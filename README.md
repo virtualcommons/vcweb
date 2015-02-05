@@ -1,13 +1,17 @@
 ### vcweb 
-vcweb is a Python/Django framework that purportedly helps developers build interactive web-based experiments for collective action researchers interested in social ecological systems. 
+vcweb is a Python/Django framework for developing collective action experiments. These experiments are characterized by
+*parameterizable* experiment configurations with parameters applicable across the entire experiment or specific to a given
+*round* and a random set of participants that are partitioned into groups (or networks). Our experiments typically
+involve common pool resources where individuals must balance self interest with the good of the group or linear public
+good games where majority group contribution is needed to maximize payoffs.
+
 We maintain a managed instance of vcweb at https://vcweb.asu.edu but you are welcome to host your own server.
 
 ### features
-* Web based experiment parameterization for multiple treatments with support for experiment-wide and round-specific
-  parameters. Standard parameters include show up fees, exchange rate for tokens to currency, round durations, and group size.
-  Custom parameters are defined by experiment developers; examples include initial resource levels and regrowth factors
-  for a common pool resource game. An experiment treatment consists of an ordered set of round parameterizations. Round
-  parameterizations can be specified to repeat N times as well.
+For screenshots and example interfaces please visit our [Features page](https://bitbucket.org/virtualcommons/vcweb/wiki/Features)
+
+* Subject pool management: invite and recruit participants with custom invitation emails
+* Real-time chat and server push events via [sockjs-tornado](https://github.com/mrjoes/sockjs-tornado) and Redis
 * Support for two broad classes of experiments:
     - Controlled experiments typically run in a computer lab with captive participants, characterized by timed rounds of
       parameterizable duration, and round transitions manually managed by an experiment facilitator, i.e., when all
@@ -19,22 +23,25 @@ We maintain a managed instance of vcweb at https://vcweb.asu.edu but you are wel
     - Extended experiments that span multiple days or weeks with scheduled custom experiment logic, e.g., at midnight
       determine the current state of a resource and up-till-now payments, then send summary emails to all registered
       participants.
-* Subject pool management with randomized invitation and recruitment and templated custom invitation emails
+* Web based experiment parameterization for multiple treatments with support for experiment-wide and round-specific
+  parameters. Standard parameters include show up fees, exchange rate for tokens to currency, round durations, and group size.
+  Custom parameters are defined by experiment developers; examples include initial resource levels and regrowth factors
+  for a common pool resource game. An experiment treatment consists of an ordered set of round parameterizations. Round
+  parameterizations can be specified to repeat N times as well.
 * Flexible data model for managing the metadata and relationships between Experiments, ExperimentConfigurations,
-  RoundConfigurations, and generated Participant and Group data via the [Entity Attribute Value Model](http://en.wikipedia.org/wiki/Entity%E2%80%93attribute%E2%80%93value_model).
-  Work is ongoing to simplify and improve this API.
-* Robust and performant real-time capabilities with support for chat and general server push events via [sockjs-tornado](https://github.com/mrjoes/sockjs-tornado) and Redis
+  RoundConfigurations, and generated Participant and Group data. Work is ongoing to simplify and improve this API.
 * Existing experiment UIs have been implemented using [Bootstrap 3](http://getbootstrap.com), 
   [knockout](http://knockoutjs.com), [jQuery Mobile](http://jquerymobile.com), and [Sencha Touch](http://www.sencha.com)
   but the view layer is unopinionated and experiments can be implemented with arbitrary web or mobile UIs. Some ideas:
   [reactjs](http://facebook.github.io/react/) and [Om](https://github.com/swannodette/om),
-  [angular](https://angularjs.org/), [emberjs](http://emberjs.com/), or even 
-  [d3js](http://d3js.org/) or [processingjs](http://ejohn.org/blog/processingjs/). 
+  [angular](https://angularjs.org/), [emberjs](http://emberjs.com/), 
+  [d3js](http://d3js.org/), [processingjs](http://ejohn.org/blog/processingjs/). 
 
-### run an experiment
 
-In order to run a vcweb experiment you'll need an experimenter account. Please [contact us](http://vcweb.asu.edu/contact)
-if you'd like to request an experimenter account. 
+### run experiments or develop new experiments
+
+Please [contact us](http://vcweb.asu.edu/contact) if you'd like to request an experimenter account or develop new
+experiments
 
 ### participate in an experiment
 
@@ -42,7 +49,7 @@ In order to participate in a vcweb experiment you must be invited to one by an e
 
 ### try it out
 
-You can demo the software as an experimenter by logging in to https://vcweb.asu.edu with the following credentials:
+You can try the software as a demo experimenter by logging in to https://vcweb.asu.edu with the following credentials:
 
 * Email: vcweb@mailinator.com
 * Password: demo
@@ -54,9 +61,6 @@ view the page by clicking on the "Monitor" button to connect to the experiment a
 * Email: s1asu@mailinator.com, s2asu@mailinator.com, ..., s10asu@mailinator.com
 * Password: test 
 
-### develop an experiment or contribute to the infrastructure
+### codebase status
 [![Build Status](https://travis-ci.org/virtualcommons/vcweb.svg?branch=develop)](https://travis-ci.org/virtualcommons/vcweb)
 [![Coverage Status](https://coveralls.io/repos/virtualcommons/vcweb/badge.png?branch=develop)](https://coveralls.io/r/virtualcommons/vcweb?branch=develop)
-
-For more information on how to install and deploy the software please visit <https://bitbucket.org/virtualcommons/vcweb/wiki/Home> (work in progress)
-
