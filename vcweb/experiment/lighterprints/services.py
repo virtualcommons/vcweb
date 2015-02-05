@@ -248,7 +248,7 @@ class GroupScores(object):
     }
 
     def __init__(self, experiment, round_data=None, round_configuration=None, groups=None,
-                 participant_group_relationship=None, experiment_configuration=None):
+                 experiment_configuration=None):
         self.experiment = experiment
         if round_data is None:
             round_data = experiment.current_round_data
@@ -258,11 +258,6 @@ class GroupScores(object):
             groups = list(experiment.groups)
         if experiment_configuration is None:
             experiment_configuration = experiment.experiment_configuration
-        if participant_group_relationship is not None:
-            # FIXME: used to construct a view model. distinction between view model and GroupScores is becoming
-            # increasingly tenuous
-            self.participant_group_relationship = participant_group_relationship
-            self.group = participant_group_relationship.group
         self.experiment_configuration = experiment_configuration
         self.round_data = round_data
         self.round_configuration = round_configuration
@@ -278,7 +273,7 @@ class GroupScores(object):
         self.total_participant_points = 0
         # establish date range
         self.treatment_type = get_treatment_type(experiment_configuration=experiment_configuration).string_value
-        self.initialize_scores(participant_group_relationship)
+        self.initialize_scores()
 
     @property
     def is_level_based_experiment(self):
@@ -300,15 +295,6 @@ class GroupScores(object):
     def group_clusters(self):
         return self.experiment.group_cluster_set
 
-    def linear_public_good_configuration_check(self, activity_points_cache):
-        if self.is_linear_public_good_experiment:
-            all_activities_performed_qs = ParticipantRoundDataValue.objects.for_experiment(
-                experiment=self.experiment,
-                parameter=get_activity_performed_parameter())
-            for dv in all_activities_performed_qs:
-                activity_points = activity_points_cache[dv.int_value]
-                self.scores_dict[dv.participant_group_relationship.group]['total_points'] += activity_points
-
     def community_treatment_initialization_check(self):
         if self.is_community_treatment:
             self.group_cluster_data = {}
@@ -321,9 +307,6 @@ class GroupScores(object):
                 for group in groups:
                     total_cluster_points += self.scores_dict[group]['total_points']
                     total_daily_cluster_points += self.scores_dict[group]['total_daily_points']
-# cache the group cluster that this group belongs to
-                    if group == getattr(self, 'group', None):
-                        self.group_cluster = gc
                 divisor = number_of_groups * group_size
                 average_daily_cluster_points = total_daily_cluster_points / divisor
                 total_average_points = total_cluster_points / divisor
@@ -340,18 +323,32 @@ class GroupScores(object):
                         average_daily_cluster_points=average_daily_cluster_points,
                     )
 
-    def initialize_scores(self, participant_group_relationship):
+    def initialize_scores(self):
         self.scores_dict = defaultdict(lambda: defaultdict(lambda: 0))
         activity_points_cache = get_activity_points_cache()
-        activities_performed_qs = ParticipantRoundDataValue.objects.for_round(
-            parameter=get_activity_performed_parameter(), round_data=self.round_data)
-        for dv in activities_performed_qs:
-            activity_points = activity_points_cache[dv.int_value]
-            self.scores_dict[dv.participant_group_relationship.group]['total_daily_points'] += activity_points
-            if participant_group_relationship and dv.participant_group_relationship == participant_group_relationship:
-                self.total_participant_points += activity_points
+        if self.is_linear_public_good_experiment:
+            # tally all green points earned across the entire experiment
+            all_activities_performed_qs = ParticipantRoundDataValue.objects.for_experiment(
+                experiment=self.experiment,
+                parameter=get_activity_performed_parameter())
+            for dv in all_activities_performed_qs:
+                activity_points = activity_points_cache[dv.int_value]
+                pgr = dv.participant_group_relationship
+                self.scores_dict[pgr.group]['total_points'] += activity_points
+                self.scores_dict[pgr]['total_points'] += activity_points
+                if dv.round_data == self.round_data:
+                    self.scores_dict[pgr.group]['total_daily_points'] += activity_points
+                    self.scores_dict[pgr]['total_daily_points'] += activity_points
+        else:
+            # only tally daily points for the group and for each individual participant
+            activities_performed_qs = ParticipantRoundDataValue.objects.for_round(
+                parameter=get_activity_performed_parameter(), round_data=self.round_data)
+            for dv in activities_performed_qs:
+                activity_points = activity_points_cache[dv.int_value]
+                pgr = dv.participant_group_relationship
+                self.scores_dict[pgr.group]['total_daily_points'] += activity_points
+                self.scores_dict[pgr]['total_daily_points'] += activity_points
 
-        self.linear_public_good_configuration_check(activity_points_cache)
         for group in self.groups:
             group_data_dict = self.scores_dict[group]
             group_size = group.size
@@ -388,7 +385,6 @@ class GroupScores(object):
             average_points = self.average_daily_cluster_points(group=group)
         else:
             average_points = self.average_daily_points(group)
-        logger.debug("daily earnings: %s", average_points)
         return average_points * self.exchange_rate
 
     def total_earnings(self, group):
@@ -396,7 +392,6 @@ class GroupScores(object):
             total_points = self.total_average_cluster_points(group=group)
         else:
             total_points = self.total_average_points(group)
-        logger.debug("total earnings: %s", total_points)
         return total_points * self.exchange_rate
 
     def total_earnings_currency(self, group):
@@ -456,8 +451,7 @@ class GroupScores(object):
             self.group_rankings = [g[0] for g in self.get_sorted_group_scores()]
         return self.group_rankings
 
-    def get_group_cluster_data_list(self):
-        group_cluster = self.group_cluster
+    def get_group_cluster_data_list(self, group_cluster):
         gdl = self.get_group_data_list(groups=group_cluster.groups)
         average_cluster_points = self.average_daily_cluster_points(group_cluster)
         total_cluster_points = self.total_daily_cluster_points(group_cluster)
@@ -470,9 +464,7 @@ class GroupScores(object):
         # FIXME: cache group_data if multiple invocations occur
         if groups is None:
             groups = self.groups
-        group_data = []
-        for group in groups:
-            group_data.append(self.to_dict(group))
+        group_data = [self.to_dict(g) for g in groups]
         group_data.sort(key=itemgetter('averagePoints'), reverse=True)
         return group_data
 
@@ -483,7 +475,7 @@ class GroupScores(object):
             'groupSize': group.size,
             'averagePoints': self.average_daily_points(group),
             'totalPoints': self.total_daily_points(group),
-            'member': group == self.group
+            'pk': group.pk,
         }
 
     @property

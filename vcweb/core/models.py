@@ -458,9 +458,9 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
     last_modified = models.DateTimeField(auto_now=True)
     is_public = models.BooleanField(default=False)
     max_group_size = models.PositiveIntegerField(default=5)
-    exchange_rate = models.DecimalField(null=True, blank=True, default=0.2, max_digits=6, decimal_places=2,
+    exchange_rate = models.DecimalField(null=True, blank=True, default=0.02, max_digits=6, decimal_places=2,
                                         help_text=_('Exchange rate of currency per in-game token, dollars per token'))
-    show_up_payment = models.DecimalField(null=True, blank=True, default=5.0, max_digits=6, decimal_places=2,
+    show_up_payment = models.DecimalField(null=True, blank=True, default=5.00, max_digits=6, decimal_places=2,
                                           help_text=_(
                                               "Show up fee paid to an in-lab experiment participant for showing up"))
     maximum_payment = models.DecimalField(null=True, blank=True, default=40.0, max_digits=6, decimal_places=2,
@@ -1736,15 +1736,14 @@ class ParameterPassThroughManager(PassThroughManager):
         return self.get(name=name)
 
 
+# special case curried converter for fk lookups that stores an int given a model instance or pk
 def _fk_converter(fk_cls):
     def converter(value):
         if isinstance(value, (int, long)):
             return value
         elif isinstance(value, fk_cls):
             return value.pk
-        raise ValueError(
-            "can only convert integers or %s - received %s" % (fk_cls, value))
-
+        raise ValueError("can only convert integers or %s - received %s" % (fk_cls, value))
     return converter
 
 
@@ -1849,8 +1848,7 @@ class Parameter(models.Model):
 
     def get_converter(self):
         converter = Parameter.CONVERTERS[self.type]
-        # FIXME: hacky special case curried converter for fk lookups that
-        # stores an int given a model instance or pk
+        # special case curried converter for fk lookups that stores an int given a model instance or pk
         return converter(self.get_model_class()) if self.type == 'foreignkey' else converter
 
     def convert(self, value=None):
@@ -1866,7 +1864,7 @@ class Parameter(models.Model):
         return value
 
     def __unicode__(self):
-        return u"%s (%s) scope:%s" % (self.label, self.type, self.scope)
+        return u"%s (%s)" % (self.label, self.type)
 
     class Meta:
         ordering = ['name']
@@ -2023,6 +2021,13 @@ class Group(models.Model, DataValueMixin):
     The experiment that contains this Group.
     """
     session_id = models.CharField(max_length=64, blank=True, default='')
+
+    @property
+    def group_cluster(self):
+        if self.relationship_set.exists():
+            return self.relationship_set.select_related('cluster').first().cluster
+        logger.warning("no group cluster available for %s", self)
+        return None
 
     @property
     def name(self):
@@ -2277,8 +2282,8 @@ class RoundData(models.Model):
 
     def __unicode__(self):
         if self.round_configuration.is_repeating_round:
-            return u"Repeating round data %s.%s" % (
-                self.round_configuration.sequence_number, self.repeating_round_sequence_number)
+            return u"Repeating round data %s.%s" % (self.round_configuration.sequence_number,
+                                                    self.repeating_round_sequence_number)
         return u"Round data %s" % self.round_configuration.sequence_label
 
     class Meta:

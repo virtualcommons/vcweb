@@ -80,8 +80,7 @@ class ActivityQuerySet(models.query.QuerySet):
 
     def scheduled(self, round_configuration=None):
         if round_configuration is None:
-            logger.warn(
-                "No round configuration specified, cannot report scheduled activities.")
+            logger.warn("No round configuration specified, cannot report scheduled activities.")
             return []
         available_activity_ids = round_configuration.parameter_value_set.filter(
             parameter=get_available_activity_parameter()).values_list('int_value', flat=True)

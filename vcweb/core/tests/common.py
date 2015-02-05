@@ -30,8 +30,7 @@ class BaseVcwebTest(TestCase):
             # better way to bootstrap tests
             experiment = Experiment.objects.first().clone()
         else:
-            experiment = self.create_new_experiment(
-                experiment_metadata, **kwargs)
+            experiment = self.create_new_experiment(experiment_metadata, **kwargs)
         if experimenter_password is None:
             experimenter_password = BaseVcwebTest.DEFAULT_EXPERIMENTER_PASSWORD
 
@@ -123,6 +122,7 @@ class BaseVcwebTest(TestCase):
             experimenter = self.demo_experimenter
         experiment_configuration = ExperimentConfiguration.objects.create(experiment_metadata=experiment_metadata,
                                                                           name='Test Experiment Configuration',
+                                                                          exchange_rate=0.02,
                                                                           creator=experimenter)
         for index in xrange(1, 10):
             should_initialize = (index == 1)

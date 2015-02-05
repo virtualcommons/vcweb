@@ -266,7 +266,7 @@ _activities = [
         "summary": "Save energy by not heating water",
         "cooldown": 1,
         "savings": "1.10",
-        "points": 11,
+        "points": 2,
         "icon": "lighterprints/activity-icons/24-washing-new.png",
         "lft": 0,
         "rght": 0,

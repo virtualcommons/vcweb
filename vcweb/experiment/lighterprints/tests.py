@@ -6,8 +6,9 @@ from vcweb.core.tests import BaseVcwebTest
 from vcweb.core.models import ParticipantRoundDataValue, ChatMessage, Like, Comment
 from .models import (Activity, get_lighterprints_experiment_metadata, get_activity_performed_parameter,
                      get_footprint_level, get_performed_activity_ids, get_treatment_type_parameter,
-                     get_leaderboard_parameter, is_scheduled_activity_experiment, is_level_based_experiment,
-                     is_high_school_treatment, is_community_treatment)
+                     get_leaderboard_parameter, get_linear_public_good_parameter, is_scheduled_activity_experiment,
+                     is_level_based_experiment, is_high_school_treatment, is_community_treatment,
+                     get_available_activity_parameter)
 from .services import (GroupScores, get_individual_points, GroupActivity, CommunityEmailGenerator)
 from .views import (LighterprintsViewModel, LevelBasedViewModel, CommunityViewModel, HighSchoolViewModel)
 
@@ -15,6 +16,9 @@ logger = logging.getLogger(__name__)
 
 
 class BaseTest(BaseVcwebTest):
+    scheduled_activity_names = (u'eat-local-lunch', u'enable-sleep-on-computer', u'share-your-ride', u'recycle-paper',
+                                u'air-dry-clothes', u'bike-or-walk', u'eat-green-lunch', u'computer-off-night',
+                                u'cold-water-wash')
 
     def setUp(self, treatment_type='LEVEL_BASED', **kwargs):
         super(BaseTest, self).setUp(experiment_metadata=get_lighterprints_experiment_metadata(), **kwargs)
@@ -22,9 +26,21 @@ class BaseTest(BaseVcwebTest):
         ec = self.experiment_configuration
         ec.has_daily_rounds = True
         ec.set_parameter_value(parameter=get_leaderboard_parameter(), boolean_value=True)
+        ec.set_parameter_value(parameter=get_linear_public_good_parameter(), boolean_value=True)
         self.set_treatment_type(treatment_type)
         ec.round_configuration_set.update(initialize_data_values=True)
         ec.save()
+
+    @property
+    def scheduled_activity_ids(self):
+        return Activity.objects.filter(name__in=BaseTest.scheduled_activity_names).values_list('pk', flat=True)
+
+    def create_scheduled_activities(self):
+        ec = self.experiment_configuration
+        for rc in ec.round_configuration_set.all():
+            for activity_pk in self.scheduled_activity_ids:
+                rc.parameter_value_set.create(parameter=get_available_activity_parameter(),
+                                              int_value=activity_pk)
 
     def set_treatment_type(self, treatment_type):
         self.experiment_configuration.set_parameter_value(parameter=get_treatment_type_parameter(),
@@ -70,6 +86,10 @@ class CommunityTreatmentTest(BaseTest):
 
     def setUp(self, **kwargs):
         super(CommunityTreatmentTest, self).setUp(treatment_type='COMMUNITY', **kwargs)
+        rc = self.experiment.current_round
+        rc.create_group_clusters = True
+        rc.save()
+        self.create_scheduled_activities()
 
     def test_treatment_type(self):
         e = self.experiment
@@ -79,35 +99,80 @@ class CommunityTreatmentTest(BaseTest):
         self.assertFalse(is_high_school_treatment(e))
         self.assertTrue(is_community_treatment(e))
 
-    def test_view_model(self):
+    def test_group_scores(self):
         e = self.experiment
         e.activate()
-        # perform activities
-        activities = Activity.objects.scheduled(e.current_round)
+        gs = GroupScores(e)
+        self.assertEqual(e.experiment_configuration.exchange_rate, 0.02)
+        for group in e.groups:
+            self.assertEqual(0, gs.average_daily_points(group))
+            self.assertEqual(0, gs.average_daily_cluster_points(group=group))
+            self.assertEqual(0, gs.total_daily_points(group))
+            self.assertEqual(0, gs.total_average_points(group))
+            self.assertEqual(0, gs.daily_earnings(group))
+            self.assertEqual(0, gs.total_earnings(group))
+        self.perform_activities()
+        gs = GroupScores(e)
+        for group in e.groups:
+            self.assertEqual(250, gs.average_daily_points(group))
+            self.assertEqual(250, gs.average_daily_cluster_points(group=group))
+            self.assertEqual(250 * group.size, gs.total_daily_points(group))
+            self.assertEqual(250, gs.total_average_points(group))
+            self.assertEqual(5.0, gs.daily_earnings(group))
+            self.assertEqual(5.0, gs.total_earnings(group))
+
+    def test_summary_emails(self):
+        e = self.experiment
+        e.activate()
+        current_round = e.current_round
+        activities = list(Activity.objects.scheduled(current_round))
+        self.assertEqual(250, sum(Activity.objects.scheduled(current_round).values_list('points', flat=True)))
         current_round_data = e.current_round_data
+        # perform activities
         for pgr in e.participant_group_relationships:
-            lvm = LighterprintsViewModel.create(pgr)
-            self.assertEqual(lvm.template_name, CommunityViewModel.template_name)
             ChatMessage.objects.create(participant_group_relationship=pgr,
                                        string_value='Harrowing message from %s' % pgr)
             for a in activities:
-                logger.error("%s performing activity %s", pgr, a)
                 ParticipantRoundDataValue.objects.create(
                     parameter=get_activity_performed_parameter(),
                     participant_group_relationship=pgr,
                     round_data=current_round_data,
                     int_value=a.pk
                 )
-            # make more assertions on community view model activities and score
-            self.assertEqual(type(lvm.email_generator), CommunityEmailGenerator)
-
         gs = GroupScores(e)
         for group in e.groups:
             summary_emails = gs.email_generator.generate(group)
             for email in summary_emails:
-                logger.error("email to %s with subject %s, body: %s", email.recipients(), email.subject, email.body)
                 self.assertTrue(email.recipients())
                 self.assertTrue("5 chat messages were posted" in email.body)
+                self.assertTrue("You earned 250 point(s)." in email.body)
+                self.assertTrue("Members of your group earned, on average, 250 point(s)." in email.body)
+                self.assertTrue("Members of all groups earned, on average, 250 point(s)." in email.body)
+
+    def perform_activities(self, activities=None):
+        if activities is None:
+            activities = list(Activity.objects.scheduled(self.experiment.current_round))
+        current_round_data = self.experiment.current_round_data
+        for pgr in self.experiment.participant_group_relationships:
+            for a in activities:
+                ParticipantRoundDataValue.objects.create(
+                    parameter=get_activity_performed_parameter(),
+                    participant_group_relationship=pgr,
+                    round_data=current_round_data,
+                    int_value=a.pk
+                )
+
+    def test_view_model(self):
+        e = self.experiment
+        e.activate()
+        for pgr in e.participant_group_relationships:
+            lvm = LighterprintsViewModel.create(pgr)
+            self.assertEqual(lvm.template_name, CommunityViewModel.template_name)
+            self.assertEqual(type(lvm.email_generator), CommunityEmailGenerator)
+            self.assertIsNotNone(lvm.group_cluster)
+            self.assertIsNotNone(lvm.group_data)
+            lvm_dict = lvm.to_dict()
+            self.assertTrue('averageClusterPoints' in lvm_dict)
 
 
 class HighSchoolTreatmentTest(BaseTest):

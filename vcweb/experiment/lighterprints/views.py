@@ -36,8 +36,7 @@ class LighterprintsViewModel(object):
         self.experiment = self.group.experiment if experiment is None else experiment
         self.group_scores = GroupScores(self.experiment,
                                         round_data=round_data,
-                                        round_configuration=round_configuration,
-                                        participant_group_relationship=self.participant_group_relationship)
+                                        round_configuration=round_configuration)
         self.group_activity = GroupActivity(participant_group_relationship)
         self.total_participant_points = self.group_scores.total_participant_points
         if activities is None:
@@ -76,7 +75,10 @@ class LighterprintsViewModel(object):
 
     @property
     def group_data(self):
-        return self.group_scores.get_group_data_list()
+        gdl = self.group_scores.get_group_data_list()
+        for group_dict in gdl:
+            group_dict['member'] = self.group.pk == group_dict['pk']
+        return gdl
 
     def to_dict(self):
         (hours_left, minutes_left) = get_time_remaining()
@@ -119,17 +121,18 @@ class CommunityViewModel(LighterprintsViewModel):
 
     @property
     def group_cluster(self):
-        return self.group_scores.group_cluster
+        return self.group.group_cluster
 
     @property
     def group_data(self):
-        return self.group_scores.get_group_cluster_data_list()
+        gdl = self.group_scores.get_group_cluster_data_list(self.group_cluster)
+        for group_dict in gdl:
+            group_dict['member'] = self.group.pk == group_dict['pk']
+        return gdl
 
     def to_dict(self):
         d = super(CommunityViewModel, self).to_dict()
-        d.update(communityTreatment=True,
-                 averageClusterPoints=self.group_scores.average_daily_cluster_points(self.group_cluster),
-                 )
+        d.update(averageClusterPoints=self.group_scores.average_daily_cluster_points(self.group_cluster),)
         return d
 
 
