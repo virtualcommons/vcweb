@@ -3,7 +3,7 @@ import logging
 from django.shortcuts import render, get_object_or_404
 
 from vcweb.core.decorators import group_required
-from vcweb.core.http import JsonResponse, dumps
+from vcweb.core.http import JsonResponse, dumps, Http404
 from vcweb.core.models import Experiment, PermissionGroup
 from vcweb.experiment.irrigation.services import get_experiment_metadata
 
@@ -22,7 +22,7 @@ class ViewModel(object):
     def __init__(self, participant_group_relationship, experiment=None, **kwargs):
         self.participant_group_relationship = participant_group_relationship
         self.group = participant_group_relationship.group
-        self.experiment = group.experiment if experiment is None else experiment
+        self.experiment = self.group.experiment if experiment is None else experiment
         self.current_round_data = self.experiment.current_round_data
         self.current_round = self.current_round_data.round_configuration
         self.experiment_model = self.experiment.to_dict(

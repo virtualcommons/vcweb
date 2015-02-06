@@ -1644,10 +1644,10 @@ class RoundConfiguration(models.Model, ParameterValueMixin):
             return self.survey_url
 
     def get_debriefing(self, participant_id=None, **kwargs):
-        return self.templatize(self.debriefing, participant_id, kwargs)
+        return self.templatize(self.debriefing, participant_id, **kwargs)
 
     def get_instructions(self, participant_id=None, **kwargs):
-        return self.templatize(self.instructions, participant_id, kwargs)
+        return self.templatize(self.instructions, participant_id, **kwargs)
 
     def templatize(self, template_string, participant_id=None, **kwargs):
         return Template(template_string).substitute(kwargs,

@@ -166,7 +166,7 @@ class ParticipantAccountForm(AccountForm):
         }
 
     def clean(self):
-        data = super(forms.ModelForm, self).clean()
+        data = super(ParticipantAccountForm, self).clean()
         email_address = data.get('email')
         validate_email(email_address)
         can_be_invited = data.get('can_receive_invitations')

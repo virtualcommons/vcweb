@@ -114,11 +114,10 @@ def test(name=None, coverage=False):
 
 
 @task
-def sockjs(ip="127.0.0.1", port=None):
+def sockjs(port=None):
     if port is None:
         port = vcweb_settings.WEBSOCKET_PORT
-    _virtualenv(
-        local, "{python} vcweb/sockjs-redis.py {port}".format(python=env.python, port=port), capture=False)
+    _virtualenv(local, "{python} vcweb/sockjs-redis.py {port}".format(python=env.python, port=port), capture=False)
 
 
 @task

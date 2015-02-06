@@ -91,7 +91,7 @@ USE_I18N = False
 # ADMIN_MEDIA_PREFIX = '/static/admin/'
 
 # Make this unique, and don't share it with anybody.
-SECRET_KEY = '2km^iq&48&6uv*x$ew@56d0#w9zqth@)_4tby(85+ac2wf4r-u'
+SECRET_KEY = 'keep it secret. keep it safe'
 
 CSRF_FAILURE_VIEW = 'vcweb.core.views.csrf_failure'
 
