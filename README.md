@@ -1,16 +1,15 @@
 ### vcweb 
 vcweb is a Python/Django framework for developing collective action experiments. These experiments are characterized by
-*parameterizable* experiment configurations with parameters applicable across the entire experiment or specific to a given
-*round* and a random set of participants that are partitioned into groups (or networks). Our experiments typically
+parameterizable experiment configurations with parameters applicable across the entire experiment or specific to a given
+round and a random set of participants that are partitioned into groups (or networks). Our experiments typically
 involve common pool resources where individuals must balance self interest with the good of the group or linear public
 good games where majority group contribution is needed to maximize payoffs.
 
 We maintain a managed instance of vcweb at https://vcweb.asu.edu but you are welcome to host your own server.
 
 ### features
-For screenshots and example interfaces please visit our [Features page](https://bitbucket.org/virtualcommons/vcweb/wiki/Features)
 
-* Subject pool management: invite and recruit participants with custom invitation emails
+* Subject pool management: participant recruitment and experiment session management with custom invitation emails
 * Real-time chat and server push events via [sockjs-tornado](https://github.com/mrjoes/sockjs-tornado) and Redis
 * Support for two broad classes of experiments:
     - Controlled experiments typically run in a computer lab with captive participants, characterized by timed rounds of
