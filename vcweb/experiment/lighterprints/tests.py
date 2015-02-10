@@ -20,6 +20,8 @@ class BaseTest(BaseVcwebTest):
                                 u'air-dry-clothes', u'bike-or-walk', u'eat-green-lunch', u'computer-off-night',
                                 u'cold-water-wash')
 
+    default_activities = Activity.objects.all()
+
     def setUp(self, treatment_type='LEVEL_BASED', **kwargs):
         super(BaseTest, self).setUp(experiment_metadata=get_lighterprints_experiment_metadata(), **kwargs)
         cache.clear()
@@ -46,6 +48,37 @@ class BaseTest(BaseVcwebTest):
         self.experiment_configuration.set_parameter_value(parameter=get_treatment_type_parameter(),
                                                           string_value=treatment_type)
 
+    def perform_activities(self, activities=None, force=False):
+        e = self.experiment
+        rd = e.current_round_data
+        if activities is None:
+            activities = self.default_activities
+        performed_activities = set()
+        for pgr in e.participant_group_relationships:
+            participant = pgr.participant
+            self.assertTrue(self.login_participant(participant),
+                            "%s failed to login" % participant)
+            for activity in activities:
+                expected_success = activity.is_available_for(pgr, rd)
+                if expected_success:
+                    performed_activities.add(activity)
+                response = self.post(self.reverse('lighterprints:perform_activity'), {
+                    'participant_group_id': pgr.id,
+                    'activity_id': activity.pk
+                }, follow=True)
+                self.assertEqual(response.status_code, 200)
+                json_object = json.loads(response.content)
+                self.assertEqual(expected_success, json_object['success'])
+                if force and not expected_success:
+                    ParticipantRoundDataValue.objects.create(
+                        parameter=get_activity_performed_parameter(),
+                        participant_group_relationship=pgr,
+                        round_data=rd,
+                        int_value=activity.pk
+                    )
+
+        return performed_activities
+
     class Meta:
         abstract = True
 
@@ -57,32 +90,17 @@ class LevelBasedTest(BaseTest):
     as well by adding available_activity parameters and scheduled activities
     """
 
-    def perform_activities(self, activities=None):
-        rd = self.experiment.current_round_data
-        activities = Activity.objects.at_level(1)
-        performed_activities = set()
-        for participant_group_relationship in self.experiment.participant_group_relationships:
-            participant = participant_group_relationship.participant
-            self.assertTrue(self.client.login(username=participant.email, password='test'),
-                            "%s failed to login" % participant)
-            for activity in activities:
-                expected_success = activity.is_available_for(participant_group_relationship, rd)
-                if expected_success:
-                    performed_activities.add(activity)
-                response = self.post(self.reverse('lighterprints:perform_activity'), {
-                    'participant_group_id': participant_group_relationship.id,
-                    'activity_id': activity.pk
-                }, follow=True)
-                self.assertEqual(response.status_code, 200)
-                json_object = json.loads(response.content)
-                self.assertEqual(expected_success, json_object['success'])
-        return performed_activities
+    default_activities = Activity.objects.at_level(1)
 
     def setUp(self, **kwargs):
         super(LevelBasedTest, self).setUp(treatment_type='LEVEL_BASED', **kwargs)
 
 
 class CommunityTreatmentTest(BaseTest):
+
+    @property
+    def default_activities(self):
+        return list(Activity.objects.scheduled(self.experiment.current_round))
 
     def setUp(self, **kwargs):
         super(CommunityTreatmentTest, self).setUp(treatment_type='COMMUNITY', **kwargs)
@@ -111,7 +129,7 @@ class CommunityTreatmentTest(BaseTest):
             self.assertEqual(0, gs.total_average_points(group))
             self.assertEqual(0, gs.daily_earnings(group))
             self.assertEqual(0, gs.total_earnings(group))
-        self.perform_activities()
+        self.perform_activities(force=True)
         gs = GroupScores(e)
         for group in e.groups:
             self.assertEqual(250, gs.average_daily_points(group))
@@ -148,19 +166,6 @@ class CommunityTreatmentTest(BaseTest):
                 self.assertTrue("You earned 250 point(s)." in email.body)
                 self.assertTrue("Members of your group earned, on average, 250 point(s)." in email.body)
                 self.assertTrue("Members of all groups earned, on average, 250 point(s)." in email.body)
-
-    def perform_activities(self, activities=None):
-        if activities is None:
-            activities = list(Activity.objects.scheduled(self.experiment.current_round))
-        current_round_data = self.experiment.current_round_data
-        for pgr in self.experiment.participant_group_relationships:
-            for a in activities:
-                ParticipantRoundDataValue.objects.create(
-                    parameter=get_activity_performed_parameter(),
-                    participant_group_relationship=pgr,
-                    round_data=current_round_data,
-                    int_value=a.pk
-                )
 
     def test_view_model(self):
         e = self.experiment
