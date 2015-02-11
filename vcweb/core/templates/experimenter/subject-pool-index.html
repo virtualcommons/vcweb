@@ -138,7 +138,7 @@
                                 <td>
 				                    <span >
                                         <div class="input-group input-group-sm">
-                                            <input name="start_date" type="text" class="form-control date-start" data-date-format="YYYY-MM-DD HH:mm" data-bind="datepicker: start_date, value: start_date, enable: isEditable" />
+                                            <input name="start_date" type="text" class="form-control date-start" data-bind="datetimepicker: start_date, enable: isEditable" />
                                             <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
                                         </div>
                                     </span>
@@ -204,7 +204,7 @@
                                 <td>
                                     <span>
                                         <div class="input-group input-group-sm">
-                                            <input name="end_date" type="text" class="form-control date-end" data-date-format="YYYY-MM-DD HH:mm" data-bind="datepicker : end_date, value: end_date, enable: isEditable" />
+                                            <input name="end_date" type="text" class="form-control date-end" data-bind="datetimepicker: end_date, enable: isEditable" />
                                             <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
                                         </div>
                                     </span>
@@ -323,9 +323,10 @@
                 ];
 
                 model.addSession = function() {
-                    var tom_date_time = moment().add(1, 'days').format('YYYY-MM-DD HH:mm');
+                    var initial_start_date = moment().add(1, 'days').hour(10).minute(0).format('YYYY-MM-DD HH:mm');
+                    var initial_end_date = moment().add(1, 'days').hour(11).minute(0).format('YYYY-MM-DD HH:mm');
                     model.session_list.push(
-                        new SessionModel({ pk: -1, experiment_metadata: -1, start_date: tom_date_time, end_date: tom_date_time, capacity:10, invite_count: 0, location: "Online", isEditable: true, signup_count: 0})
+                        new SessionModel({ pk: -1, experiment_metadata: -1, start_date: initial_start_date, end_date: initial_end_date, capacity:10, invite_count: 0, location: "Online", isEditable: true, signup_count: 0})
                     );
                 };
 
@@ -443,6 +444,7 @@
                     self.isEditable(true);
                 };
             }
+            console.log(viewModelJson)
             ko.applyBindings(new SessionListViewModel(viewModelJson));
         });
     </script>

@@ -65,23 +65,27 @@ ko.bindingHandlers.slideVisible = {
     }
 };
 
-ko.bindingHandlers.datepicker = {
-    init: function(element, valueAccessor, allBindingsAccessor) {
+ko.bindingHandlers.datetimepicker = {
+    init: function(element, valueAccessor, allBindings) {
         //initialize datepicker with some optional options
-        var options = { minDate: moment(), sideBySide: true };
-        $(element).datetimepicker(options);
-
-        ko.utils.registerEventHandler(element, "dp.show", function(event) {
-            var value = ko.utils.unwrapObservable(valueAccessor());
-            $(element).data("DateTimePicker").date(value);
-        });
-
-        ko.utils.registerEventHandler(element, "dp.change", function(event) {
-            if($(element).hasClass("date-start")) {
-                $(element).parents("tbody").find(".date-end").data("DateTimePicker").minDate(event.date);
-                $(element).parents("tbody").find(".date-end").data("DateTimePicker").date(event.date);
+        var options = {
+            format: 'YYYY-MM-DD HH:mm',
+            defaultDate: ko.unwrap(valueAccessor()),
+            sideBySide: true,
+        };
+        ko.utils.extend(options, allBindings.dateTimePickerOptions);
+        $(element).datetimepicker(options).on("dp.change", function (evntObj) {
+            var observable = valueAccessor();
+            if (evntObj.timeStamp !== undefined) {
+                var picker = $(this).data("DateTimePicker");
+                var d = picker.date();
+                observable(d.format(options.format));
             }
         });
+    },
+    update: function (element, valueAccessor) {
+        var value = ko.unwrap(valueAccessor());
+        $(element).datetimepicker('date', value || '');
     }
 };
 
