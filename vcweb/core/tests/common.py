@@ -114,7 +114,7 @@ class BaseVcwebTest(TestCase):
             password = BaseVcwebTest.DEFAULT_EXPERIMENTER_PASSWORD
         return self.client.login(username=experimenter.email, password=password)
 
-    def create_new_experiment(self, experiment_metadata, experimenter=None):
+    def create_new_experiment(self, experiment_metadata, experimenter=None, number_of_rounds=10):
         """
         Creates a new Experiment and ExperimentConfiguration based on the given ExperimentMetadata.
         """
@@ -124,7 +124,7 @@ class BaseVcwebTest(TestCase):
                                                                           name='Test Experiment Configuration',
                                                                           exchange_rate=0.02,
                                                                           creator=experimenter)
-        for index in xrange(1, 10):
+        for index in xrange(1, number_of_rounds):
             should_initialize = (index == 1)
             experiment_configuration.round_configuration_set.create(sequence_number=index,
                                                                     randomize_groups=should_initialize,

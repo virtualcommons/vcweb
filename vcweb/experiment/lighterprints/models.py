@@ -109,20 +109,18 @@ class ActivityManager(TreeManager, PassThroughManager):
             round_data=round_data).exists()
 
     def is_available_now(self, activity):
-        current_time = datetime.now().time()
         if activity.available_all_day:
             return True
-        availabilities = activity.availability_set.filter(
-            start_time__lte=current_time, end_time__gte=current_time)
-        return availabilities.count() > 0
+        current_time = datetime.now().time()
+        availabilities = activity.availability_set.filter(start_time__lte=current_time, end_time__gte=current_time)
+        return availabilities.exists()
 
     def is_activity_available(self, activity, participant_group_relationship, round_data):
         round_configuration = round_data.round_configuration
         experiment_configuration = round_configuration.experiment_configuration
         unlocked_activities = []
-        treatment_type = get_treatment_type(
-            experiment_configuration=experiment_configuration).string_value
-        if treatment_type != 'LEVEL_BASED':
+        treatment_type = get_treatment_type(experiment_configuration=experiment_configuration).string_value
+        if is_scheduled_activity_experiment(treatment_type=treatment_type):
             # find scheduled set of activities
             unlocked_activities = self.scheduled(round_configuration)
         else:
@@ -132,12 +130,10 @@ class ActivityManager(TreeManager, PassThroughManager):
         if activity in unlocked_activities:
             # check for time availability. high school treatment doesn't have
             # time requirements however.
-            currently_available = treatment_type == 'HIGH_SCHOOL' or self.is_available_now(
-                activity)
-            if currently_available:
-                # finally, if it is currently available, make sure they haven't
-                # already performed it
-                return not self.already_performed(activity, participant_group_relationship, round_data)
+            if is_high_school_treatment(treatment_type=treatment_type) or self.is_available_now(activity):
+                # if it is currently available, make sure they haven't already performed it
+                already_performed = self.already_performed(activity, participant_group_relationship, round_data)
+                return not already_performed
         return False
 
     def get_by_natural_key(self, name):
@@ -201,9 +197,6 @@ class Activity(MPTTModel):
                 cv = ','.join([availability.time_slot for availability in self.availability_set.all()])
             cache.set(ck, cv)
         return cv
-
-    def is_available_for(self, participant_group_relationship, round_data):
-        return Activity.objects.is_activity_available(self, participant_group_relationship, round_data)
 
     def to_dict(self):
         ck = 'activity.%s' % self.pk
@@ -336,8 +329,3 @@ def get_treatment_type(experiment=None, experiment_configuration=None, default_t
     treatment_type = experiment_configuration.get_parameter_value(parameter=get_treatment_type_parameter(),
                                                                   default=default_treatment_type)
     return treatment_type
-
-
-def get_performed_activity_ids(participant_group_relationship):
-    return participant_group_relationship.data_value_set.filter(
-        parameter=get_activity_performed_parameter()).values_list('id', flat=True)

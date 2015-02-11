@@ -378,6 +378,9 @@ class GroupScores(object):
         raise ValueError("no group or group cluster specified")
 
     def average_daily_points(self, group):
+        """
+        Returns the average group score for this group for the current round / day.
+        """
         return self.scores_dict[group]['average_daily_points']
 
     def daily_earnings(self, group):
@@ -401,6 +404,9 @@ class GroupScores(object):
         return locale.currency(self.daily_earnings(group), grouping=True)
 
     def total_average_points(self, group):
+        """
+        Returns the average group score for this group over the entire experiment, not just the current round / day.
+        """
         return self.scores_dict[group]['total_average_points']
 
     def total_daily_points(self, group):
@@ -572,6 +578,7 @@ def do_activity(activity, participant_group_relationship):
                                                         round_data=round_data,
                                                         int_value=activity.pk,
                                                         submitted=True)
+    return None
 
 
 def get_time_remaining():

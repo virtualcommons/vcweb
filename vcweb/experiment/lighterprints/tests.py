@@ -5,10 +5,9 @@ from django.core.cache import cache
 from vcweb.core.tests import BaseVcwebTest
 from vcweb.core.models import ParticipantRoundDataValue, ChatMessage, Like, Comment
 from .models import (Activity, get_lighterprints_experiment_metadata, get_activity_performed_parameter,
-                     get_footprint_level, get_performed_activity_ids, get_treatment_type_parameter,
-                     get_leaderboard_parameter, get_linear_public_good_parameter, is_scheduled_activity_experiment,
-                     is_level_based_experiment, is_high_school_treatment, is_community_treatment,
-                     get_available_activity_parameter)
+                     get_footprint_level, get_treatment_type_parameter, get_leaderboard_parameter,
+                     get_linear_public_good_parameter, is_scheduled_activity_experiment, is_level_based_experiment,
+                     is_high_school_treatment, is_community_treatment, get_available_activity_parameter)
 from .services import (GroupScores, get_individual_points, GroupActivity, CommunityEmailGenerator)
 from .views import (LighterprintsViewModel, LevelBasedViewModel, CommunityViewModel, HighSchoolViewModel)
 
@@ -22,14 +21,15 @@ class BaseTest(BaseVcwebTest):
 
     default_activities = Activity.objects.all()
 
-    def setUp(self, treatment_type='LEVEL_BASED', **kwargs):
-        super(BaseTest, self).setUp(experiment_metadata=get_lighterprints_experiment_metadata(), **kwargs)
+    def setUp(self, treatment_type='LEVEL_BASED', leaderboard=True, linear_public_good=True, **kwargs):
+        super(BaseTest, self).setUp(experiment_metadata=get_lighterprints_experiment_metadata(), number_of_rounds=3,
+                                    **kwargs)
         cache.clear()
         ec = self.experiment_configuration
         ec.has_daily_rounds = True
-        ec.set_parameter_value(parameter=get_leaderboard_parameter(), boolean_value=True)
-        ec.set_parameter_value(parameter=get_linear_public_good_parameter(), boolean_value=True)
-        self.set_treatment_type(treatment_type)
+        ec.set_parameter_value(parameter=get_leaderboard_parameter(), boolean_value=leaderboard)
+        ec.set_parameter_value(parameter=get_linear_public_good_parameter(), boolean_value=linear_public_good)
+        ec.set_parameter_value(parameter=get_treatment_type_parameter(), string_value=treatment_type)
         ec.round_configuration_set.update(initialize_data_values=True)
         ec.save()
 
@@ -44,13 +44,10 @@ class BaseTest(BaseVcwebTest):
                 rc.parameter_value_set.create(parameter=get_available_activity_parameter(),
                                               int_value=activity_pk)
 
-    def set_treatment_type(self, treatment_type):
-        self.experiment_configuration.set_parameter_value(parameter=get_treatment_type_parameter(),
-                                                          string_value=treatment_type)
-
-    def perform_activities(self, activities=None, force=False):
+    def perform_activities(self, activities=None, force=False, round_data=None):
         e = self.experiment
-        rd = e.current_round_data
+        if round_data is None:
+            round_data = e.current_round_data
         if activities is None:
             activities = self.default_activities
         performed_activities = set()
@@ -59,7 +56,7 @@ class BaseTest(BaseVcwebTest):
             self.assertTrue(self.login_participant(participant),
                             "%s failed to login" % participant)
             for activity in activities:
-                expected_success = activity.is_available_for(pgr, rd)
+                expected_success = Activity.objects.is_activity_available(activity, pgr, round_data)
                 if expected_success:
                     performed_activities.add(activity)
                 response = self.post(self.reverse('lighterprints:perform_activity'), {
@@ -73,7 +70,7 @@ class BaseTest(BaseVcwebTest):
                     ParticipantRoundDataValue.objects.create(
                         parameter=get_activity_performed_parameter(),
                         participant_group_relationship=pgr,
-                        round_data=rd,
+                        round_data=round_data,
                         int_value=activity.pk
                     )
 
@@ -96,11 +93,14 @@ class LevelBasedTest(BaseTest):
         super(LevelBasedTest, self).setUp(treatment_type='LEVEL_BASED', **kwargs)
 
 
-class CommunityTreatmentTest(BaseTest):
+class ScheduledActivityTest(BaseTest):
 
     @property
     def default_activities(self):
         return list(Activity.objects.scheduled(self.experiment.current_round))
+
+
+class CommunityTreatmentTest(ScheduledActivityTest):
 
     def setUp(self, **kwargs):
         super(CommunityTreatmentTest, self).setUp(treatment_type='COMMUNITY', **kwargs)
@@ -117,27 +117,59 @@ class CommunityTreatmentTest(BaseTest):
         self.assertFalse(is_high_school_treatment(e))
         self.assertTrue(is_community_treatment(e))
 
-    def test_group_scores(self):
+    def test_perform_available_activities(self):
         e = self.experiment
         e.activate()
-        gs = GroupScores(e)
-        self.assertEqual(e.experiment_configuration.exchange_rate, 0.02)
-        for group in e.groups:
-            self.assertEqual(0, gs.average_daily_points(group))
-            self.assertEqual(0, gs.average_daily_cluster_points(group=group))
-            self.assertEqual(0, gs.total_daily_points(group))
-            self.assertEqual(0, gs.total_average_points(group))
-            self.assertEqual(0, gs.daily_earnings(group))
-            self.assertEqual(0, gs.total_earnings(group))
-        self.perform_activities(force=True)
-        gs = GroupScores(e)
-        for group in e.groups:
-            self.assertEqual(250, gs.average_daily_points(group))
-            self.assertEqual(250, gs.average_daily_cluster_points(group=group))
-            self.assertEqual(250 * group.size, gs.total_daily_points(group))
-            self.assertEqual(250, gs.total_average_points(group))
-            self.assertEqual(5.0, gs.daily_earnings(group))
-            self.assertEqual(5.0, gs.total_earnings(group))
+        exchange_rate = e.experiment_configuration.exchange_rate
+        while e.has_next_round:
+            gs = GroupScores(e)
+            for group in e.groups:
+                self.assertEqual(0, gs.average_daily_points(group))
+                self.assertEqual(0, gs.average_daily_cluster_points(group=group))
+                self.assertEqual(0, gs.total_daily_points(group))
+                self.assertEqual(0, gs.daily_earnings(group))
+            performed_activities = self.perform_activities(round_data=e.current_round_data)
+            total_expected_points = sum([a.points for a in performed_activities])
+            gs = GroupScores(e)
+            for group in e.groups:
+                self.assertEqual(total_expected_points, gs.average_daily_points(group))
+                self.assertEqual(total_expected_points, gs.average_daily_cluster_points(group=group))
+                self.assertEqual(total_expected_points * group.size, gs.total_daily_points(group))
+                self.assertEqual(total_expected_points * e.current_round_sequence_number,
+                                 gs.total_average_points(group))
+                self.assertAlmostEqual(total_expected_points * exchange_rate, gs.daily_earnings(group))
+                self.assertAlmostEqual(total_expected_points * exchange_rate * e.current_round_sequence_number,
+                                       gs.total_earnings(group))
+            e.advance_to_next_round()
+
+    def test_perform_all_activities(self):
+        e = self.experiment
+        e.activate()
+        exchange_rate = e.experiment_configuration.exchange_rate
+        self.assertEqual(exchange_rate, 0.02)
+        expected_points = 250
+        while e.has_next_round:
+            gs = GroupScores(e)
+            total_group_score = expected_points * (e.current_round_sequence_number - 1)
+            for group in e.groups:
+                self.assertEqual(0, gs.average_daily_points(group))
+                self.assertEqual(0, gs.average_daily_cluster_points(group=group))
+                self.assertEqual(0, gs.total_daily_points(group))
+                self.assertEqual(total_group_score,
+                                 gs.total_average_points(group))
+                self.assertEqual(0, gs.daily_earnings(group))
+                self.assertAlmostEqual(total_group_score * exchange_rate, gs.total_earnings(group))
+            self.perform_activities(force=True, round_data=e.current_round_data)
+            gs = GroupScores(e)
+            for group in e.groups:
+                self.assertEqual(expected_points, gs.average_daily_points(group))
+                self.assertEqual(expected_points, gs.average_daily_cluster_points(group=group))
+                self.assertEqual(expected_points * group.size, gs.total_daily_points(group))
+                self.assertEqual(expected_points * e.current_round_sequence_number, gs.total_average_points(group))
+                self.assertAlmostEqual(expected_points * exchange_rate, gs.daily_earnings(group))
+                self.assertAlmostEqual(expected_points * e.current_round_sequence_number * exchange_rate,
+                                       gs.total_earnings(group))
+            e.advance_to_next_round()
 
     def test_summary_emails(self):
         e = self.experiment
@@ -308,76 +340,72 @@ class GroupActivityTest(LevelBasedTest):
         self.assertEqual(len(messages), len(e.groups) * e.experiment_configuration.max_group_size)
 
 
-class PerformActivityTest(LevelBasedTest):
+class PerformActivityTest(BaseTest):
 
-    def test_comments_likes(self):
-        logger.debug("testing do activity view")
+    def test_perform_multiple_activities(self):
         e = self.experiment
         e.activate()
         # gets all activities with no params
-        activities = Activity.objects.all()
-        rd = e.current_round_data
-        for participant_group_relationship in e.participant_group_relationships:
-            logger.debug("all available activities: %s", activities)
-            participant = participant_group_relationship.participant
-            self.login_participant(participant, password='test')
-            for activity in activities:
-                logger.debug("participant %s performing activity %s", participant, activity)
-                expected_success = activity.is_available_for(participant_group_relationship, rd)
-                response = self.post('lighterprints:perform_activity', {
-                    'participant_group_id': participant_group_relationship.id,
-                    'activity_id': activity.pk
-                })
-                self.assertEqual(response.status_code, 200)
-                json_object = json.loads(response.content)
-                self.assertEqual(expected_success, json_object['success'])
+        performed_activities = self.perform_activities()
+        for pgr in e.participant_group_relationships:
+            participant = pgr.participant
+            self.login_participant(participant)
+            for activity in performed_activities:
                 # trying to do the same activity again should result in an
                 # error response
                 response = self.post(self.reverse('lighterprints:perform_activity'), {
-                    'participant_group_id': participant_group_relationship.id,
+                    'participant_group_id': pgr.id,
                     'activity_id': activity.pk
                 })
                 self.assertEqual(response.status_code, 200)
                 json_object = json.loads(response.content)
                 self.assertFalse(json_object['success'])
 
+    def test_comments_likes(self):
+        e = self.experiment
+        e.activate()
+        self.perform_activities()
+        activity_performed_parameter = get_activity_performed_parameter()
+        for pgr in e.participant_group_relationships:
+            performed_activity_ids = ParticipantRoundDataValue.objects.filter(
+                participant_group_relationship=pgr,
+                parameter=activity_performed_parameter).values_list('pk', flat=True)
+            participant = pgr.participant
+            self.login_participant(participant)
             # test comments on performed activities
-            performed_activity_ids = get_performed_activity_ids(participant_group_relationship)
-            text = "This is a harrowing comment by %s" % participant_group_relationship
-            self.assertFalse(Like.objects.filter(
-                participant_group_relationship=participant_group_relationship).exists())
-            self.assertFalse(Comment.objects.filter(
-                participant_group_relationship=participant_group_relationship).exists())
+            text = "This is a harrowing comment by %s" % pgr
+            self.assertFalse(Like.objects.filter(participant_group_relationship=pgr).exists())
+            self.assertFalse(Comment.objects.filter(participant_group_relationship=pgr).exists())
             for performed_activity_id in performed_activity_ids:
                 # test comment posting on performed activities
                 response = self.post('lighterprints:post_comment', {
-                    'participant_group_id': participant_group_relationship.pk,
+                    'participant_group_id': pgr.pk,
                     'message': text,
                     'target_id': performed_activity_id
                 })
                 self.assertEqual(response.status_code, 200)
                 json_object = json.loads(response.content)
                 self.assertTrue(json_object['success'])
-                c = Comment.objects.get(participant_group_relationship__pk=participant_group_relationship.pk,
+                c = Comment.objects.get(participant_group_relationship__pk=pgr.pk,
                                         target_data_value__id=performed_activity_id)
                 self.assertEqual(c.string_value, text)
                 # test likes on comment and performed activities
                 response = self.post('lighterprints:like', {
-                    'participant_group_id': participant_group_relationship.pk,
+                    'participant_group_id': pgr.pk,
                     'target_id': c.pk
                 })
                 self.assertEqual(response.status_code, 200)
                 self.assertTrue(json.loads(response.content)['success'])
-                self.assertTrue(Like.objects.filter(participant_group_relationship=participant_group_relationship,
+                self.assertTrue(Like.objects.filter(participant_group_relationship=pgr,
                                                     target_data_value__id=c.pk).exists())
 
                 response = self.post('lighterprints:like', {
-                    'participant_group_id': participant_group_relationship.pk,
+                    'participant_group_id': pgr.pk,
                     'target_id': performed_activity_id
                 })
                 self.assertEqual(response.status_code, 200)
                 self.assertTrue(json.loads(response.content)['success'])
-                self.assertTrue(Like.objects.filter(participant_group_relationship=participant_group_relationship,
+                self.assertTrue(Like.objects.filter(participant_group_relationship=pgr,
                                                     target_data_value__id=performed_activity_id).exists())
 
 
