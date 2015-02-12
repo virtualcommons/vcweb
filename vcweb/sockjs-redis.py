@@ -4,19 +4,19 @@ import sys
 import json
 import logging
 import tornadoredis
-import tornadoredis.pubsub
-
-from os import path
-from itertools import chain
-from sockjs.tornado import SockJSRouter, SockJSConnection
-from tornado import web, ioloop
-from raven.contrib.tornado import AsyncSentryClient
-
-from logging.config import dictConfig
-
-from redis_pubsub import RedisPubSub
 
 from django.conf import settings
+from itertools import chain
+from logging.config import dictConfig
+from os import path
+from raven.contrib.tornado import AsyncSentryClient
+from redis_pubsub import RedisPubSub
+from sockjs.tornado import SockJSRouter, SockJSConnection
+from tornado import web, ioloop
+from tornadoredis import pubsub
+
+
+
 
 sys.path.append(path.abspath(path.join(path.dirname(path.abspath(__file__)), '..')))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings'
@@ -65,7 +65,7 @@ dictConfig({
 logger = logging.getLogger('sockjs.vcweb')
 
 # Create the tornadoredis.Client instance and use it for redis channel subscriptions
-subscriber = tornadoredis.pubsub.SockJSSubscriber(tornadoredis.Client())
+subscriber = pubsub.SockJSSubscriber(tornadoredis.Client())
 
 
 class RedisSockJSConnection(SockJSConnection):

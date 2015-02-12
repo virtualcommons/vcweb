@@ -1,23 +1,21 @@
 #!/usr/bin/env python
-import os
-from os import path
-import sys
-import json
 from itertools import chain
-
+from os import path
 from raven.contrib.tornado import AsyncSentryClient
 from sockjs.tornado import SockJSRouter, SockJSConnection
 from tornado import web, ioloop
 
+import os
+import sys
+import json
 
-sys.path.append(
-    path.abspath(path.join(path.dirname(path.abspath(__file__)), '..')))
+
+sys.path.append(path.abspath(path.join(path.dirname(path.abspath(__file__)), '..')))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings'
 import django
 django.setup()
 from django.conf import settings
-from vcweb.core.models import (
-    Experiment, ParticipantExperimentRelationship, Experimenter, ChatMessage)
+from vcweb.core.models import (Experiment, ParticipantExperimentRelationship, Experimenter, ChatMessage)
 
 # redefine logger
 import logging
@@ -111,22 +109,19 @@ class ConnectionManager(object):
     '''
 
     def __str__(self):
-        return u"Participants: %s\nExperimenters: %s" % (self.participant_to_connection, self.experimenter_to_connection)
+        return u"Participants: %s\nExperimenters: %s" % (self.participant_to_connection,
+                                                         self.experimenter_to_connection)
 
     def add_experimenter(self, connection, incoming_experimenter_pk, incoming_experiment_pk):
-        logger.debug(
-            "experimenter_to_connection: %s", self.experimenter_to_connection)
-        logger.debug(
-            "connection_to_experimenter: %s", self.connection_to_experimenter)
+        logger.debug("experimenter_to_connection: %s", self.experimenter_to_connection)
+        logger.debug("connection_to_experimenter: %s", self.connection_to_experimenter)
         experimenter_pk = int(incoming_experimenter_pk)
         experiment_id = int(incoming_experiment_pk)
         experimenter_tuple = (experimenter_pk, experiment_id)
-        logger.debug(
-            "registering experimenter %s with connection %s", experimenter_pk, connection)
+        logger.debug("registering experimenter %s with connection %s", experimenter_pk, connection)
 # prune old connections
         if experimenter_tuple in self.experimenter_to_connection:
-            existing_connection = self.experimenter_to_connection[
-                experimenter_tuple]
+            existing_connection = self.experimenter_to_connection[experimenter_tuple]
             if existing_connection:
                 existing_connection.send(DISCONNECTION_EVENT)
                 del self.connection_to_experimenter[existing_connection]
@@ -147,10 +142,8 @@ class ConnectionManager(object):
                 del self.experimenter_to_connection[experimenter_tuple]
 
     def get_participant_group_relationship(self, connection, experiment):
-        (participant_pk, experiment_pk) = self.connection_to_participant[
-            connection]
-        logger.debug(
-            "Looking for ParticipantGroupRelationship with tuple (%s, %s)", participant_pk, experiment_pk)
+        (participant_pk, experiment_pk) = self.connection_to_participant[connection]
+        logger.debug("Looking for ParticipantGroupRelationship with tuple (%s, %s)", participant_pk, experiment_pk)
         return experiment.get_participant_group_relationship(participant_pk)
 
     def get_participant_experiment_tuple(self, connection):
@@ -206,8 +199,7 @@ class ConnectionManager(object):
                 for participant_group_relationship_id, connection in self.connections(group):
                     yield (participant_group_relationship_id, connection)
         else:
-            logger.warning(
-                "No experimenter available in experimenter_to_connection %s", self.experimenter_to_connection)
+            logger.warning("No experimenter available in experimenter_to_connection %s", self.experimenter_to_connection)
     '''
     experimenter functions
     '''
@@ -263,7 +255,7 @@ connection_manager = ConnectionManager()
 # replace with namedtuple
 
 
-class Struct:
+class Struct(object):
 
     def to_json(self):
         return json.dumps(self.__dict__)
@@ -417,16 +409,14 @@ class ExperimenterConnection(BaseConnection):
             handler = self.get_handler(event.event_type)
             handler(event, experiment, experimenter=experimenter)
             return
-        logger.warning(
-            "experimenter %s auth tokens didn't match: [%s <=> %s]", experimenter, auth_token, experimenter.authentication_token)
+        logger.warning("experimenter %s auth tokens didn't match: [%s <=> %s]", experimenter, auth_token,
+                       experimenter.authentication_token)
         self.send(create_message_event(
             'Your session has expired, please try logging in again.  If this problem persists, please contact us.'))
 
     def handle_connect(self, event, experiment, experimenter):
-        connection_manager.add_experimenter(
-            self, event.experimenter_id, event.experiment_id)
-        self.send(
-            create_message_event("Experimenter %s connected." % experimenter))
+        connection_manager.add_experimenter(self, event.experimenter_id, event.experiment_id)
+        self.send(create_message_event("Experimenter %s connected." % experimenter))
 
     def handle_refresh(self, event, experiment, experimenter):
         notified_participants = connection_manager.send_refresh(
