@@ -2223,7 +2223,7 @@ class GroupCluster(models.Model, DataValueMixin):
 
     @property
     def groups(self):
-        return Group.objects.filter(pk__in=(self.group_relationship_set.values_list('group', flat=True)))
+        return self.group_relationship_set.select_related('group').values_list('group', flat=True)
 
     def add(self, group):
         return GroupRelationship.objects.create(cluster=self, group=group)
@@ -2639,7 +2639,7 @@ class ParticipantRoundDataValueQuerySet(models.query.QuerySet):
     def for_experiment(self, experiment=None, **kwargs):
         if experiment is None:
             raise ValueError("Must specify an experiment for this query")
-        return self.select_related('parameter', 'participant_group_relationship__group').filter(
+        return self.select_related('round_data', 'parameter', 'participant_group_relationship__group').filter(
             round_data__experiment=experiment, is_active=True, **kwargs)
 
     def target_ids(self, participant_group_relationship):

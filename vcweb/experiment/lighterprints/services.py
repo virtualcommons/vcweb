@@ -50,31 +50,29 @@ class ActivityStatusList(object):
     relationship parameter and the type of experiment being run (scheduled activity, level based, high school)
     """
 
-    def __init__(self, participant_group_relationship, activities=None, round_configuration=None, group_level=1):
+    def __init__(self, participant_group_relationship, activities=None, group_scores=None, group_level=1):
         self.activities = list(Activity.objects.all()) if activities is None else activities
-        if round_configuration is None:
-            round_configuration = participant_group_relationship.group.current_round
-        self.round_configuration = round_configuration
-        self.has_scheduled_activities = is_scheduled_activity_experiment(
-            participant_group_relationship.group.experiment)
-        # find all unlocked activities for the given participant
-        self.all_unlocked_activities = Activity.objects.unlocked(self.round_configuration,
-                                                                 scheduled=self.has_scheduled_activities,
-                                                                 level=group_level)
-        all_unlocked_activity_ids = self.all_unlocked_activities.values_list('pk', flat=True)
-        self.today = datetime.combine(date.today(), time())
+        if group_scores is None:
+            raise ValueError("group scores required")
+        self.round_data = group_scores.round_data
+        self.round_configuration = group_scores.round_configuration
+        self.has_scheduled_activities = group_scores.has_scheduled_activities
         self.current_time = datetime.now().time()
+        # find all unlocked activities for the given participant
+        self.all_unlocked_activity_ids = Activity.objects.unlocked(
+            self.round_configuration,
+            scheduled=self.has_scheduled_activities,
+            level=group_level).values_list('pk', flat=True)
         # first grab all the activities that have already been completed today
         completed_activity_dvs = participant_group_relationship.data_value_set.filter(
             parameter=get_activity_performed_parameter(),
-            int_value__in=all_unlocked_activity_ids,
-            date_created__gte=self.today)
-        self.completed_activity_ids = completed_activity_dvs.values_list(
-            'int_value', flat=True)
+            int_value__in=self.all_unlocked_activity_ids,
+            round_data=self.round_data)
+        self.completed_activity_ids = completed_activity_dvs.values_list('int_value', flat=True)
         # next, find all the activity availabilities for the unlocked activities and partition them into currently
         # available, upcoming, or expired
         activity_availabilities = ActivityAvailability.objects.select_related('activity').filter(
-            activity__pk__in=all_unlocked_activity_ids)
+            activity__pk__in=self.all_unlocked_activity_ids)
         self.currently_available_activity_ids = activity_availabilities.filter(
             start_time__lte=self.current_time,
             end_time__gte=self.current_time).values_list('activity', flat=True)
@@ -87,7 +85,7 @@ class ActivityStatusList(object):
         adl = []
         for activity in self.activities:
             activity_dict = activity.to_dict()
-            activity_status = self.get_activity_status(activity)
+            activity_status = self.get_activity_status(activity.pk)
             activity_dict['status'] = activity_status
             activity_dict['availableNow'] = activity_status == 'available'
             activity_dict['availabilities'] = [aa.to_dict() for aa in activity_availability_cache[activity.pk]]
@@ -95,16 +93,16 @@ class ActivityStatusList(object):
         adl.sort(key=_activity_status_sort_key)
         self.activity_dict_list = adl
 
-    def get_activity_status(self, activity):
+    def get_activity_status(self, activity_id):
         activity_status = 'locked'
-        if activity in self.all_unlocked_activities:
+        if activity_id in self.all_unlocked_activity_ids:
             # check for 1. has activity already been completed 2. activity
             # time slot eligibility
-            if activity.pk in self.completed_activity_ids:
+            if activity_id in self.completed_activity_ids:
                 activity_status = 'completed'
-            elif activity.pk in self.currently_available_activity_ids:
+            elif activity_id in self.currently_available_activity_ids:
                 activity_status = 'available'
-            elif activity.pk in self.upcoming_activity_ids:
+            elif activity_id in self.upcoming_activity_ids:
                 activity_status = 'upcoming'
             else:
                 activity_status = 'expired'
@@ -349,9 +347,10 @@ class GroupScores(object):
                 self.scores_dict[pgr.group]['total_daily_points'] += activity_points
                 self.scores_dict[pgr]['total_daily_points'] += activity_points
 
+        # FIXME: assumes all groups are equally sized
+        group_size = self.experiment_configuration.max_group_size
         for group in self.groups:
             group_data_dict = self.scores_dict[group]
-            group_size = group.size
             group_data_dict['average_daily_points'] = group_data_dict['total_daily_points'] / group_size
             group_data_dict['total_average_points'] = group_data_dict['total_points'] / group_size
         self.community_treatment_initialization_check()

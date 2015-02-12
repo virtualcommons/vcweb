@@ -39,11 +39,9 @@ class LighterprintsViewModel(object):
                                         round_configuration=round_configuration)
         self.group_activity = GroupActivity(participant_group_relationship)
         self.total_participant_points = self.group_scores.total_participant_points
-        if activities is None:
-            activities = Activity.objects.all()
         self.activity_status_list = ActivityStatusList(participant_group_relationship,
-                                                       activities,
-                                                       self.round_configuration,
+                                                       activities=activities,
+                                                       group_scores=self.group_scores,
                                                        group_level=self.own_group_level)
 
     @staticmethod
@@ -327,7 +325,7 @@ def get_view_model(request, participant_group_id=None):
 def participate(request, experiment_id=None):
     user = request.user
     participant = user.participant
-    experiment = get_object_or_404(Experiment, pk=experiment_id,
+    experiment = get_object_or_404(Experiment.objects.select_related('experiment_configuration'), pk=experiment_id,
                                    experiment_metadata=get_lighterprints_experiment_metadata())
     if experiment.is_active:
         round_configuration = experiment.current_round
@@ -336,6 +334,7 @@ def participate(request, experiment_id=None):
         view_model = LighterprintsViewModel.create(pgr, experiment, round_configuration=round_configuration)
         return render(request, view_model.template_name, {
             'experiment': experiment,
+            'group_size': experiment.experiment_configuration.max_group_size,
             'participant_group_relationship': pgr,
             'has_leaderboard': view_model.has_leaderboard,
             'treatment_type': view_model.treatment_type,
