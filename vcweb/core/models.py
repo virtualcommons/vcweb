@@ -2031,15 +2031,15 @@ class Group(models.Model, DataValueMixin):
 
     @property
     def name(self):
-        # XXX: major assumption, this allows AA - ZZ groups.
         return u"Group %s" % self.identifier
 
     @property
     def identifier(self):
-        quotient, remainder = divmod(self.number, 26)
+        # XXX: major assumption, does not allow for more groups than A-Z + AA - ZZ groups.
+        quotient, remainder = divmod(self.number - 1, 26)
         group_identifier = string.ascii_uppercase[remainder]
         if quotient > 0:
-            group_identifier = string.ascii_uppercase[quotient] + group_identifier
+            group_identifier = string.ascii_uppercase[quotient - 1] + group_identifier
         return group_identifier
 
     @property
