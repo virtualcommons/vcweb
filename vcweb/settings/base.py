@@ -238,7 +238,7 @@ LOGGING = {
     'disable_existing_loggers': True,
     'root': {
         'level': 'WARNING',
-        'handlers': ['sentry', 'vcweb.file'],
+        'handlers': ['sentry', 'vcweb.file', 'console'],
     },
     'formatters': {
         'verbose': {

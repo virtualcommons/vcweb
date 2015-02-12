@@ -260,6 +260,7 @@ class GroupScores(object):
         self.round_data = round_data
         self.round_configuration = round_configuration
         self.groups = groups
+        self.group_dict = dict([(g.pk, g) for g in groups])
         self.exchange_rate = float(experiment_configuration.exchange_rate)
 # FIXME: death by a thousand small inefficiencies, better to pull all ExperimentParameterValues instead of issuing
 # multiple queries. look into updating API to handle this better for a given session
@@ -272,6 +273,10 @@ class GroupScores(object):
         # establish date range
         self.treatment_type = get_treatment_type(experiment_configuration=experiment_configuration).string_value
         self.initialize_scores()
+
+    def get_groups(self, group_id_list):
+        gd = self.group_dict
+        return [gd[pk] for pk in group_id_list]
 
     @property
     def is_level_based_experiment(self):
@@ -300,21 +305,21 @@ class GroupScores(object):
             for gc in self.group_clusters.all():
                 total_cluster_points = 0
                 total_daily_cluster_points = 0
-                groups = list(gc.groups)
-                number_of_groups = len(groups)
-                for group in groups:
-                    total_cluster_points += self.scores_dict[group]['total_points']
-                    total_daily_cluster_points += self.scores_dict[group]['total_daily_points']
-                divisor = number_of_groups * group_size
-                average_daily_cluster_points = total_daily_cluster_points / divisor
-                total_average_points = total_cluster_points / divisor
+                group_ids = list(gc.groups)
+                number_of_groups = len(group_ids)
+                for group_id in group_ids:
+                    total_cluster_points += self.scores_dict[group_id]['total_points']
+                    total_daily_cluster_points += self.scores_dict[group_id]['total_daily_points']
+                total_number_of_participants = number_of_groups * group_size
+                average_daily_cluster_points = total_daily_cluster_points / total_number_of_participants
+                total_average_points = total_cluster_points / total_number_of_participants
                 self.group_cluster_data[gc] = {
                     'total_daily_points': total_daily_cluster_points,
                     'average_daily_points': average_daily_cluster_points,
                     'total_average_points': total_average_points,
                 }
-                for group in groups:
-                    group_data_dict = self.scores_dict[group]
+                for group_id in group_ids:
+                    group_data_dict = self.scores_dict[group_id]
                     group_data_dict.update(
                         total_average_cluster_points=total_average_points,
                         total_daily_cluster_points=total_daily_cluster_points,
@@ -332,10 +337,10 @@ class GroupScores(object):
             for dv in all_activities_performed_qs:
                 activity_points = activity_points_cache[dv.int_value]
                 pgr = dv.participant_group_relationship
-                self.scores_dict[pgr.group]['total_points'] += activity_points
+                self.scores_dict[pgr.group.pk]['total_points'] += activity_points
                 self.scores_dict[pgr]['total_points'] += activity_points
                 if dv.round_data == self.round_data:
-                    self.scores_dict[pgr.group]['total_daily_points'] += activity_points
+                    self.scores_dict[pgr.group.pk]['total_daily_points'] += activity_points
                     self.scores_dict[pgr]['total_daily_points'] += activity_points
         else:
             # only tally daily points for the group and for each individual participant
@@ -344,43 +349,43 @@ class GroupScores(object):
             for dv in activities_performed_qs:
                 activity_points = activity_points_cache[dv.int_value]
                 pgr = dv.participant_group_relationship
-                self.scores_dict[pgr.group]['total_daily_points'] += activity_points
+                self.scores_dict[pgr.group.pk]['total_daily_points'] += activity_points
                 self.scores_dict[pgr]['total_daily_points'] += activity_points
 
         # FIXME: assumes all groups are equally sized
-        group_size = self.experiment_configuration.max_group_size
+        self.group_size = self.experiment_configuration.max_group_size
         for group in self.groups:
-            group_data_dict = self.scores_dict[group]
-            group_data_dict['average_daily_points'] = group_data_dict['total_daily_points'] / group_size
-            group_data_dict['total_average_points'] = group_data_dict['total_points'] / group_size
+            group_data_dict = self.scores_dict[group.pk]
+            group_data_dict['average_daily_points'] = group_data_dict['total_daily_points'] / self.group_size
+            group_data_dict['total_average_points'] = group_data_dict['total_points'] / self.group_size
         self.community_treatment_initialization_check()
 
     def average_daily_cluster_points(self, group_cluster=None, group=None):
         if group_cluster is not None:
             return self.group_cluster_data[group_cluster]['average_daily_points']
         elif group is not None:
-            return self.scores_dict[group]['average_daily_cluster_points']
+            return self.scores_dict[group.pk]['average_daily_cluster_points']
         raise ValueError("no group or group cluster specified")
 
     def total_daily_cluster_points(self, group_cluster=None, group=None):
         if group_cluster is not None:
             return self.group_cluster_data[group_cluster]['total_daily_points']
         elif group is not None:
-            return self.scores_dict[group]['total_daily_cluster_points']
+            return self.scores_dict[group.pk]['total_daily_cluster_points']
         raise ValueError("no group or group cluster specified")
 
     def total_average_cluster_points(self, group_cluster=None, group=None):
         if group_cluster is not None:
             return self.group_cluster_data[group_cluster]['total_average_points']
         elif group is not None:
-            return self.scores_dict[group]['total_average_cluster_points']
+            return self.scores_dict[group.pk]['total_average_cluster_points']
         raise ValueError("no group or group cluster specified")
 
     def average_daily_points(self, group):
         """
         Returns the average group score for this group for the current round / day.
         """
-        return self.scores_dict[group]['average_daily_points']
+        return self.scores_dict[group.pk]['average_daily_points']
 
     def daily_earnings(self, group):
         if self.is_community_treatment:
@@ -406,10 +411,10 @@ class GroupScores(object):
         """
         Returns the average group score for this group over the entire experiment, not just the current round / day.
         """
-        return self.scores_dict[group]['total_average_points']
+        return self.scores_dict[group.pk]['total_average_points']
 
     def total_daily_points(self, group):
-        return self.scores_dict[group]['total_daily_points']
+        return self.scores_dict[group.pk]['total_daily_points']
 
     def get_group_level(self, group):
         if self.has_scheduled_activities:
@@ -438,7 +443,7 @@ class GroupScores(object):
 
     def should_advance_level(self, group, level, max_level=3):
         logger.debug("checking if group %s at level %s should advance in level: %s",
-                     group, level, self.scores_dict[group])
+                     group, level, self.scores_dict[group.pk])
         if level <= max_level:
             return self.average_daily_points(group) >= get_points_to_next_level(level)
         return False
@@ -457,7 +462,8 @@ class GroupScores(object):
         return self.group_rankings
 
     def get_group_cluster_data_list(self, group_cluster):
-        gdl = self.get_group_data_list(groups=group_cluster.groups)
+        groups = self.get_groups(group_cluster.groups)
+        gdl = self.get_group_data_list(groups=groups)
         average_cluster_points = self.average_daily_cluster_points(group_cluster)
         total_cluster_points = self.total_daily_cluster_points(group_cluster)
         for d in gdl:
@@ -477,7 +483,7 @@ class GroupScores(object):
         return {
             'groupName': group.name,
             'groupLevel': self.get_group_level(group),
-            'groupSize': group.size,
+            'groupSize': self.group_size,
             'averagePoints': self.average_daily_points(group),
             'totalPoints': self.total_daily_points(group),
             'pk': group.pk,
