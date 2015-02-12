@@ -38,7 +38,7 @@ env.test_fixtures = ' '.join(['forestry_experiment_metadata', 'lighterprints_exp
 env.virtualenv = 'vcweb'
 env.virtualenv_path = '%s/.virtualenvs/%s' % (os.getenv('HOME'), env.project_name)
 env.ignored_coverage = ('test', 'settings', 'migrations', 'fabfile', 'wsgi',
-                        'broker', 'irrigation', 'commands', 'sanitation', 'vcweb-sockjs', 'sockjs-redis')
+                        'broker', 'irrigation', 'commands', 'sanitation', 'sockjs-redis')
 env.branches = {
     'prod': {
         'hg': 'stable',
