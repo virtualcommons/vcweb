@@ -328,6 +328,7 @@ class GroupScores(object):
 
     def initialize_scores(self):
         self.scores_dict = defaultdict(lambda: defaultdict(lambda: 0))
+        self.participant_dict = defaultdict(lambda: defaultdict(lambda: 0))
         activity_points_cache = get_activity_points_cache()
         if self.is_linear_public_good_experiment:
             # tally all green points earned across the entire experiment
@@ -338,10 +339,10 @@ class GroupScores(object):
                 activity_points = activity_points_cache[dv.int_value]
                 pgr = dv.participant_group_relationship
                 self.scores_dict[pgr.group.pk]['total_points'] += activity_points
-                self.scores_dict[pgr]['total_points'] += activity_points
+                self.participant_dict[pgr]['total_points'] += activity_points
                 if dv.round_data == self.round_data:
                     self.scores_dict[pgr.group.pk]['total_daily_points'] += activity_points
-                    self.scores_dict[pgr]['total_daily_points'] += activity_points
+                    self.participant_dict[pgr]['total_daily_points'] += activity_points
         else:
             # only tally daily points for the group and for each individual participant
             activities_performed_qs = ParticipantRoundDataValue.objects.for_round(
@@ -350,7 +351,7 @@ class GroupScores(object):
                 activity_points = activity_points_cache[dv.int_value]
                 pgr = dv.participant_group_relationship
                 self.scores_dict[pgr.group.pk]['total_daily_points'] += activity_points
-                self.scores_dict[pgr]['total_daily_points'] += activity_points
+                self.participant_dict[pgr]['total_daily_points'] += activity_points
 
         # FIXME: assumes all groups are equally sized
         self.group_size = self.experiment_configuration.max_group_size
@@ -436,11 +437,6 @@ class GroupScores(object):
         else:
             return get_experiment_completed_dv(group, round_data=self.round_data).boolean_value
 
-    def get_sorted_group_scores(self):
-        return sorted(self.scores_dict.items(),
-                      key=lambda x: x[1]['average_daily_points'],
-                      reverse=True)
-
     def should_advance_level(self, group, level, max_level=3):
         logger.debug("checking if group %s at level %s should advance in level: %s",
                      group, level, self.scores_dict[group.pk])
@@ -458,7 +454,12 @@ class GroupScores(object):
         """
         # cached because we invoke this often via get_group_rank
         if self.group_rankings is None:
-            self.group_rankings = [g[0] for g in self.get_sorted_group_scores()]
+            sorted_group_scores = sorted(self.scores_dict.items(),
+                                         key=lambda x: x[1]['average_daily_points'],
+                                         reverse=True)
+            group_dict = self.group_dict
+            # g[0] is a group pk instead of the actual group, retrieve the actual group via self.group_dict
+            self.group_rankings = [group_dict[g[0]] for g in sorted_group_scores]
         return self.group_rankings
 
     def get_group_cluster_data_list(self, group_cluster):
