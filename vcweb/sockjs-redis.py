@@ -16,8 +16,6 @@ from tornado import web, ioloop
 from tornadoredis import pubsub
 
 
-
-
 sys.path.append(path.abspath(path.join(path.dirname(path.abspath(__file__)), '..')))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings'
 
