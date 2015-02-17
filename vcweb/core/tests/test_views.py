@@ -1,7 +1,7 @@
 from ..models import (Participant, ExperimentMetadata, ExperimentSession, Experiment, Invitation, ParticipantSignup,
                       PermissionGroup, BookmarkedExperimentMetadata)
 from ..forms import LoginForm
-from ..views import DashboardViewModel, ExperimenterDashboardViewModel, ParticipantDashboardViewModel
+from ..views import (DashboardViewModel, ExperimenterDashboardViewModel, ParticipantDashboardViewModel)
 from .common import BaseVcwebTest, SubjectPoolTest
 
 import random
@@ -160,6 +160,7 @@ class BookmarkExperimentMetadataTest(BaseVcwebTest):
         self.assertEqual(200, response.status_code)
         self.assertFalse(BookmarkedExperimentMetadata.objects.filter(experimenter=experimenter).exists())
 
+
 class ClearParticipantsApiTest(BaseVcwebTest):
 
     def test_api(self):
@@ -177,7 +178,7 @@ class ClearParticipantsApiTest(BaseVcwebTest):
         self.login_experimenter(new_experimenter)
         response = self.post(self.update_experiment_url,
                              {'experiment_id': self.experiment.pk, 'action': 'clear'})
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 404)
         self.assertTrue(self.experiment.participant_set.count() > 0)
 
     def test_unauthorized_participant_access(self):

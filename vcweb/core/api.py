@@ -125,20 +125,16 @@ def handle_chat_message(request, pk):
     if form.is_valid():
         participant_group_id = form.cleaned_data.get('participant_group_id')
         message = form.cleaned_data.get('message')
-        pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user'),
-                                pk=participant_group_id)
-        if pgr.participant != request.user.participant:
-            logger.warning("authenticated user %s tried to post message %s as %s", request.user, message, pgr)
-            return JsonResponse(dumps({'success': False, 'message': "Invalid request"}))
-
+        pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('group'),
+                                pk=participant_group_id,
+                                participant=request.user.participant)
         experiment = Experiment.objects.get(pk=pk)
         current_round_data = experiment.current_round_data
         chat_message = ChatMessage.objects.create(participant_group_relationship=pgr,
                                                   string_value=message,
                                                   round_data=current_round_data)
-        logger.debug("Publishing to redis on channel group_channel.{}".format(pgr.group))
-        experiment.publish_to_participants(chat_message.to_json(), pgr.group)
-        experiment.publish_to_experimenter(chat_message.to_json())
+        chat_json = chat_message.to_json()
+        experiment.notify_participants(chat_json, pgr.group, notify_experimenter=True)
         return JsonResponse(SUCCESS_DICT)
     return JsonResponse(FAILURE_DICT)
 
@@ -165,13 +161,10 @@ def participant_ready(request):
         logger.debug("handling participant ready event for experiment %s", experiment)
         message = "Participant %s is ready." % request.user.participant
 
-        experiment.publish_to_participants(create_message_event(message, "participant_ready"))
-        experiment.publish_to_experimenter(create_message_event(message))
-
+        experiment.notify_participants(create_message_event(message, "participant_ready"), notify_experimenter=True)
         if experiment.all_participants_ready:
-            experiment.publish_to_experimenter(create_message_event(
+            experiment.notify_experimenter(create_message_event(
                 "All participants are ready to move on to the next round."))
-
         return JsonResponse(_ready_participants_dict(experiment))
     else:
         return JsonResponse({'success': False, 'message': "Invalid form"})

@@ -940,14 +940,17 @@ class Experiment(models.Model):
                 subject = 'VCWEB experiment registration for %s' % self.display_name
         return subject
 
-    def publish_to_participants(self, message, group=None):
+    def notify_participants(self, message, group=None, notify_experimenter=False):
         redis_client = RedisPubSub.get_redis_instance()
         if group is None:
-            redis_client.publish(RedisPubSub.get_participant_broadcast_channel(self.pk), message)
+            channel = RedisPubSub.get_participant_broadcast_channel(self.pk)
         else:
-            redis_client.publish(RedisPubSub.get_participant_group_channel(group), message)
+            channel = RedisPubSub.get_participant_group_channel(group.pk)
+        redis_client.publish(channel, message)
+        if notify_experimenter:
+            redis_client.publish(RedisPubSub.get_experimenter_channel(self.pk), message)
 
-    def publish_to_experimenter(self, message):
+    def notify_experimenter(self, message):
         RedisPubSub.get_redis_instance().publish(RedisPubSub.get_experimenter_channel(self.pk), message)
 
     @transaction.atomic
@@ -2344,16 +2347,16 @@ class ParticipantQuerySet(models.query.QuerySet):
         invited_in_last_threshold_days = Invitation.objects.already_invited(
             experiment_metadata_pk=experiment_metadata_pk).values_list('participant__pk', flat=True)
 
-        # signup_participants is the list of participants who has already participated in the
+        # already_participated is the list of participants who has already participated in the
         # given Experiment Metadata(in the past or currently participating)
-        signup_participants = ParticipantSignup.objects.registered(
+        already_participated = ParticipantSignup.objects.registered_or_participated(
             experiment_metadata_pk=experiment_metadata_pk).values_list('invitation__participant__pk', flat=True)
 
         invalid_participants = self.invalid_participants().values_list('pk', flat=True)
         # a list of participant pks who have already received invitations in last threshold days, have already
         # participated in the same experiment, or have 'mailinator.com' in their name
         ineligible_participants = list(set(itertools.chain(invited_in_last_threshold_days,
-                                                           signup_participants, invalid_participants)))
+                                                           already_participated, invalid_participants)))
 
         criteria = dict(can_receive_invitations=True, user__is_active=True)
         if institution_name is not None:
@@ -2969,14 +2972,14 @@ class ParticipantSignupQuerySet(models.query.QuerySet):
         return criteria
 
     def with_attendance(self, attendance, **kwargs):
-        criteria = self._experiment_metadata_criteria({'attendance': attendance}, **kwargs)
+        attendance_key = 'attendance__in' if isinstance(attendance, (list, tuple)) else 'attendance'
+        criteria = self._experiment_metadata_criteria({attendance_key: attendance}, **kwargs)
         return self.filter(**criteria)
 
     def registered_or_participated(self, **kwargs):
-        criteria = self._experiment_metadata_criteria(
-            {'attendance__in': (ParticipantSignup.ATTENDANCE.participated, ParticipantSignup.ATTENDANCE.registered)},
+        return self.with_attendance(
+            (ParticipantSignup.ATTENDANCE.participated, ParticipantSignup.ATTENDANCE.registered),
             **kwargs)
-        return self.filter(**criteria)
 
     def registered(self, **kwargs):
         return self.with_attendance(ParticipantSignup.ATTENDANCE.registered, **kwargs)

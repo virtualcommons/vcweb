@@ -5,27 +5,26 @@ import random
 import unicodecsv
 import markdown
 
-from django.core.mail import EmailMultiAlternatives
-from django.db import transaction
 
-from django.template import Context
-from django.template.loader import get_template
-from django.forms.models import modelformset_factory
 from django.conf import settings
 from django.contrib import messages
+from django.core.mail import EmailMultiAlternatives
+from django.db import transaction
+from django.forms.models import modelformset_factory
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.template import Context
+from django.template.loader import get_template
 from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.http import require_GET, require_POST
 
-from .forms import (SessionInviteForm, ExperimentSessionForm,
-                    ParticipantAttendanceForm, CancelSignupForm)
-from vcweb.core.views import mimetypes
+from .forms import (SessionInviteForm, ExperimentSessionForm, ParticipantAttendanceForm, CancelSignupForm)
 
-from vcweb.core.models import (ExperimentSession, ExperimentMetadata, Invitation, send_markdown_email)
-from vcweb.core.http import JsonResponse, dumps
 from vcweb.core.decorators import group_required, ownership_required
-from vcweb.core.models import (Participant, ParticipantSignup, PermissionGroup)
+from vcweb.core.http import JsonResponse, dumps
+from vcweb.core.models import (Participant, ParticipantSignup, PermissionGroup, ExperimentSession, ExperimentMetadata,
+                               Invitation, send_markdown_email)
+from vcweb.core.views import mimetypes
 
 
 logger = logging.getLogger(__name__)

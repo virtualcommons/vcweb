@@ -767,25 +767,20 @@ def download_data_excel(request, pk=None):
 @require_POST
 def update_experiment(request):
     form = UpdateExperimentForm(request.POST or None)
-    user = request.user
     if form.is_valid():
-        experiment = get_object_or_404(
-            Experiment, pk=form.cleaned_data['experiment_id'])
-        action = form.cleaned_data['action']
         experimenter = request.user.experimenter
-        if experimenter != experiment.experimenter:
-            logger.warn(
-                "user %s tried to invoke %s on %s", user, action, experiment)
-            raise PermissionDenied(
-                "You aren't authorized to perform this action on this experiment.")
+        experiment = get_object_or_404(Experiment.objects.select_related('experimenter'),
+                                       pk=form.cleaned_data['experiment_id'],
+                                       experimenter=experimenter)
+        action = form.cleaned_data['action']
         logger.debug("experimenter %s invoking %s on %s", experimenter, action, experiment)
         try:
             response_tuples = experiment.invoke(action, experimenter)
             logger.debug("experiment.invoke %s -> %s", action, str(response_tuples))
             logger.debug("Publishing to redis on channel experimenter_channel.{}".format(experiment.pk))
-            experiment.publish_to_participants(create_message_event("", "update"))
-            experiment.publish_to_experimenter(create_message_event("Updating all connected participants"))
-
+# FIXME: remove duplication here + update_participants
+            experiment.notify_participants(create_message_event("", "update"))
+            experiment.notify_experimenter(create_message_event("Updating all connected participants"))
             return JsonResponse({
                 'success': True,
                 'experiment': experiment.to_dict(include_round_data=True)
@@ -804,8 +799,9 @@ def update_participants(request, pk):
     try:
         experiment = Experiment.objects.get(pk=pk)
         logger.debug("Publishing to redis on channel experimenter_channel.{}".format(experiment.pk))
-        experiment.publish_to_participants(create_message_event("", "update"))
-        experiment.publish_to_experimenter(create_message_event("Updating all connected participants"))
+# FIXME: remove duplication here + update_participants
+        experiment.notify_participants(create_message_event("", "update"))
+        experiment.notify_experimenter(create_message_event("Updating all connected participants"))
         return JsonResponse(SUCCESS_DICT)
     except Exception as e:
         logger.debug(e)

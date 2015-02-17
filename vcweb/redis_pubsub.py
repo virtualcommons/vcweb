@@ -13,13 +13,13 @@ class RedisPubSub(object):
         return cls.__instance
 
     @staticmethod
-    def get_participant_broadcast_channel(experiment):
-        return 'experiment_channel.{}'.format(experiment)
+    def get_participant_broadcast_channel(experiment_pk):
+        return 'experiment_channel.{}'.format(experiment_pk)
 
     @staticmethod
-    def get_participant_group_channel(group):
-        return 'group_channel.{}'.format(group)
+    def get_participant_group_channel(group_pk):
+        return 'group_channel.{}'.format(group_pk)
 
     @staticmethod
-    def get_experimenter_channel(experiment):
-        return 'experimenter_channel.{}'.format(experiment)
+    def get_experimenter_channel(experiment_pk):
+        return 'experimenter_channel.{}'.format(experiment_pk)
