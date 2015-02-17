@@ -946,6 +946,7 @@ class Experiment(models.Model):
             channel = RedisPubSub.get_participant_broadcast_channel(self.pk)
         else:
             channel = RedisPubSub.get_participant_group_channel(group.pk)
+        logger.debug("notifying participants in channel %s", channel)
         redis_client.publish(channel, message)
         if notify_experimenter:
             redis_client.publish(RedisPubSub.get_experimenter_channel(self.pk), message)

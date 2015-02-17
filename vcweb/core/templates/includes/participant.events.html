@@ -12,8 +12,10 @@ function createMessageEvent(payload, event_type) {
         auth_token: "{{ request.user.participant.authentication_token }}",
         email: "{{ request.user.email }}",
         experiment_id: {{experiment.pk|default:-1}},
-        {% if participant_group_relationship %}
-            participant_group: "{{participant_group_relationship.group|default:-1}}",
+        {% if group %}
+            group_id: "{{ group.pk }}",
+        {% elif participant_group_relationship %}
+            group_id: "{{ participant_group_relationship.group.pk }}",
         {% endif %}
         message: payload
     });

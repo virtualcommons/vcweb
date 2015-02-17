@@ -131,13 +131,13 @@ class ParticipantConnection(RedisSockJSConnection):
     """
 
     def initialize(self, message_dict):
-        self.group = message_dict['participant_group']
-        self.experiment = message_dict['experiment_id']
+        self.group_id = message_dict['group_id']
+        self.experiment_id = message_dict['experiment_id']
 
     @property
     def redis_channels(self):
-        return (RedisPubSub.get_participant_broadcast_channel(self.experiment),
-                RedisPubSub.get_participant_group_channel(self.group))
+        return (RedisPubSub.get_participant_broadcast_channel(self.experiment_id),
+                RedisPubSub.get_participant_group_channel(self.group_id))
 
 
 class ExperimenterConnection(RedisSockJSConnection):
@@ -146,11 +146,11 @@ class ExperimenterConnection(RedisSockJSConnection):
     """
 
     def initialize(self, message_dict):
-        self.experiment = message_dict['experiment_id']
+        self.experiment_id = message_dict['experiment_id']
 
     @property
     def redis_channels(self):
-        return [RedisPubSub.get_experimenter_channel(self.experiment)]
+        return [RedisPubSub.get_experimenter_channel(self.experiment_id)]
 
 
 def main(argv=None):
