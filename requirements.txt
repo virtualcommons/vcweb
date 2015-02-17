@@ -5,7 +5,7 @@ Pillow==2.7.0
 PyYAML==3.11
 certifi==14.05.14
 coverage==3.7.1
-django-autocomplete-light==2.0.7
+django-autocomplete-light==2.0.9
 django-bootstrap3==5.1.1
 django-contact-form==1.0
 django-extensions==1.5.0
@@ -24,7 +24,7 @@ psycopg2==2.6
 pycrypto==2.6.1
 python-coveralls==2.5.0
 python-openid==2.2.5
-raven==5.1.1
+raven==5.2.0
 requests==2.5.1
 sockjs-tornado==1.0.1
 tornado==4.1
