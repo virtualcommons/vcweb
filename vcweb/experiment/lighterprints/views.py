@@ -338,6 +338,7 @@ def participate(request, experiment_id=None):
             'participant_group_relationship': pgr,
             'has_leaderboard': view_model.has_leaderboard,
             'treatment_type': view_model.treatment_type,
+            'linear_public_good': view_model.is_linear_public_good_experiment,
             'view_model_json': view_model.to_json(),
         })
     else:

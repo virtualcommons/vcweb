@@ -48,15 +48,16 @@
                     performing challenges.
                     <span data-bind='if: linearPublicGood'>
                         You will earn <b class='lighterprints-green'><i class='fa fa-usd'></i>0.02</b> for each point in
+                        your Overall Score.
                         {% if treatment_type == "COMMUNITY" %}
-                        your Overall Score. Your Overall Score is the average number of green points earned by <b>all
+                        Your Overall Score is the average number of green points earned by <b>all
                         members of your group and the members of all the other groups</b>.
                         {% else %}
-                        your Group Score.
+                        Your Overall Score is the average number of green points earned by <b>all members of your group</b>.
                         {% endif %}
                     </span>
                     <span data-bind='if: ! linearPublicGood'>
-                        Your goal is to have your <b>group's average points per person</b>, shown in the <b>Group Score
+                        Your goal is to have your <b>group's average points per person</b>, shown in the <b>Overall Score
                         box</b>, reach <span data-bind='text: pointsToNextLevel'></span>.
                     </span>
                 </p>
@@ -81,7 +82,7 @@
                     </div>
                 </div>
                 <div class='col-md-3 left-divider'>
-                    <h5 id='group-score'><span class='lighterprints-scoreboard-uppercase'>Overall Score</span></h5>
+                    <h5 id='overall-score'><span class='lighterprints-scoreboard-uppercase'>Overall Score</span></h5>
                     <table class='lighterprints-scoreboard'>
                         <tr>
                             {% if treatment_type == "COMMUNITY" %}
@@ -145,14 +146,17 @@
                 <p>
                     Different challenges are available at different times and days.
                     <span data-bind='if: linearPublicGood'>You will earn <b><i class='fa fa-usd'></i>0.02</b> for each
+                        point in your Overall Score. 
                         {% if treatment_type == "COMMUNITY" %}
-                        your Overall Score. Your Overall Score is the average number of green points earned by all
-                        members of your group and all the other groups.
+                        Your Overall Score is the average number of green points earned by all members of your group and
+                        <b>all the other groups</b> in the experiment. There are a total of twenty participants in this
+                        experiment so that means that the individual green points you earn will be <b>divided by 20</b>
+                        when added to the Overall Score.
+                        {% else %}
+                        Your Overall Score is the average number of green points earned by all members of your group.
+                        {% endif %}
                         For example, if your overall score is <b>150</b> by the end of today you would have earned
                         <b><i class='fa fa-usd'></i>3.00</b>.
-                        {% else %}
-                        your Group Score.
-                        {% endif %}
                     </span>
                     <span data-bind='ifnot: linearPublicGood'>In order to maximize your chances at
                         winning a prize, your group must earn enough points so that the <strong>average number of points</strong> per participant is greater than
@@ -183,17 +187,20 @@
             select the challenge from the list below, and click the &quot;Perform&quot; button.
             </p>
             <div data-bind='if: linearPublicGood'>
-                You will earn <b class='lighterprints-green'><i class='fa fa-usd'></i>0.02</b> for each point in your group average score, so if your group average score is <b>150</b> by the end of the day you would have earned 
+                You will earn <b class='lighterprints-green'><i class='fa fa-usd'></i>0.02</b> for each point in your Oveall Score, so if your Overall Score is <b>150</b> by the end of the day you would have earned 
                 <b class='lighterprints-green'><i class='fa fa-usd'></i>3.00</b> for that day.
             </div>
             <div data-bind='ifnot: linearPublicGood'>
-                In order to earn a prize your group score must reach <strong class='lighterprints-green'><span data-bind='text: pointsToNextLevel'></span>
+                In order to earn a prize your overall score must reach <strong class='lighterprints-green'><span data-bind='text: pointsToNextLevel'></span>
                 <i class='fa fa-leaf'></i></strong>. In order to reach this target you and a majority of the members of your group will need to perform high point challenges when they are available.
             </div>
-            <b>Different challenges will be available on different days, so check back each day to see which challenges are available</b>
+            <br>
+            <p>
+                <b>Different challenges will be available on different days, so check back each day to see which challenges are available.</b>
+            </p>
             <h3>How to participate</h3>
             <p>
-            To participate, simply click on the <a href='#challenges' data-bind='click: activateChallengesTab'>Challenges tab</a>, and select a challenge you'd like to perform.
+            To participate, click on the <a href='#challenges' data-bind='click: activateChallengesTab'>Challenges tab</a>, and select a challenge you'd like to perform.
             You can leave messages for the other members n your group via the <a href='#group' data-bind='click: activateGroupTab'>My Group tab</a> 
             or use the <a href='#dashboard' data-bind='click:activateDashboardTab'>Dashboard</a> to view your group's progress.
             <br>
@@ -205,19 +212,20 @@
                 <h4>I performed an activity worth 40 points but only 2 points were added to my Overall Score and 8 points
                     were added to my Group Progress. Why?</h4>
                 <p>
-                The Group Progress chart represents <b>your group's average progress</b> and is simply the average
-                number of green points earned by each member of <b>your group</b>. There are 5 members in each group, so
-                earning 40 green points increases <b>your group's average score</b> by 40 / 5 = 8 points.
+                The Group Progress chart represents <b>your group's average progress</b> and is the average number of
+                green points earned by each member of <b>your group</b>. There are 5 members in each group, so earning
+                40 green points increases <b>your group's average progress</b> by 40 / 5 = 8 points.
                 </p>
                 <p>
-                The number in your Overall Score is the average number of earned points across all members of your group
-                and <b>all other groups</b>. In total, there are twenty participants so if you earned 40 green points you'd
-                add 1 to the average by 40 / 20 = 2 points, which is equivalent to <b class='lighterprints-green'><i class='fa fa-usd'></i>0.04</b>
+                The number in your Overall Score is the average number of green points points earned across all members
+                of your group and <b>all other groups</b>. In total, there are twenty participants so if you earned 40
+                green points individually you would contribute 40 / 20 = 2 points to your Overall Score, which is
+                equivalent to <b class='lighterprints-green'><i class='fa fa-usd'></i>0.04</b>
                 </p>
                 {% else %}
-                <h4>I performed an activity worth 15 points but only 3 points were added to my Group Score and Progress. Why?</h4>
+                <h4>I performed an activity worth 15 points but only 3 points were added to my Overall Score and Group Progress. Why?</h4>
                 <p>
-                The numbers in the Group Score and Progress boxes represent your group's <b>average number of earned points</b>.  If there are 5
+                The numbers in the Overall Score and Progress boxes represent your group's <b>average number of earned points</b>.  If there are 5
                 people in your group, performing a 15 point activity adds 3 points to the group average (15 / 5 = 3).
                 </p>
                 {% endif %}
@@ -225,8 +233,8 @@
             <div class='well alert-white'>
                 <h4>I don't have a car or anyone to carpool with, so how can I carpool?</h4>
                 <p>
-                You don't have to actually perform the activity in the real world to click on the "perform" button. At
-                the moment these are purely virtual challenges.
+                You don't have to actually perform the activity in the real world to click on the "perform" button.
+                These are currently virtual challenges.
                 </p>
             </div>
         </div>
@@ -375,6 +383,8 @@ $(function() {
     // set up KO binding, using one master view model
     var viewModel = new LighterFootprintsModel($.parseJSON("{{ view_model_json|escapejs }}"));
     // custom view model methods, some of these may be lifted into the model itself
+    viewModel.tutorialTour = ko.observable();
+    viewModel.progressChart = ko.observable(new Chart(document.getElementById("progressChart").getContext("2d")));
     viewModel.thirdBoxTitle = ko.computed(function() {
         if (viewModel.linearPublicGood()) {
             return "Today's Earnings";
@@ -383,16 +393,6 @@ $(function() {
             return "Your Score";
         }
     });
-    viewModel.thirdBoxTooltipContent = ko.computed(function() {
-        if (viewModel.linearPublicGood()) {
-            return "This shows the number of points you have contributed to your group today and your total earnings for the day.";
-        }
-        else {
-            return "This shows the total number of points you have contributed to your group today.";
-        }
-    });
-    viewModel.tutorialTour = ko.observable();
-    viewModel.progressChart = ko.observable(new Chart(document.getElementById("progressChart").getContext("2d")));
     viewModel.setup = function() {
         viewModel.initializeChart();
         viewModel.setupTour();
@@ -418,21 +418,25 @@ $(function() {
                     content: "This chart shows your current group score (blue) compared to the maximum possible score (gray)."
                 },
                 {
-                    element: "#group-score",
+                    element: "#overall-score",
                     placement: "top",
-                    {% if treatment_type == "COMMUNITY" %}
                     title: "Overall Score",
+                    {% if treatment_type == "COMMUNITY" %}
                     content: "This is your overall score for the day. Your score is the average number of green points each member of every group has earned, starting at midnight each day."
                     {% else %}
-                    title: "Group Score",
-                    content: "This is your group score for the day. Your score is the average number of points each member of your group has earned, starting at midnight each day."
+                    content: "This is your overall score for the day. Your score is the average number of points each member of your group has earned, starting at midnight each day."
                     {% endif %}
                 },
                 {
                     element: "#third-box",
-                    title: viewModel.thirdBoxTitle(),
                     placement: "top",
-                    content: viewModel.thirdBoxTooltipContent()
+                    {% if linear_public_good %}
+                    title: "Today's Earnings",
+                    content: "This is your total earnings for the day."
+                    {% else %}
+                    title: "Your Score",
+                    content: "The total number of points you have contributed to your group today."
+                    {% endif %}
                 },
                 {
                     element: "#time-remaining",
@@ -450,7 +454,6 @@ $(function() {
         viewModel.tutorialTour(tour);
         tour.init();
         tour.start(true);
-        console.debug("setup tour");
     };
     viewModel.restartTour = function() {
         viewModel.activateDashboardTab();
