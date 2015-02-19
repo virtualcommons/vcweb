@@ -1165,6 +1165,7 @@ def unsubscribe(request):
             participant.can_receive_invitations = False
             participant.save()
             successfully_unsubscribed = True
+            logger.debug("unsubscribing user %s", user)
         return render(request, 'accounts/unsubscribe.html', {'successfully_unsubscribed': successfully_unsubscribed})
     return render(request, 'invalid_request.html',
                   {'message': "You aren't currently subscribed to our experiment session mailing list."})
