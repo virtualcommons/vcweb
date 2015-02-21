@@ -1,6 +1,6 @@
 Django==1.7.4
 Fabric==1.10.1
-Markdown==2.5.2
+Markdown==2.6
 Pillow==2.7.0
 PyYAML==3.11
 certifi==14.05.14
@@ -13,7 +13,7 @@ django-kronos==0.6
 django-localflavor==1.1
 django-model-utils==2.2
 django-mptt==0.6.1
-django-redis==3.8.2
+django-redis==3.8.3
 django-social-auth==0.7.28
 ecdsa==0.13
 enum34==1.0.4
