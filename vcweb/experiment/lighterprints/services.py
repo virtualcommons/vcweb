@@ -117,6 +117,7 @@ class EmailGenerator(object):
         self.yesterday = date.today() - timedelta(1)
         self.experimenter_email = settings.DEFAULT_FROM_EMAIL
         self.experiment = group_scores.experiment
+        self.experiment_configuration = group_scores.experiment_configuration
         self.round_data = group_scores.round_data
         self.treatment_type = group_scores.treatment_type
         self.has_leaderboard = group_scores.has_leaderboard
@@ -134,6 +135,7 @@ class EmailGenerator(object):
         return Context({
             'experiment': experiment,
             'experiment_completed': experiment.is_last_round,
+            'payment_information': self.experiment_configuration.payment_information,
             'number_of_groups': self.number_of_groups,
             'group_name': group.name,
             'summary_date': self.yesterday,

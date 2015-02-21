@@ -1,6 +1,7 @@
 import json
 import logging
 
+from django.conf import settings
 from django.core.cache import cache
 from vcweb.core.tests import BaseVcwebTest
 from vcweb.core.models import ParticipantRoundDataValue, ChatMessage, Like, Comment
@@ -31,6 +32,7 @@ class BaseTest(BaseVcwebTest):
         ec.set_parameter_value(parameter=get_linear_public_good_parameter(), boolean_value=linear_public_good)
         ec.set_parameter_value(parameter=get_treatment_type_parameter(), string_value=treatment_type)
         ec.round_configuration_set.update(initialize_data_values=True)
+        ec.payment_information = '''unique text for payment information: tobacco hornworm'''
         ec.save()
 
     @property
@@ -192,12 +194,31 @@ class CommunityTreatmentTest(ScheduledActivityTest):
         gs = GroupScores(e)
         for group in e.groups:
             summary_emails = gs.email_generator.generate(group)
+            group_emails = [pgr.participant.email for pgr in group.participant_group_relationship_set.all()]
             for email in summary_emails:
+                for recipient in email.recipients():
+                    if recipient != settings.DEFAULT_FROM_EMAIL:
+                        group_emails.remove(recipient)
                 self.assertTrue(email.recipients())
                 self.assertTrue("5 chat messages were posted" in email.body)
                 self.assertTrue("You earned 250 point(s)." in email.body)
                 self.assertTrue("Members of your group earned, on average, 250 point(s)." in email.body)
                 self.assertTrue("Members of all groups earned, on average, 250 point(s)." in email.body)
+            self.assertFalse(group_emails, "Group emails should have all been removed")
+
+    def test_payment_information(self):
+        e = self.experiment
+        e.activate()
+        while e.has_next_round:
+            e.advance_to_next_round()
+        gs = GroupScores(e)
+        for group in e.groups:
+            summary_emails = gs.email_generator.generate(group)
+            for email in summary_emails:
+                logger.error("recipients: %s", email.recipients())
+                logger.error("body: %s", email.body)
+                self.assertTrue(email.recipients())
+                self.assertTrue("tobacco hornworm" in email.body)
 
     def test_view_model(self):
         e = self.experiment

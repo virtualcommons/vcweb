@@ -6,6 +6,7 @@ Lighter Footprints Summary for {{ summary_date }}
 (http://en.wikipedia.org/wiki/Public_good) where there often exists a conflict between individual and collective interests.
 
 {{ payment_information }}
+
 {% else %}
 You are a member of {{ group_name }}. To participate in this experiment, visit [{{experiment.full_participant_url}}]({{experiment.full_participant_url}}).
 {% endif %}
@@ -20,8 +21,4 @@ You are a member of {{ group_name }}. To participate in this experiment, visit [
 {% if linear_public_good %}
 * Each member of your group earned {{ daily_earnings }}
 * Your total earnings over the entire experiment are: {{ total_earnings }}
-{% endif %}
-
-{% if completed %}
-Congratulations! Your group reached the target of {{ threshold }} average points per person.
 {% endif %}

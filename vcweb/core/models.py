@@ -2089,8 +2089,7 @@ class Group(models.Model, DataValueMixin):
 
     def to_dict(self):
         participant_group_relationships = [
-            {'pk': pgr.pk, 'participant_number': pgr.participant_number,
-                'email': pgr.participant.email}
+            {'pk': pgr.pk, 'participant_number': pgr.participant_number, 'email': pgr.participant.email}
             for pgr in self.participant_group_relationship_set.select_related('participant__user').all()
         ]
         return {
@@ -2100,10 +2099,9 @@ class Group(models.Model, DataValueMixin):
         }
 
     def get_related_group(self):
-        # FIXME: currently only assumes single paired relationships
+        # FIXME: assumes single paired relationships, this method will raise an error in group clusters with groups > 2
         gr = GroupRelationship.objects.get(group=self)
-        related_gr = GroupRelationship.objects.select_related(
-            'group').get(~models.Q(group=self), cluster=gr.cluster)
+        related_gr = GroupRelationship.objects.select_related('group').get(~models.Q(group=self), cluster=gr.cluster)
         return related_gr.group
 
     def log(self, log_message):
@@ -2114,15 +2112,12 @@ class Group(models.Model, DataValueMixin):
 
     def add(self, parameter=None, amount=0):
         # could be a float or an int..
-        update_dict = {parameter.value_field_name:
-                       models.F(parameter.value_field_name) + amount}
-        self.log("adding %s to this group's %s parameter" %
-                 (amount, parameter))
+        update_dict = {parameter.value_field_name: models.F(parameter.value_field_name) + amount}
+        self.log("adding %s to this group's %s parameter" % (amount, parameter))
         updated_rows = self.data_value_set.filter(round_data=self.current_round_data, parameter=parameter).update(
             **update_dict)
         if updated_rows != 1:
-            logger.error(
-                "Updated %s rows, should have been only one.", updated_rows)
+            logger.error("Updated %s rows, should have been only one.", updated_rows)
 
     def has_data_parameter(self, **kwargs):
         criteria = self._criteria(**kwargs)
