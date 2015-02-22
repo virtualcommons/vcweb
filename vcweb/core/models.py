@@ -2101,16 +2101,18 @@ class Group(models.Model, DataValueMixin):
         }
 
     def get_related_group(self):
-        # FIXME: assumes single paired relationships, this method will raise an error in group clusters with groups > 2
         gr = GroupRelationship.objects.get(group=self)
-        related_gr = GroupRelationship.objects.select_related('group').get(~models.Q(group=self), cluster=gr.cluster)
-        return related_gr.group
+        related_grs = GroupRelationship.objects.select_related('group').filter(~models.Q(group=self),
+                                                                               cluster=gr.cluster)
+        if related_grs.exists():
+            return related_grs[0].group
+        else:
+            return None
 
     def log(self, log_message):
         if log_message:
             logger.debug(log_message)
-            self.activity_log_set.create(
-                round_configuration=self.current_round, log_message=log_message)
+            self.activity_log_set.create(round_configuration=self.current_round, log_message=log_message)
 
     def add(self, parameter=None, amount=0):
         # could be a float or an int..
@@ -2210,6 +2212,14 @@ class GroupCluster(models.Model, DataValueMixin):
     objects = PassThroughManager.for_queryset_class(GroupClusterQuerySet)()
 
     @property
+    def participant_ids(self):
+        return self.participant_group_relationships.values_list('participant', flat=True)
+
+    @property
+    def participant_group_relationships(self):
+        return ParticipantGroupRelationship.objects.filter(group__pk__in=self.group_ids)
+
+    @property
     def display_name(self):
         if self.name:
             return self.name
@@ -2224,7 +2234,15 @@ class GroupCluster(models.Model, DataValueMixin):
 
     @property
     def groups(self):
+        # FIXME: make consistent API split for gc.model_ids and gc.models
+        return self.group_ids
+
+    @property
+    def group_ids(self):
         return self.group_relationship_set.select_related('group').values_list('group', flat=True)
+
+    def get_groups(self):
+        return Group.objects.filter(pk__in=self.groups)
 
     def add(self, group):
         return GroupRelationship.objects.create(cluster=self, group=group)

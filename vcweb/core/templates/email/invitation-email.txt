@@ -19,8 +19,5 @@ To register, please click on the following link or copy and paste the url into y
 
 Thanks in advance for participating!
 
-team vcweb
-
-
 You are receiving this invitation because you've opted in to our participant database. If you are no longer interested in receiving experiment invitations you can
 [unsubscribe at {{SITE_URL}}/accounts/unsubscribe]({{SITE_URL}}/accounts/unsubscribe).
