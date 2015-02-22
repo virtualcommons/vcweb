@@ -314,12 +314,14 @@ class GroupScores(object):
                 self.number_of_groups = len(group_ids)
                 cluster_rankings = []
                 for group_id in group_ids:
-                    total_group_points = self.scores_dict[group_id]['total_points']
                     total_cluster_points += self.scores_dict[group_id]['total_points']
-                    total_daily_cluster_points += self.scores_dict[group_id]['total_daily_points']
+                    daily_group_points = self.scores_dict[group_id]['total_daily_points']
+                    total_daily_cluster_points += daily_group_points
                     self.group_cluster_cache[group_id] = gc
-                    cluster_rankings.append({'pk': group_id, 'points': total_group_points})
-                self.group_cluster_rankings[gc] = [x['pk'] for x in sorted(cluster_rankings, key=itemgetter('points'))]
+                    cluster_rankings.append({'pk': group_id, 'points': daily_group_points})
+                self.group_cluster_rankings[gc] = [x['pk'] for x in sorted(cluster_rankings,
+                                                                           key=itemgetter('points'),
+                                                                           reverse=True)]
                 total_number_of_participants = self.number_of_groups * group_size
                 average_daily_cluster_points = total_daily_cluster_points / total_number_of_participants
                 total_average_points = total_cluster_points / total_number_of_participants
