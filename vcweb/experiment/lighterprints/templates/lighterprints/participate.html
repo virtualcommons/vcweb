@@ -145,23 +145,26 @@
                 <h2>Complete challenges to earn green points.</h2>
                 <p>
                     Different challenges are available at different times and days.
-                    <span data-bind='if: linearPublicGood'>You will earn <b><i class='fa fa-usd'></i>0.02</b> for each
-                        point in your Overall Score. 
-                        {% if treatment_type == "COMMUNITY" %}
-                        Your Overall Score is the average number of green points earned by all members of your group and
-                        <b>all the other groups</b> in the experiment. There are a total of twenty participants in this
-                        experiment so that means that the individual green points you earn will be <b>divided by 20</b>
-                        when added to the Overall Score.
-                        {% else %}
-                        Your Overall Score is the average number of green points earned by all members of your group.
-                        {% endif %}
-                        For example, if your overall score is <b>150</b> by the end of today you would have earned
-                        <b><i class='fa fa-usd'></i>3.00</b>.
-                    </span>
-                    <span data-bind='ifnot: linearPublicGood'>In order to maximize your chances at
-                        winning a prize, your group must earn enough points so that the <strong>average number of points</strong> per participant is greater than
-                        <span data-bind='text:pointsToNextLevel' class='badge badge-lighterprints-green'></span>.
-                    </span>
+                </p>
+                <p data-bind='if: linearPublicGood'>
+                    You will earn <b><i class='fa fa-usd'></i>0.02</b> for each point in your Overall Score. If your
+                    Overall Score is <b>150</b> by the end of today you would have earned
+                    <b><i class='fa fa-usd'></i>3.00</b>.
+                </p>
+                <p>
+                {% if treatment_type == "COMMUNITY" %}
+                Your Overall Score is the average number of green points earned by all members of your group and
+                <b>all the other groups</b> in the experiment. There are a total of twenty participants in this
+                experiment so that means that the individual green points you earn will be <b>divided by 20</b>
+                when added to the Overall Score. For example, if you performed the <b>Replace beef with poultry</b>
+                challenge (worth 43 green points) your Overall Score would be increased by 43 / 20 = 2 points.
+                {% else %}
+                Your Overall Score is the average number of green points earned by all members of your group.
+                {% endif %}
+                </p>
+                <p data-bind='ifnot: linearPublicGood'>In order to maximize your chances at
+                    winning a prize, your group must earn enough points so that the <strong>average number of points</strong> per participant is greater than
+                    <span data-bind='text:pointsToNextLevel' class='badge badge-lighterprints-green'></span>.
                 </p>
                 <p>
                 <i class='fa fa-clock-o'></i> Some challenges are available all day, and others are only available at <strong>certain hours</strong>.
@@ -223,11 +226,16 @@
                 equivalent to <b class='lighterprints-green'><i class='fa fa-usd'></i>0.04</b>
                 </p>
                 {% else %}
-                <h4>I performed an activity worth 15 points but only 3 points were added to my Overall Score and Group Progress. Why?</h4>
+                {% with total_points=40 %}
+                {% widthratio total_points group_size 1 as average_points %}
+                <h4>I performed an activity worth {{ total_points }} points but only {{average_points}} points were added to my Overall Score and Group Progress. Why?</h4>
                 <p>
-                The numbers in the Overall Score and Progress boxes represent your group's <b>average number of earned points</b>.  If there are 5
-                people in your group, performing a 15 point activity adds 3 points to the group average (15 / 5 = 3).
+                The numbers in the Overall Score and Progress boxes represent your group's <b>average number of earned
+                    points</b>.  There are {{ group_size }} people in your group, so performing a {{ total_points }} point activity adds 
+                {{ average_points }}
+                points to the group average ({{total_points}} / {{ group_size }} = {{ average_points }}).
                 </p>
+                {% endwith %}
                 {% endif %}
             </div>
             <div class='well alert-white'>
@@ -460,7 +468,7 @@ $(function() {
         viewModel.tutorialTour().restart();
     };
     viewModel.progressChartData = ko.computed(function() {
-        var avgPoints = Math.max(1, viewModel.averagePoints());
+        var avgPoints = Math.max(0, viewModel.averagePoints());
         var pointsToNextLevel = viewModel.pointsToNextLevel();
         var data = [ { value: avgPoints, color: "#13a5e6" } ];
         var pointsNeeded = Math.max(0, pointsToNextLevel - avgPoints);

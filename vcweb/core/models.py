@@ -2848,6 +2848,7 @@ class ExperimentSession(models.Model):
     scheduled_date = models.DateTimeField()
     scheduled_end_date = models.DateTimeField(null=True, blank=True)
     capacity = models.PositiveIntegerField(default=20)
+    waitlist = models.BooleanField(default=False)
     creator = models.ForeignKey(User, related_name='experiment_session_set')
     # wire up with autocomplete
     location = models.CharField(max_length=128, help_text=_('Where will this experiment session be held?'))
@@ -2865,7 +2866,9 @@ class ExperimentSession(models.Model):
 
     @property
     def waitlist_capacity(self):
-        return int(min(settings.SUBJECT_POOL_WAITLIST_SIZE, self.capacity * .20))
+        if self.waitlist:
+            return int(min(settings.SUBJECT_POOL_WAITLIST_SIZE, self.capacity * .20))
+        return 0
 
     def is_owner(self, user):
         return self.creator == user or user.is_superuser
