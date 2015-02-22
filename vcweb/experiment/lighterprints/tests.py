@@ -1,6 +1,7 @@
 import json
 import logging
 
+from datetime import date, timedelta
 from django.conf import settings
 from django.core.cache import cache
 from vcweb.core.tests import BaseVcwebTest
@@ -26,6 +27,9 @@ class BaseTest(BaseVcwebTest):
         super(BaseTest, self).setUp(experiment_metadata=get_lighterprints_experiment_metadata(), number_of_rounds=3,
                                     **kwargs)
         cache.clear()
+        e = self.experiment
+        e.start_date = date.today()
+        e.save()
         ec = self.experiment_configuration
         ec.has_daily_rounds = True
         ec.set_parameter_value(parameter=get_leaderboard_parameter(), boolean_value=leaderboard)
@@ -118,6 +122,9 @@ class CommunityTreatmentTest(ScheduledActivityTest):
         self.assertTrue(is_scheduled_activity_experiment(e))
         self.assertFalse(is_high_school_treatment(e))
         self.assertTrue(is_community_treatment(e))
+        today = date.today()
+        self.assertEqual(e.start_date, today)
+        self.assertEqual(e.end_date, today + timedelta(e.number_of_rounds))
 
     def test_perform_available_activities(self):
         e = self.experiment
@@ -215,8 +222,6 @@ class CommunityTreatmentTest(ScheduledActivityTest):
         for group in e.groups:
             summary_emails = gs.email_generator.generate(group)
             for email in summary_emails:
-                logger.error("recipients: %s", email.recipients())
-                logger.error("body: %s", email.body)
                 self.assertTrue(email.recipients())
                 self.assertTrue("tobacco hornworm" in email.body)
 

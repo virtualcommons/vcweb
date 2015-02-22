@@ -486,8 +486,9 @@ class ExperimentConfiguration(models.Model, ParameterValueMixin):
     def total_number_of_rounds(self):
         number_of_rounds = self.round_configuration_set.count()
         repeating_rounds = self.round_configuration_set.filter(repeat__gt=0)
-        repeated_rounds = repeating_rounds.aggregate(total=Sum('repeat'))
-        number_of_rounds = number_of_rounds - repeating_rounds.count() + repeated_rounds['total']
+        if repeating_rounds:
+            repeated_rounds = repeating_rounds.aggregate(total=Sum('repeat'))
+            number_of_rounds = number_of_rounds - repeating_rounds.count() + repeated_rounds['total']
         return number_of_rounds
 
     @property
@@ -1051,7 +1052,8 @@ class Experiment(models.Model):
         if from_email is None or not from_email.strip():
             from_email = experimenter_email
         msg = EmailMultiAlternatives(subject=subject, body=plaintext_content, from_email=from_email,
-                                     to=[participant_experiment_relationship.participant.email], bcc=['vcweb@asu.edu'],
+                                     to=[participant_experiment_relationship.participant.email],
+                                     bcc=[settings.DEFAULT_FROM_EMAIL],
                                      headers={'Reply-To': experimenter_email})
         msg.attach_alternative(html_content, "text/html")
         return msg
