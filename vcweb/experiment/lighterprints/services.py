@@ -231,6 +231,7 @@ class CommunityEmailGenerator(EmailGenerator):
             experiment_completed=self.experiment.is_last_round,
             average_daily_points=self.average_daily_points(group),
             average_daily_cluster_points=self.average_daily_cluster_points(group=group),
+            group_rank=self.get_group_cluster_rank(group),
         ))
         return context
 
@@ -271,6 +272,8 @@ class GroupScores(object):
         self.number_of_groups = len(groups)
         # { group : {average_daily_points, total_daily_points} }
         self.group_rankings = None
+        self.group_cluster_cache = {}
+        self.group_cluster_rankings = {}
         self.total_participant_points = 0
         # establish date range
         self.treatment_type = get_treatment_type(experiment_configuration=experiment_configuration).string_value
@@ -307,12 +310,17 @@ class GroupScores(object):
             for gc in self.group_clusters.all():
                 total_cluster_points = 0
                 total_daily_cluster_points = 0
-                group_ids = list(gc.groups)
-                number_of_groups = len(group_ids)
+                group_ids = list(gc.group_ids)
+                self.number_of_groups = len(group_ids)
+                cluster_rankings = []
                 for group_id in group_ids:
+                    total_group_points = self.scores_dict[group_id]['total_points']
                     total_cluster_points += self.scores_dict[group_id]['total_points']
                     total_daily_cluster_points += self.scores_dict[group_id]['total_daily_points']
-                total_number_of_participants = number_of_groups * group_size
+                    self.group_cluster_cache[group_id] = gc
+                    cluster_rankings.append({'pk': group_id, 'points': total_group_points})
+                self.group_cluster_rankings[gc] = [x['pk'] for x in sorted(cluster_rankings, key=itemgetter('points'))]
+                total_number_of_participants = self.number_of_groups * group_size
                 average_daily_cluster_points = total_daily_cluster_points / total_number_of_participants
                 total_average_points = total_cluster_points / total_number_of_participants
                 self.group_cluster_data[gc] = {
@@ -320,6 +328,7 @@ class GroupScores(object):
                     'average_daily_points': average_daily_cluster_points,
                     'total_average_points': total_average_points,
                 }
+
                 for group_id in group_ids:
                     group_data_dict = self.scores_dict[group_id]
                     group_data_dict.update(
@@ -445,6 +454,10 @@ class GroupScores(object):
         if level <= max_level:
             return self.average_daily_points(group) >= get_points_to_next_level(level)
         return False
+
+    def get_group_cluster_rank(self, group):
+        gc = self.group_cluster_cache[group.pk]
+        return self.group_cluster_rankings[gc].index(group.pk) + 1
 
     def get_group_rank(self, group):
         return self.get_group_ranking_list().index(group) + 1
