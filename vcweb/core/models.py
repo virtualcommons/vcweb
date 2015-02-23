@@ -3140,7 +3140,6 @@ def reset_password(email_address,
 def set_full_name(user, full_name):
     """ crudely splits last token as last_name and everything else as first_name """
     (first_name, separator, last_name) = full_name.rpartition(' ')
-    logger.debug("first_name %s, last_name %s", first_name, last_name)
     updated = False
     if first_name and not user.first_name:
         user.first_name = first_name

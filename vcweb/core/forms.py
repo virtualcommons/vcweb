@@ -367,7 +367,6 @@ class EmailListField(forms.CharField):
         for line in lines:
             # check for emails in the form of Allen T Lee <allen.t.lee@asu.edu>
             (full_name, email_address) = email.utils.parseaddr(line)
-            logger.debug("full name %s, email %s", full_name, email_address)
             email_address = email_address.strip()
             if not email_address:
                 logger.debug("blank line, ignoring")
