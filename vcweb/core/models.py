@@ -3194,7 +3194,7 @@ def create_reminder_emails():
         emails.append(create_markdown_email(template="email/reminder-email.txt",
                                             context={"session": es},
                                             subject="vcweb experiment reminder",
-                                            to_email=settings.DEFAULT_FROM_EMAIL,
+                                            to_email=[settings.DEFAULT_EMAIL],
                                             bcc=participant_emails))
     return emails
 
