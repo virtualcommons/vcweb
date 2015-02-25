@@ -218,11 +218,10 @@ def post_chat_message(request):
         participant_group_id = form.cleaned_data['participant_group_id']
         message = form.cleaned_data['message']
         pgr = get_object_or_404(ParticipantGroupRelationship.objects.select_related('participant__user'),
-                                pk=participant_group_id)
-        if pgr.participant != request.user.participant:
-            logger.warning("authenticated user %s tried to post message %s as %s", request.user, message, pgr)
-            return JsonResponse({'success': False, 'message': "Invalid request"})
-        chat_message = ChatMessage.objects.create(value=message, participant_group_relationship=pgr)
+                                pk=participant_group_id,
+                                participant=request.user.participant,
+                                )
+        chat_message = ChatMessage.objects.create(string_value=message, participant_group_relationship=pgr)
         logger.debug("%s: %s", pgr.participant, chat_message)
         # FIXME: optimize, only retrieving the latest group activity since the last checkin time
         group_activity = GroupActivity(pgr)
@@ -237,13 +236,10 @@ def like(request):
         participant_group_id = form.cleaned_data['participant_group_id']
         target_id = form.cleaned_data['target_id']
         participant_group_relationship = get_object_or_404(
-            ParticipantGroupRelationship.objects.select_related(
-                'participant__user', 'group__experiment'),
-            pk=participant_group_id)
-        if participant_group_relationship.participant != request.user.participant:
-            logger.warning("authenticated user %s tried to like target_id %s as %s", request.user, target_id,
-                           participant_group_relationship)
-            return JsonResponse({'success': False, 'message': "Invalid request"})
+            ParticipantGroupRelationship.objects.select_related('participant__user', 'group__experiment'),
+            pk=participant_group_id,
+            participant=request.user.participant
+        )
         target = get_object_or_404(ParticipantRoundDataValue, pk=target_id)
         # FIXME: either needs a uniqueness constraint to ensure that duplicates don't get created or add guards when we
         # retrieve them to only send back the latest one (feels hacky).  See
@@ -252,8 +248,7 @@ def like(request):
         Like.objects.create(round_data=round_data, participant_group_relationship=participant_group_relationship,
                             target_data_value=target)
         logger.debug("Participant %s liked %s", participant_group_relationship, target)
-        return JsonResponse({'success': True,
-                             'viewModel': LighterprintsViewModel.create(participant_group_relationship).to_dict()})
+        return JsonResponse({'success': True})
     else:
         logger.debug("invalid form: %s from request: %s", form, request)
         return JsonResponse({'success': False, 'message': 'Invalid like post'})
@@ -267,13 +262,10 @@ def post_comment(request):
         target_id = form.cleaned_data['target_id']
         message = form.cleaned_data['message']
         participant_group_relationship = get_object_or_404(
-            ParticipantGroupRelationship.objects.select_related(
-                'participant__user', 'group__experiment'),
-            pk=participant_group_id)
-        if participant_group_relationship.participant != request.user.participant:
-            logger.warning("authenticated user %s tried to post comment %s on target %s as %s", request.user, message,
-                           target_id, participant_group_relationship)
-            return JsonResponse({'success': False, 'message': "Invalid request"})
+            ParticipantGroupRelationship.objects.select_related('participant__user', 'group__experiment'),
+            pk=participant_group_id,
+            participant=request.user.participant,
+        )
         target = get_object_or_404(ParticipantRoundDataValue, pk=target_id)
         Comment.objects.create(
             string_value=message,
@@ -285,7 +277,7 @@ def post_comment(request):
         return JsonResponse({'success': True,
                              'viewModel': LighterprintsViewModel.create(participant_group_relationship).to_dict()})
     else:
-        logger.debug("invalid form: %s from request: %s", form, request)
+        logger.debug("invalid form: %s from request: %s", form.errors, request)
         return JsonResponse({'success': False, 'message': 'Invalid post comment'})
 
 
