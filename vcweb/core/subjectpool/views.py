@@ -126,14 +126,14 @@ def datetime_to_timestamp(date):
 
 
 @group_required(PermissionGroup.experimenter)
-@require_GET
+@require_POST
 def get_invitations_count(request):
     """
     API endpoint that returns the potential participant count based on the selected experiment metadata and Institution
     """
-    form = SessionInviteForm(request.GET or None)
+    form = SessionInviteForm(request.POST or None)
     if form.is_valid():
-        session_pk_list = request.GET.get('session_pk_list').split(",")
+        session_pk_list = request.POST.get('session_pk_list').split(",")
         experiment_metadata_ids = ExperimentSession.objects.filter(pk__in=session_pk_list).values_list(
             'experiment_metadata__pk', flat=True)
         if len(set(experiment_metadata_ids)) == 1:
@@ -249,15 +249,15 @@ def send_invitations(request):
 
 
 @group_required(PermissionGroup.experimenter)
-@require_GET
+@require_POST
 def invite_email_preview(request):
     """
     Generates email Preview for the provided invitation details
     """
-    form = SessionInviteForm(request.GET or None)
+    form = SessionInviteForm(request.POST or None)
     message = "Please fill in all the form fields to preview the invitation email."
     if form.is_valid():
-        session_pk_list = request.GET.get('session_pk_list').split(",")
+        session_pk_list = request.POST.get('session_pk_list').split(",")
         plaintext_content, html_content = get_invitation_email_content(form.cleaned_data.get('invitation_text'),
                                                                        session_pk_list)
         return JsonResponse({'success': True, 'content': html_content})

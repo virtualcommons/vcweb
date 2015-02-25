@@ -412,11 +412,11 @@
                     var session_pk_list = ko.utils.arrayMap(model.selectedSessions(), function(item) { return item.pk(); });
                     if(session_pk_list.length) {
                         var formData = $("#invite-form form").serialize() + '&session_pk_list='+ session_pk_list;
-                        $.get("{% url 'subjectpool:get_invitations_count' %}?" + formData)
+                        $.post("{% url 'subjectpool:get_invitations_count' %}", formData)
                             .done(function(result) {
                                 model.potentialParticipantsCount(result.invitesCount);
                             });
-                        $.get("{% url 'subjectpool:invite_email_preview' %}?" + formData)
+                        $.post("{% url 'subjectpool:invite_email_preview' %}", formData)
                             .done(function(result) {
                                 $("#email-content").html(
                                     '<fieldset class="scheduler-border"><legend class="scheduler-border">Email Preview</legend><div id="email-text"></div></fieldset>');
