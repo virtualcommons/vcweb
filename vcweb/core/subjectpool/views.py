@@ -333,10 +333,15 @@ def submit_experiment_session_signup(request):
             experiment_session_pk=invitation.experiment_session_id)
 
         experiment_session = invitation.experiment_session
-        previous_signups = ParticipantSignup.objects.filter(invitation__experiment_session=experiment_session,
-                                                            invitation__participant=user.participant)
-        if previous_signups.exists():
-            messages.error(request, _("""You have already signed up for this experiment."""))
+        current_signups = ParticipantSignup.objects.registered_or_participated(
+            experiment_metadata_pk=experiment_session.experiment_metadata.pk,
+            invitation__participant=user.participant).exclude(invitation__pk=invitation_pk)
+        if current_signups.exists():
+            # FIXME: allow users to switch sessions instead of forcing them to cancel and then sign up again.
+            scheduled_date = current_signups.first().invitation.experiment_session.scheduled_date
+            messages.error(request, _("""You have already signed up for this experiment on %s - if you would like to
+            change your registered session, please cancel your existing session first before signing up for another
+            session.""" % scheduled_date))
             return redirect('core:dashboard')
 
         signup_count = participant_signups.count()
