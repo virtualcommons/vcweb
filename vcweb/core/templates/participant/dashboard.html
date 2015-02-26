@@ -25,7 +25,7 @@ Participant Dashboard
             <div data-bind="template: { name: 'experimentTemplate', foreach: runningExperiments }"></div>
         </div>
         <div data-bind='if: signups().length > 0'>
-            <h4>You're currently signed up / waitlisted for the following upcoming experiments:</h4>
+            <h4>You're currently registered or waitlisted for the following experiments:</h4>
             <table class='table table-bordered table-striped'>
                 <thead>
                     <tr>
@@ -58,12 +58,14 @@ Participant Dashboard
                     <td data-bind='text: invitation.scheduled_end_time'></td>
                     <td data-bind='text: invitation.location'></td>
                     <td>
-                        <a class='btn btn-primary' href='{% url "subjectpool:experiment_session_signup" %}'>Edit</a>
-                        <form method='POST' action='/subject-pool/signup/cancel/'>
-                            {% csrf_token %}
-                            <input type='hidden' name='pk' id='id_pk' data-bind='value: pk'>
-                            <button type='submit' class='btn btn-primary'>Cancel</button>
-                        </form>
+                        <div class='btn-group-vertical' role='group'>
+                            <a class='btn btn-primary' href='{% url "subjectpool:experiment_session_signup" %}'>Edit</a>
+                            <form method='POST' action='/subject-pool/signup/cancel/'>
+                                {% csrf_token %}
+                                <input type='hidden' name='pk' id='id_pk' data-bind='value: pk'>
+                                <button type='submit' class='btn btn-warning'>Cancel</button>
+                            </form>
+                        </div>
                     </td>
                 </tbody>
             </table>

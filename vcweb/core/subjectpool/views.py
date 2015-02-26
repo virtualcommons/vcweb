@@ -331,15 +331,22 @@ def submit_experiment_session_signup(request):
     with transaction.atomic():
         participant_signups = ParticipantSignup.objects.select_for_update().registered(
             experiment_session_pk=invitation.experiment_session_id)
+
+        experiment_session = invitation.experiment_session
+        previous_signups = ParticipantSignup.objects.filter(invitation__experiment_session=experiment_session,
+                                                            invitation__participant=user.participant)
+        if previous_signups.exists():
+            messages.error(request, _("""You have already signed up for this experiment."""))
+            return redirect('core:dashboard')
+
         signup_count = participant_signups.count()
         # verify for the vacancy in the selected experiment session before
         # creating participant signup entry
-        experiment_session = invitation.experiment_session
         if signup_count < experiment_session.capacity:
             registered = True
             message = '''You are now registered for this experiment session. A confirmation email has been sent and you
             should also receive a reminder email one day before the session. Thanks in advance for participating!'''
-        else:
+        elif experiment_session.waitlist:
             # signups are full, check if waitlists are full
             wc = ParticipantSignup.objects.waitlist(experiment_session_pk=invitation.experiment_session_id).count()
             if wc < experiment_session.waitlist_capacity:
