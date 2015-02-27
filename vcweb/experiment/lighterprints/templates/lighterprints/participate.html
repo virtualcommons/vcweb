@@ -386,7 +386,6 @@
 <script src='//cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.1/Chart.min.js'></script>
 {% include "includes/bootstrap-tour.html" %}
 <script>
-var vm;
 $(function() {
     // set up KO binding, using one master view model
     var viewModel = new LighterFootprintsModel($.parseJSON("{{ view_model_json|escapejs }}"));
@@ -523,7 +522,6 @@ $(function() {
             }
         });
     };
-    vm = viewModel;
     ko.applyBindings(viewModel);
     viewModel.setup();
     // FIXME: more efficient way to select these?

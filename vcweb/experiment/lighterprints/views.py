@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 
 class LighterprintsViewModel(object):
     template_name = 'lighterprints/participate.html'
+    activity_limit = 60
 
     """ FIXME: more refactoring needed, continue to merge this with GroupScores """
 
@@ -37,7 +38,7 @@ class LighterprintsViewModel(object):
         self.group_scores = GroupScores(self.experiment,
                                         round_data=round_data,
                                         round_configuration=round_configuration)
-        self.group_activity = GroupActivity(participant_group_relationship)
+        self.group_activity = GroupActivity(participant_group_relationship, limit=self.activity_limit)
         self.total_participant_points = self.group_scores.total_participant_points
         self.activity_status_list = ActivityStatusList(participant_group_relationship,
                                                        activities=activities,
@@ -224,7 +225,7 @@ def post_chat_message(request):
         chat_message = ChatMessage.objects.create(string_value=message, participant_group_relationship=pgr)
         logger.debug("%s: %s", pgr.participant, chat_message)
         # FIXME: optimize, only retrieving the latest group activity since the last checkin time
-        group_activity = GroupActivity(pgr)
+        group_activity = GroupActivity(pgr, limit=LighterprintsViewModel.activity_limit)
         return JsonResponse({'success': True, 'viewModel': {'groupActivity': group_activity.all_activities}})
     return JsonResponse({'success': False, 'message': "Invalid chat message post"})
 
