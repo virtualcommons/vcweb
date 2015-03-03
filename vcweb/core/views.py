@@ -651,20 +651,23 @@ def download_participants(request, pk=None):
 @require_GET
 @ownership_required(Experiment)
 def download_data(request, pk=None, file_type='csv'):
-    experiment = get_object_or_404(Experiment, pk=pk)
+    experiment = get_object_or_404(Experiment.objects.select_related('experimenter'), pk=pk)
     content_type = mimetypes.types_map['.%s' % file_type]
     logger.debug("Downloading data as %s", content_type)
     response = HttpResponse(content_type=content_type)
-    response[
-        'Content-Disposition'] = 'attachment; filename=%s' % experiment.data_file_name()
+    response['Content-Disposition'] = 'attachment; filename=%s' % experiment.data_file_name()
     writer = unicodecsv.writer(response, encoding='utf-8')
     """ header for group membership, session id, and base participant data """
-    writer.writerow(
-        ['Group ID', 'Group Number', 'Session ID', 'Participant ID', 'Participant Email'])
+    writer.writerow(['Group ID', 'Group Number', 'Group Cluster ID', 'Session ID', 'Participant ID', 'Participant Email'])
+    group_to_cluster_dict = defaultdict(str)
+    for group_cluster in experiment.group_cluster_set.all():
+        for g in group_cluster.group_relationship_set.select_related('group').values_list('group', flat=True):
+            group_to_cluster_dict[g] = group_cluster.pk
+
     for group in experiment.group_set.order_by('pk').all():
         for pgr in group.participant_group_relationship_set.select_related('participant__user').all():
-            writer.writerow(
-                [group.pk, group.number, group.session_id, pgr.pk, pgr.participant.email])
+            writer.writerow([group.pk, group.number, group_to_cluster_dict[group.pk], group.session_id, pgr.pk,
+                             pgr.participant.email])
     """ header for participant data values, chat messages, and per-group data ordered per-round"""
     writer.writerow(
         ['Round', 'Participant ID', 'Participant Number', 'Group ID', 'Parameter', 'Value',
@@ -675,8 +678,8 @@ def download_data(request, pk=None, file_type='csv'):
         # emit experimenter notes
         if round_data.experimenter_notes:
             writer.writerow(
-                [round_number, 'Experimenter Notes', '', '', 'Experimenter Notes', round_data.experimenter_notes, '',
-                 '', '', ''])
+                [round_number, experiment.experimenter.email, '', '', 'Experimenter Notes',
+                 round_data.experimenter_notes, '', '', '', ''])
         # emit all participant data values
         for data_value in round_data.participant_data_value_set.select_related('participant_group_relationship__group',
                                                                                'parameter').all():
@@ -687,8 +690,7 @@ def download_data(request, pk=None, file_type='csv'):
             lm = data_value.last_modified
             writer.writerow(
                 [round_number, pgr.pk, pgr.participant_number, pgr.group.pk, data_value.parameter.label,
-                 data_value.value, dc.date(), dc.time(), lm.date(), lm.time()
-                 ])
+                 data_value.value, dc.date(), dc.time(), lm.date(), lm.time()])
             # emit all chat messages
         chat_messages = ChatMessage.objects.filter(round_data=round_data)
         if chat_messages.count() > 0:
@@ -698,7 +700,7 @@ def download_data(request, pk=None, file_type='csv'):
                 lm = chat_message.last_modified
                 writer.writerow([round_number, pgr.pk, pgr.participant_number, pgr.group.pk, "Chat Message",
                                  chat_message.string_value, dc.date(), dc.time(), lm.date(), lm.time()])
-                # emit round data for the group as a whole
+        # emit group round data values
         for data_value in round_data.group_data_value_set.select_related('group').all():
             dc = data_value.date_created
             lm = data_value.last_modified

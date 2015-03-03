@@ -1230,8 +1230,7 @@ class Experiment(models.Model):
         round_configuration = self.current_round
         session_id = round_configuration.session_id
         if round_configuration.create_group_clusters:
-            logger.debug(
-                "creating new (and deleting existing) group clusters with session id %s", session_id)
+            logger.debug("deleting existing group clusters and creating anew with session id %s", session_id)
             self.group_cluster_set.filter(session_id=session_id).delete()
             gs = self.group_set.filter(session_id=session_id)
             group_cluster_size = round_configuration.group_cluster_size
@@ -2221,12 +2220,11 @@ class GroupCluster(models.Model, DataValueMixin):
 
     @property
     def display_name(self):
-        if self.name:
-            return self.name
-        group_cluster_identifier = ''
-        for group in self.groups:
-            group_cluster_identifier += group.identifier
-        return "Group " + group_cluster_identifier
+        display_name = self.name
+        if not display_name:
+            group_cluster_identifier = ''.join([g.identifier for g in Group.objects.filter(pk__in=self.group_ids)])
+            display_name = "Group " + group_cluster_identifier
+        return display_name
 
     @property
     def size(self):
