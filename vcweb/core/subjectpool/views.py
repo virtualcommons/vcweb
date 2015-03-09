@@ -320,10 +320,10 @@ def submit_experiment_session_signup(request):
     """
     user = request.user
     invitation_pk = request.POST.get('invitation_pk')
+    experiment_metadata_pk = request.POST.get('experiment_metadata_pk')
     invitation = get_object_or_404(Invitation.objects.select_related('experiment_session'), pk=invitation_pk)
-    registered = False
-    waitlist = False
     attendance = ParticipantSignup.ATTENDANCE.registered
+    registered = waitlist = False
     message = ""
 
     # lock on the experiment session to prevent concurrent participant signups for an experiment session
@@ -331,22 +331,10 @@ def submit_experiment_session_signup(request):
     with transaction.atomic():
         participant_signups = ParticipantSignup.objects.select_for_update().registered(
             experiment_session_pk=invitation.experiment_session_id)
+        signup_count = participant_signups.count()
 
         experiment_session = invitation.experiment_session
-        current_signups = ParticipantSignup.objects.registered_or_participated(
-            experiment_metadata_pk=experiment_session.experiment_metadata.pk,
-            invitation__participant=user.participant).exclude(invitation__pk=invitation_pk)
-        if current_signups.exists():
-            # FIXME: allow users to switch sessions instead of forcing them to cancel and then sign up again.
-            scheduled_date = current_signups.first().invitation.experiment_session.scheduled_date
-            messages.error(request, _("""You have already signed up for this experiment on %s - if you would like to
-            change your registered session, please cancel your existing session first before signing up for another
-            session.""" % scheduled_date))
-            return redirect('core:dashboard')
-
-        signup_count = participant_signups.count()
-        # verify for the vacancy in the selected experiment session before
-        # creating participant signup entry
+        # verify for the vacancy in the selected experiment session before creating or updating participant signup entry
         if signup_count < experiment_session.capacity:
             registered = True
             message = '''You are now registered for this experiment session. A confirmation email has been sent and you
@@ -359,10 +347,17 @@ def submit_experiment_session_signup(request):
                 attendance = ParticipantSignup.ATTENDANCE.waitlist
                 message = """This experiment session is currently full, but you have been added to the waitlist. You may
                 still be able to participate in this experiment if other participants leave the experiment."""
-        ps, created = ParticipantSignup.objects.get_or_create(invitation=invitation, attendance=attendance)
-        logger.debug("updated participant signup %s - created? %s", ps, created)
 
     if registered or waitlist:
+        # Check for any already registered or waitlisted participant signups for the current user
+        ps = ParticipantSignup.objects.registered_or_waitlisted(invitation__participant=user.participant, invitation__experiment_session__experiment_metadata__pk=experiment_metadata_pk)
+
+        ps = ps.first() if len(ps) > 0 else ParticipantSignup()
+
+        ps.invitation = invitation
+        ps.attendance = attendance
+        ps.save()
+
         messages.success(request, _(message))
         send_markdown_email(template="email/confirmation-email.txt",
                             context={'session': invitation.experiment_session},

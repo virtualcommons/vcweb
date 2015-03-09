@@ -2998,6 +2998,11 @@ class ParticipantSignupQuerySet(models.query.QuerySet):
             (ParticipantSignup.ATTENDANCE.participated, ParticipantSignup.ATTENDANCE.registered),
             **kwargs)
 
+    def registered_or_waitlisted(self, **kwargs):
+        return self.with_attendance(
+            (ParticipantSignup.ATTENDANCE.waitlist, ParticipantSignup.ATTENDANCE.registered),
+            **kwargs)
+
     def registered(self, **kwargs):
         return self.with_attendance(ParticipantSignup.ATTENDANCE.registered, **kwargs)
 
