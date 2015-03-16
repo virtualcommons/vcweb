@@ -47,16 +47,6 @@
             <span data-bind='text:roundStatusLabel'></span><br>
             Round started on: <span data-bind='text:currentRoundStartTime'></span><br>
             Time remaining: <span data-bind='text: timeRemainingText'></span><br>
-            {% comment %}
-            FIXME: embed experimenter notes form in each round data along with the current round
-            {% endcomment %}
-            <form id="experimenterNotesForm" role='form'>
-                {% csrf_token %}
-                <div class='form-group'>
-                    <textarea style='resize: vertical' class='input-block-level form-control' id='experimenterNotesText' data-bind='text: experimenterNotes' placeholder="Experimenter notes to be stored with this round's data" rows="3"></textarea>
-                </div>
-                <button id='submitExperimenterNotesButton' class='btn btn-success' type='submit' data-bind='click: saveExperimenterNotes'>Save</button>
-            </form>
             <br>
             <div class='alert alert-warning alert-block'>
                 <h4><i class='fa fa-arrow-circle-o-down'></i> Download Data</h4>
@@ -157,10 +147,14 @@
         </div>
         <div data-bind="attr: { id: roundDataId }" class="accordion-body collapse">
         <div class="accordion-inner">
-            <div data-bind="if: experimenterNotes">
-                 <h4>Experimenter Notes</h4>
-                <div class="alert alert-warning" data-bind="text: experimenterNotes"></div>
-            </div>
+            <h4>Experimenter Notes</h4>
+            <form role='form' data-bind='submit: $root.saveExperimenterNotes.bind(event, roundNumber())'>
+                {% csrf_token %}
+                <div class='form-group'>
+                    <textarea style='resize: vertical' class='input-block-level form-control' data-bind='text: experimenterNotes, attr: {id: "experimenterNotes"+roundNumber()}' placeholder="Experimenter notes to be stored with this round's data" rows="3"></textarea>
+                </div>
+                <button data-bind='attr: {id: "submitExperimenterNotesButton"+roundNumber()}' class='btn btn-success' type='submit'>Save</button>
+            </form>
             <table class="table table-striped table-bordered">
                 <caption>Group data</caption>
                 <thead>
@@ -193,10 +187,9 @@
                 <tbody data-bind="foreach: participantDataValues">
                     <tr>
                         <td><span data-bind="text: participant_name"></span> (<span data-bind="text: participant_email"></span>)</td>
-                        <td
-                        data-bind="text: parameter_label"></td>
-                            <td data-bind="text: value"></td>
-                            <td data-bind="text: date_created"></td>
+                        <td data-bind="text: parameter_label"></td>
+                        <td data-bind="text: value"></td>
+                        <td data-bind="text: date_created"></td>
                     </tr>
                 </tbody>
             </table>
@@ -252,10 +245,10 @@
                     model.clearCurrentInterval();
                 }
             };
-            model.saveExperimenterNotes = function(localModel, evt) {
-                var notes = $('#experimenterNotesText').val();
-                $('#submitExperimenterNotesButton').html("Submitting..");
-                $.post("/api/experimenter/save-notes", { experiment_id: {{ experiment.pk }}, notes: notes })
+            model.saveExperimenterNotes = function(roundNumber, evt) {
+                var notes = $('#experimenterNotes'+roundNumber).val();
+                $('#submitExperimenterNotesButton'+roundNumber).html("Submitting..");
+                $.post("/api/experimenter/save-notes", { experiment_id: {{ experiment.pk }}, round_data_id: roundNumber, notes: notes })
                  .done(function() {
                      model.addMessage("Saved experimenter notes: " + notes);
                  })
