@@ -93,9 +93,7 @@ class RedisSockJSConnection(SockJSConnection):
         return message_dict['event_type'] == 'connect'
 
     def is_valid(self, auth_token):
-        valid = self.get_auth_token() == auth_token
-        logger.debug("checking validity of %s: %s", auth_token, valid)
-        return valid
+        return self.get_auth_token() == auth_token
 
     def get_auth_token(self):
         key = "%s_%s" % (self.email, self.user_id)
@@ -117,7 +115,7 @@ class RedisSockJSConnection(SockJSConnection):
         else:
             self.info("Failed to authenticate with the real-time server. Please try signing out and signing back in.")
             logger.debug("Failed to connect due to auth_token mismatch. Found (%s) expected (%s)",
-                         auth_token, self.get_auth_token(message_dict))
+                         auth_token, self.get_auth_token())
 
     def on_close(self):
         for channel in self.redis_channels:
