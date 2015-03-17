@@ -31,6 +31,18 @@ class AuthTest(BaseVcwebTest):
         self.assertTrue(
             LoginForm.INVALID_AUTHENTICATION_MESSAGE in response.content)
 
+    def test_inactive_user_login(self):
+        participant = Participant.objects.all()[0]
+        participant.user.is_active = False
+        participant.user.save()
+
+        self.assertEqual(participant.user.is_active, False)
+
+        response = self.post(self.login_url, {'email': participant.email,
+                                              'password': 'test'})
+        self.assertTrue(
+            LoginForm.INACTIVE_USER_AUTHENTICATION_MESSAGE in response.content)
+
     def test_experimenter_permissions(self):
         self.assertTrue(self.login_experimenter())
         # FIXME: more tests

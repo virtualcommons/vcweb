@@ -91,6 +91,7 @@ class LoginForm(forms.Form):
     email = forms.EmailField(widget=EmailInput)
     password = forms.CharField(widget=widgets.PasswordInput)
     INVALID_AUTHENTICATION_MESSAGE = "Your combination of email and password was incorrect."
+    INACTIVE_USER_AUTHENTICATION_MESSAGE = "This user has been deactivated. Please contact us if this is in error."
 
     def clean(self):
         cleaned_data = super(LoginForm, self).clean()
@@ -106,7 +107,7 @@ class LoginForm(forms.Form):
                     _(LoginForm.INVALID_AUTHENTICATION_MESSAGE), code='invalid')
             elif not self.user_cache.is_active:
                 raise forms.ValidationError(
-                    _("This user has been deactivated. Please contact us if this is in error."))
+                    _(LoginForm.INACTIVE_USER_AUTHENTICATION_MESSAGE))
         return cleaned_data
 
 
