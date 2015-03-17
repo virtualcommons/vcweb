@@ -1,0 +1,4 @@
+ignore-paths: 
+    - vcweb/settings
+ignore-patterns:
+    - (^|/)migrations(/|$)
