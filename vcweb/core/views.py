@@ -1233,15 +1233,3 @@ class AntiSpamContactFormView(ContactFormView):
 
     def form_valid(self, form):
         return super(AntiSpamContactFormView, self).form_valid(form)
-
-
-@login_required
-@require_GET
-@group_required(PermissionGroup.experimenter)
-def deactivated_users_list(request):
-    """
-    returns the list of deactivated users in the system
-    """
-    deactivated_users = Participant.objects.select_related('user').filter(user__is_active=False)
-    return render(request, 'accounts/deactivated_users.html', {'deactivatedUsers': deactivated_users})
-
