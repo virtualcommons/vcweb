@@ -100,14 +100,11 @@ class LoginForm(forms.Form):
             email_address = email_address.lower()
         password = cleaned_data.get('password')
         if email_address and password:
-            self.user_cache = authenticate(
-                username=email_address, password=password)
+            self.user_cache = authenticate(username=email_address, password=password)
             if self.user_cache is None:
-                raise forms.ValidationError(
-                    _(LoginForm.INVALID_AUTHENTICATION_MESSAGE), code='invalid')
+                raise forms.ValidationError(_(LoginForm.INVALID_AUTHENTICATION_MESSAGE), code='invalid')
             elif not self.user_cache.is_active:
-                raise forms.ValidationError(
-                    _(LoginForm.INACTIVE_USER_AUTHENTICATION_MESSAGE))
+                raise forms.ValidationError(_(LoginForm.INACTIVE_USER_AUTHENTICATION_MESSAGE))
         return cleaned_data
 
 
@@ -116,8 +113,8 @@ class AsuRegistrationForm(forms.ModelForm):
 
     first_name = forms.CharField(widget=widgets.TextInput)
     last_name = forms.CharField(widget=widgets.TextInput)
-    email = forms.EmailField(
-        widget=widgets.TextInput, help_text=_('We will never share your email.'))
+    email = forms.EmailField(widget=widgets.TextInput, help_text=_('''When experiments are scheduled you may receive an
+    invitation to participate. Please be sure to enter a valid email address. We will never share your email.'''))
 
     def __init__(self, *args, **kwargs):
         instance = kwargs.get('instance')
@@ -136,12 +133,12 @@ class AsuRegistrationForm(forms.ModelForm):
 
 
 class AccountForm(forms.ModelForm):
+    # FIXME: remove duplication across this and AsuRegistrationForm
     required_css_class = 'required'
 
     first_name = forms.CharField(widget=widgets.TextInput)
     last_name = forms.CharField(widget=widgets.TextInput)
-    email = forms.EmailField(
-        widget=widgets.TextInput, help_text=_('We will never share your email.'))
+    email = forms.EmailField(widget=widgets.TextInput, help_text=_('We will never share your email.'))
     institution = forms.CharField(widget=autocomplete_light.TextWidget(InstitutionAutocomplete), required=False,
                                   help_text=_('The primary institution, if any, you are affiliated with.'))
 
@@ -170,7 +167,7 @@ class ParticipantAccountForm(AccountForm):
         data = super(ParticipantAccountForm, self).clean()
         email_address = data.get('email')
         validate_email(email_address)
-        can_be_invited = data.get('can_receive_invitations')
+        can_receive_invitations = data.get('can_receive_invitations')
         major = data.get('major')
         gender = data.get('gender')
         class_status = data.get('class_status')
@@ -182,11 +179,9 @@ class ParticipantAccountForm(AccountForm):
             raise forms.ValidationError(
                 _("Please enter a valid email address"))
 
-        if can_be_invited and (not major or not gender or not class_status or not favorite_food or not favorite_color
-                               or not favorite_sport or not favorite_movie_genre):
-            raise forms.ValidationError(_("Please enter your major, gender, class status, favorite food, favorite color"
-                                          ", favorite sport and favorite movie genre to receive invitations"))
-
+        if can_receive_invitations and not all([major, gender, class_status, favorite_food, favorite_color,
+                                                favorite_sport, favorite_movie_genre]):
+            raise forms.ValidationError(_("Please fill in all fields to be eligible for experiment invitations."))
         return data
 
 
