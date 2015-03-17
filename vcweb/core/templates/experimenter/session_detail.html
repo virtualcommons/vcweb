@@ -16,10 +16,24 @@
             <p><strong>Location: </strong> {{ session_detail.location }}</p>
             <p><strong>Capacity: </strong> {{ session_detail.capacity }}</p>
         </div>
-        <div>
+        <div class="alert alert-warning">
             {% if formset.forms|length > 0 %}
                 <a target="_blank" href="/subject-pool/session/{{ session_detail.pk }}/download/">Download Registered Participants</a>
             {% endif %}
+            <form class="form-inline">
+                <div class="form-group">
+                    <label for="bulkAction">Mark All Participants as: </label>
+                    <select id="bulkAction" name="bulkAction" class="form-control input-sm">
+                        <option value="-1">select Action</option>
+                        <option value="0">participated</option>
+                        <option value="1">turned away</option>
+                        <option value="2">absent</option>
+                        <option value="3">signed up</option>
+                        <option value="4">waitlisted</option>
+                    </select>
+                    Note: This will not save the changes, you still need to click on the save button to save the changes.
+                </div>
+            </form>
         </div>
         {% for dict in formset.errors %}
             {% for error in dict.values %}
@@ -74,11 +88,17 @@
 {% endblock %}
 {% block javascript %}
     {{ block.super }}
-        <script type="text/javascript" charset="utf8" src="//ajax.aspnetcdn.com/ajax/jquery.dataTables/1.9.4/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="//ajax.aspnetcdn.com/ajax/jquery.dataTables/1.9.4/jquery.dataTables.min.js"></script>
 
-        <script type="text/javascript">
-
+    <script type="text/javascript">
         $(function(){
+
+            $("#bulkAction").change(function() {
+                var optionVal = $(this).val();
+                if(optionVal != -1) {
+                    $("#participant-table").find("select").val(optionVal);
+                }
+            });
 
             /* API method to get paging information */
             $.fn.dataTableExt.oApi.fnPagingInfo = function ( oSettings ) {
@@ -170,7 +190,7 @@
                         }
                     }
                 }
-            } );
+            });
 
             $('#participant-table').dataTable( {
                 "sDom": "<'pull-left'l><'pull-right'f><'clearfix'r>t<'col-md-6'i><'pull-right datatable-pager'p>",
