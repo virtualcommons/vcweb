@@ -82,7 +82,8 @@
                 </div>
                 <div id='registeredParticipants' class='panel-collapse collapse'>
                     {% comment %} display registered participants in a flat list if groups haven't been formed yet {% endcomment %}
-                    <div class='panel-default panel-body' data-bind='ifnot: groups'>
+                    <!-- ko ifnot: groups -->
+                    <div class='panel-default panel-body'>
                         <table class='table table-compact table-striped table-bordered'>
                             <thead><tr><th>Participant</th><th>Email</th></tr></thead>
                             <tbody data-bind='foreach: participants'>
@@ -90,19 +91,22 @@
                             </tbody>
                         </table>
                     </div>
-                    <div class='panel-default panel-body' data-bind='foreach: groups'>
-                        <table class='table table-compact table-striped table-bordered'>
-                            <caption class='text-info'><b><span data-bind='text: name'></span> (PK: <span data-bind='text: pk'></span>)</b></caption>
-                            <thead><tr><th>PGR PK</th><th>Participant</th><th>Email</th></tr></thead>
-                            <tbody data-bind='foreach: participant_group_relationships'>
-                            <tr>
-                                <td data-bind='text: pk'></td>
-                                <td data-bind='text: participant_number'></td>
-                                <td data-bind='text: email'></td>
-                            </tr>
-                            </tbody>
-                        </table>
+                    <!-- /ko -->
+
+                    <!-- ko if: groupClusters().length == 0 -->
+                    <div class='panel-default panel-body'> 
+                        <div data-bind='template: { name: "group-template", foreach: groups }'></div>
                     </div>
+                    <!-- /ko -->
+
+                    <!-- ko foreach: groupClusters -->
+                    <div class='panel-default panel-body'>
+                        <span data-bind="text: name"></span>
+                        <div class="callout callout-info">
+                            <div data-bind='template: { name: "group-template", foreach: groups }'></div>
+                        </div>
+                    </div>
+                    <!-- /ko -->
                 </div>
             </div>
         </div>
@@ -216,6 +220,20 @@
 {{ block.super }}
 {% include "includes/experimenter.events.html" %}
 {% include "includes/sockjs.html" %}
+
+<script type='text/html' id='group-template'>
+    <table class='table table-compact table-striped table-bordered'>
+        <caption class='text-info'><b><span data-bind='text: name'></span> (PK: <span data-bind='text: pk'></span>)</b></caption>
+        <thead><tr><th>PGR PK</th><th>Participant</th><th>Email</th></tr></thead>
+        <tbody data-bind='foreach: participant_group_relationships'>
+            <tr>
+                <td data-bind='text: pk'></td>
+                <td data-bind='text: participant_number'></td>
+                <td data-bind='text: email'></td>
+            </tr>
+        </tbody>
+    </table>
+</script>
 <script type='text/javascript'>
     var experimentModelJson = $.parseJSON("{{ experimentModelJson|escapejs }}");
     $(function() {

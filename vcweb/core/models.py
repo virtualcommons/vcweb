@@ -1464,6 +1464,12 @@ class Experiment(models.Model):
             crd = self.current_round_data
             experiment_dict['experimenterNotes'] = crd.experimenter_notes if crd else ''
             experiment_dict['groups'] = [group.to_dict() for group in self.groups]
+            experiment_dict['groupClusters'] = []
+            for group_cluster in self.active_group_clusters:
+                cluster_data = []
+                for group in group_cluster.get_groups():
+                    cluster_data.append(group.to_dict())
+                experiment_dict['groupClusters'].append({'name': str(group_cluster), 'groups': cluster_data})
         # FIXME: intended to provide some way to include more experiment attributes at invocation time, remove if unused
         if attrs:
             experiment_dict.update([(attr, getattr(self, attr, None)) for attr in attrs])
