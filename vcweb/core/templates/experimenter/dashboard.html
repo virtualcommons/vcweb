@@ -1,4 +1,5 @@
 {% extends "experimenter/base.html" %}
+{% load tags %}
 {% block title %}Virtual Commons Web Experimenter Dashboard{% endblock %}
 {% block page %}
     <div class='row' id='page'>
@@ -14,7 +15,7 @@
             </ul>
             <div class='tab-content'>
                 <div class='tab-pane' id='start'>
-                {% if not perms.core.add_experiment %}
+                {% if not request.user|has_group:"Experimenters" %}
                     <div class='alert alert-warning'>
                         Demo experimenters cannot start new experiments, try <a href='#running' data-bind='click: activateRunningExperimentsTab'> running an experiment instead</a>.
                     </div>
