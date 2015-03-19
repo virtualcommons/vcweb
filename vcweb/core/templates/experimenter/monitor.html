@@ -152,12 +152,12 @@
         <div data-bind="attr: { id: roundDataId }" class="accordion-body collapse">
         <div class="accordion-inner">
             <h4>Experimenter Notes</h4>
-            <form role='form' data-bind='submit: $root.saveExperimenterNotes.bind(event, roundNumber())'>
+            <form role='form' data-bind='submit: $root.saveExperimenterNotes.bind(event, pk())'>
                 {% csrf_token %}
                 <div class='form-group'>
-                    <textarea style='resize: vertical' class='input-block-level form-control' data-bind='text: experimenterNotes, attr: {id: "experimenterNotes"+roundNumber()}' placeholder="Experimenter notes to be stored with this round's data" rows="3"></textarea>
+                    <textarea style='resize: vertical' class='input-block-level form-control' data-bind='text: experimenterNotes, attr: {id: "experimenterNotes"+pk()}' placeholder="Experimenter notes to be stored with this round's data" rows="3"></textarea>
                 </div>
-                <button data-bind='attr: {id: "submitExperimenterNotesButton"+roundNumber()}' class='btn btn-success' type='submit'>Save</button>
+                <button data-bind='attr: {id: "submitExperimenterNotesButton"+pk()}' class='btn btn-success' type='submit'>Save</button>
             </form>
             <table class="table table-striped table-bordered">
                 <caption>Group data</caption>
@@ -236,6 +236,7 @@
 </script>
 <script type='text/javascript'>
     var experimentModelJson = $.parseJSON("{{ experimentModelJson|escapejs }}");
+    console.log(experimentModelJson)
     $(function() {
         var ALLOWED_ACTIONS = ["activate", "advance_to_next_round", "restart", "deactivate", "complete"];
         function ExperimentModel(experimentModelJson) {
@@ -263,10 +264,10 @@
                     model.clearCurrentInterval();
                 }
             };
-            model.saveExperimenterNotes = function(roundNumber, evt) {
-                var notes = $('#experimenterNotes'+roundNumber).val();
-                $('#submitExperimenterNotesButton'+roundNumber).html("Submitting..");
-                $.post("/api/experimenter/save-notes", { experiment_id: {{ experiment.pk }}, round_data_id: roundNumber, notes: notes })
+            model.saveExperimenterNotes = function(roundPk, evt) {
+                var notes = $('#experimenterNotes'+roundPk).val();
+                $('#submitExperimenterNotesButton'+roundPk).html("Submitting..");
+                $.post("/api/experimenter/save-notes", { experiment_id: {{ experiment.pk }}, round_data_id: roundPk, notes: notes })
                  .done(function() {
                      model.addMessage("Saved experimenter notes: " + notes);
                  })
@@ -274,7 +275,7 @@
                      model.addMessage(response.message);
                  })
                  .always(function() {
-                    setTimeout(function() { $('#submitExperimenterNotesButton').html("Save"); }, 1000);
+                    setTimeout(function() { $('#submitExperimenterNotesButton'+roundPk).html("Save"); }, 1000);
                  });
             };
             model.loadRoundData = function(localModel) {
