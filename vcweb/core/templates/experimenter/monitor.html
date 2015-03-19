@@ -47,6 +47,13 @@
             <span data-bind='text:roundStatusLabel'></span><br>
             Round started on: <span data-bind='text:currentRoundStartTime'></span><br>
             Time remaining: <span data-bind='text: timeRemainingText'></span><br>
+            <form id="experimenterNotesForm" role='form'>
+                {% csrf_token %}
+                <div class='form-group'>
+                    <textarea style='resize: vertical' class='input-block-level form-control' id='experimenterNotes' data-bind='text: experimenterNotes' placeholder="Experimenter notes to be stored with this round's data" rows="3"></textarea>
+                </div>
+                <button id='submitExperimenterNotesButton' class='btn btn-success' type='submit' data-bind='click: saveExperimenterNotes.bind(event, "")'>Save</button>
+            </form>
             <br>
             <div class='alert alert-warning alert-block'>
                 <h4><i class='fa fa-arrow-circle-o-down'></i> Download Data</h4>
@@ -267,7 +274,10 @@
             model.saveExperimenterNotes = function(roundPk, evt) {
                 var notes = $('#experimenterNotes'+roundPk).val();
                 $('#submitExperimenterNotesButton'+roundPk).html("Submitting..");
-                $.post("/api/experimenter/save-notes", { experiment_id: {{ experiment.pk }}, round_data_id: roundPk, notes: notes })
+                var formData = { experiment_id: {{ experiment.pk }}, notes: notes };
+                if(roundPk) {formData["round_data_id"] = roundPk;}
+
+                $.post("/api/experimenter/save-notes", formData)
                  .done(function() {
                      model.addMessage("Saved experimenter notes: " + notes);
                  })
