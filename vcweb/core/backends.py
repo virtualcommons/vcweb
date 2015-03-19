@@ -15,7 +15,7 @@ class EmailAuthenticationBackend(ModelBackend):
     adapted from http://djangosnippets.org/snippets/74/ and
     http://scottbarnham.com/blog/2008/08/21/extending-the-django-user-model-with-inheritance/
 
-    FIXME: should we check for and handle Participant experiment auth codes separately from actual login?
+    FIXME: check for and handle Participant experiment auth codes separately from actual login
     """
 
     def authenticate(self, username=None, password=None, **kwargs):

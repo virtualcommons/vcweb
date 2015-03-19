@@ -2246,7 +2246,7 @@ class GroupCluster(models.Model, DataValueMixin):
         return self.group_relationship_set.select_related('group').values_list('group', flat=True)
 
     def get_groups(self):
-        return Group.objects.filter(pk__in=self.groups)
+        return Group.objects.filter(pk__in=self.group_ids)
 
     def add(self, group):
         return GroupRelationship.objects.create(cluster=self, group=group)
