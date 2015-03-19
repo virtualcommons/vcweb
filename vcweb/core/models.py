@@ -3232,3 +3232,34 @@ def update_daily_experiments(sender, timestamp=None, start=None, **kwargs):
         if e.start_date == today:
             logger.debug("activating experiment %s with start date of %s", e, e.start_date)
             e.activate()
+
+
+@receiver(signals.system_weekly_tick, dispatch_uid='schedule-weekly-tasks')
+def weekly_schedule_tasks(sender, start=None, **kwargs):
+    """
+    1) perform permissions checks on participants & experimenters
+    2) generate weekly activity log email with aggregate stats on participant signups,
+       experiment status changes (run or archived), invitations sent
+    """
+    # FIXME add information about invalid uses who are experimenter as well as participant.
+    # FIXME add information regarding experiment status changes
+    invalid_permission_participants = Participant.objects.active().exclude(user__groups__name=PermissionGroup.participant)
+    invalid_permission_experimenters = Experimenter.objects.filter(user__is_active=True).exclude(user__email__contains=('mailinator.com')).exclude(user__groups__name=PermissionGroup.experimenter)
+
+    last_week_datetime = datetime.now() - timedelta(days=7)
+    # participant signup in last week
+    signup_last_week = ParticipantSignup.objects.filter(date_created__gt=last_week_datetime).count()
+
+    # Invitations sent in last week
+    invites_last_week = Invitation.objects.filter(date_created__gt=last_week_datetime).count()
+
+    email = create_markdown_email(template="email/audit-email.txt",
+                                  context={
+                                      "participants": invalid_permission_participants,
+                                      "experimenters": invalid_permission_experimenters,
+                                      "signups": signup_last_week,
+                                      "invites": invites_last_week
+                                    },
+                                  subject="VCWEB Audit",
+                                  to_email=[settings.DEFAULT_EMAIL])
+    mail.get_connection().send_messages([email,])

@@ -1,0 +1,21 @@
+Greetings,
+
+This email contains the results of periodically performed audit tasks:
+- Signups in last week: **{{ signups }}** 
+- Invitations sent in last week: **{{ invites }}**
+{% if participants|length > 0 %}
+- The following participants don't have proper permissions
+{% for participant in participants %}
+-  **{{forloop.counter}}** username: {{ participant.username }} email: {{ participant.email }}
+{% endfor %}
+{% else %}
+- All the participants have proper permissions
+{% endif %}
+{% if experimenters|length > 0 %}
+- The following experimenters don't have proper permissions
+{% for experimenter in experimenters %}
+-  **{{forloop.counter}}** username: {{ experimenter.username }} email: {{ experimenter.email }}
+{% endfor %}
+{% else %}
+- All the experimenters have proper permissions
+{% endif %}
