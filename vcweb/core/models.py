@@ -2904,6 +2904,7 @@ class ExperimentSession(models.Model):
             "start_date": scheduled_date.strftime('%Y-%m-%d %H:%M'),
             "end_date": scheduled_end_date.strftime('%Y-%m-%d %H:%M'),
             "capacity": self.capacity,
+            "waitlist": self.waitlist,
             "location": self.location,
             "invite_count": Invitation.objects.filter(experiment_session=self).count(),
             "signup_count": ParticipantSignup.objects.filter(invitation__experiment_session=self).count(),

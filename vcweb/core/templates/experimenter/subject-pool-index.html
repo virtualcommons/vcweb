@@ -136,7 +136,7 @@
                                     <span class="label label-info session-label">Start Date/Time: </span>
 				                </td>
                                 <td>
-				                    <span >
+				                    <span>
                                         <div class="input-group input-group-sm">
                                             <input name="start_date" type="text" class="form-control date-start" data-bind="datetimepicker: start_date, enable: isEditable" />
                                             <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
@@ -150,18 +150,19 @@
                                     <input style="width: 60px;" class="form-control input-sm" name="capacity" type="number" min="2" data-bind ="value : capacity, enable: isEditable" />
 				                </td>
                                 <td rowspan="2">
+                                    <span class=" label label-info session-label">waitlist:</span>
+                                </td>
+                                <td rowspan="2">
+                                    <input name="waitlist" type="checkbox" data-bind ="checked: waitlist, enable: isEditable" />
+                                </td>
+
+                                <td>
                                     <span class="label label-info session-label">Invites sent: </span>
                                 </td>
-                                <td rowspan="2">
+                                <td>
                                     <span class="badge invite-badge" data-bind="text: invite_count">0</span>
                                 </td>
-                                <td rowspan="2">
-                                    <span class=" label label-info session-label">Signups:</span>
-                                </td>
-                                <td rowspan="2">
-                                    <span class="badge invite-badge" data-bind="text: signup_count">0</span>
-				                </td>
-                                <!-- ko if: active -->
+                               <!-- ko if: active -->
                                 <td rowspan="2">
                                     <div class="btn-group" data-bind = "visible: isEditable">
                                         <button class="btn btn-success" data-bind="click: $root.saveSession">
@@ -208,7 +209,13 @@
                                             <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
                                         </div>
                                     </span>
-                                </td> 
+                                </td>
+                                <td>
+                                    <span class=" label label-info session-label">Signups:</span>
+                                </td>
+                                <td>
+                                    <span class="badge invite-badge" data-bind="text: signup_count">0</span>
+				                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -326,7 +333,7 @@
                     var initial_start_date = moment().add(1, 'days').hour(10).minute(0).format('YYYY-MM-DD HH:mm');
                     var initial_end_date = moment().add(1, 'days').hour(11).minute(0).format('YYYY-MM-DD HH:mm');
                     model.session_list.push(
-                        new SessionModel({ pk: -1, experiment_metadata: -1, start_date: initial_start_date, end_date: initial_end_date, capacity:10, invite_count: 0, location: "Online", isEditable: true, signup_count: 0})
+                        new SessionModel({ pk: -1, experiment_metadata: -1, start_date: initial_start_date, end_date: initial_end_date, capacity:10, invite_count: 0, location: "Online", isEditable: true, signup_count: 0, waitlist: false})
                     );
                 };
 
@@ -339,7 +346,7 @@
                         );
                         return;
                     }
-                    var formData = 'location='+session.location()+'&capacity='+session.capacity()+'&scheduled_date='+session.start_date()+'&experiment_metadata='+session.experiment_metadata()+ '&scheduled_end_date='+session.end_date();
+                    var formData = 'location='+session.location()+'&capacity='+session.capacity()+'&scheduled_date='+session.start_date()+'&experiment_metadata='+session.experiment_metadata()+ '&scheduled_end_date='+session.end_date()+ '&waitlist='+session.waitlist();
                     $.post("session/manage/"+ session.pk(), formData)
                         .done(function(result) {
                             if(result.success) {
@@ -444,7 +451,6 @@
                     self.isEditable(true);
                 };
             }
-            console.log(viewModelJson)
             ko.applyBindings(new SessionListViewModel(viewModelJson));
         });
     </script>

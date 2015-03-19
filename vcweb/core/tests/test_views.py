@@ -305,7 +305,7 @@ class SubjectPoolViewTest(SubjectPoolTest):
         em = ExperimentMetadata.objects.order_by('?')[0]
         response = self.post(self.reverse('subjectpool:manage_experiment_session', args=[-1]), {
             'experiment_metadata': em.pk, 'scheduled_date': '2014-09-23 2:0', 'capacity': 10,
-            'location': 'Online', 'scheduled_end_date': '2014-09-23 3:0'})
+            'location': 'Online', 'scheduled_end_date': '2014-09-23 3:0', 'waitlist': True})
         response_dict = json.loads(response.content)
         # FIXME: make assertions on response_dict..
         fro = 1411000000000
@@ -320,7 +320,7 @@ class SubjectPoolViewTest(SubjectPoolTest):
         em = ExperimentMetadata.objects.order_by('?')[0]
         response = self.post(self.reverse('subjectpool:manage_experiment_session', args=[-1]),
                              {'experiment_metadata': em.pk, 'scheduled_date': '2014-09-23 2:0', 'capacity': 10,
-                              'location': 'Online', 'scheduled_end_date': '2014-09-23 3:0'})
+                              'location': 'Online', 'scheduled_end_date': '2014-09-23 3:0', 'waitlist': False})
         response_dict = json.loads(response.content)
         es = ExperimentSession.objects.get(pk=response_dict['session']['pk'])
         es.creator = e.user
@@ -337,7 +337,7 @@ class SubjectPoolViewTest(SubjectPoolTest):
         em = ExperimentMetadata.objects.order_by('?')[0]
         response = self.post(self.reverse('subjectpool:manage_experiment_session', args=[-1]),
                              {'experiment_metadata': em.pk, 'scheduled_date': '2014-09-23 2:0', 'capacity': 10,
-                              'location': 'Online', 'scheduled_end_date': '2014-09-23 3:0'})
+                              'location': 'Online', 'scheduled_end_date': '2014-09-23 3:0', 'waitlist': True})
         self.assertEqual(200, response.status_code)
 
         response_dict = json.loads(response.content)
@@ -347,7 +347,7 @@ class SubjectPoolViewTest(SubjectPoolTest):
         response = self.post(self.reverse('subjectpool:manage_experiment_session',
                                           args=[response_dict['session']['pk']]),
                              {'experiment_metadata': em.pk, 'scheduled_date': '2014-09-23 2:0', 'capacity': 10,
-                              'location': 'Online', 'scheduled_end_date': '2014-09-23 4:0'})
+                              'location': 'Online', 'scheduled_end_date': '2014-09-23 4:0', 'waitlist': True})
         self.assertEqual(200, response.status_code)
 
         response_dict = json.loads(response.content)
@@ -366,7 +366,7 @@ class SubjectPoolViewTest(SubjectPoolTest):
         response = self.post(self.reverse('subjectpool:manage_experiment_session',
                                           args=[response_dict['session']['pk']]),
                              {'experiment_metadata': em.pk, 'scheduled_date': '2014-09-23 2:0', 'capacity': 10,
-                              'location': 'Online', 'scheduled_end_date': '2014-09-23 4:0', 'request_type': 'delete'})
+                              'location': 'Online', 'scheduled_end_date': '2014-09-23 4:0', 'request_type': 'delete', 'waitlist': True})
         self.assertEqual(200, response.status_code)
 
         response = json.loads(response.content)
@@ -426,7 +426,7 @@ class SubjectPoolViewTest(SubjectPoolTest):
         em = ExperimentMetadata.objects.order_by('?')[0]
         response = self.post(self.reverse('subjectpool:manage_experiment_session', args=[-1]),
                              {'experiment_metadata': em.pk, 'scheduled_date': '2014-09-23 2:0', 'capacity': 10,
-                              'location': 'Online', 'scheduled_end_date': '2014-09-23 3:0'})
+                              'location': 'Online', 'scheduled_end_date': '2014-09-23 3:0', 'waitlist': True})
         response_dict = json.loads(response.content)
 
         es = ExperimentSession.objects.get(pk=response_dict['session']['pk'])
@@ -472,7 +472,7 @@ class SubjectPoolViewTest(SubjectPoolTest):
         em = ExperimentMetadata.objects.order_by('?')[0]
         response = self.post(self.reverse('subjectpool:manage_experiment_session', args=[-1]),
                              {'experiment_metadata': em.pk, 'scheduled_date': '2014-09-23 2:0', 'capacity': 10,
-                              'location': 'Online', 'scheduled_end_date': '2014-09-23 3:0'})
+                              'location': 'Online', 'scheduled_end_date': '2014-09-23 3:0', 'waitlist': True})
         response_dict_session = json.loads(response.content)
 
         # Test invalid form
