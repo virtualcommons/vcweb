@@ -18,12 +18,8 @@ FAILURE_DICT = {'success': False}
 
 
 def _get_experiment(request, pk):
-    experiment = get_object_or_404(
-        Experiment.objects.select_related('experimenter'), pk=pk)
-    if request.user.experimenter == experiment.experimenter:
-        return experiment
-    raise Experiment.DoesNotExist("Sorry, %s - you do not have access to experiment %s" % (experiment.experimenter,
-                                                                                           pk))
+    return get_object_or_404(Experiment.objects.select_related('experimenter'), pk=pk,
+                             experimenter=request.user.experimenter)
 
 
 @require_POST
@@ -74,27 +70,20 @@ def is_email_available(request):
 def save_experimenter_notes(request):
     experiment_id = request.POST.get('experiment_id')
     notes = request.POST.get('notes')
-    round_data = request.POST.get('round_data_id', None)
+    round_data_id = request.POST.get('round_data_id', None)
+    round_data = None
     experiment = _get_experiment(request, experiment_id)
-    if round_data is None:
+    if round_data_id is None:
         round_data = experiment.current_round_data
+    else:
+        round_data = get_object_or_404(RoundData, pk=round_data_id)
     current_experimenter_notes = round_data.experimenter_notes
-    if notes != round_data.experimenter_notes:
+    if notes != current_experimenter_notes:
         if current_experimenter_notes:
-            experiment.log("Replacing existing experimenter notes %s with %s" % (current_experimenter_notes, notes))
+            experiment.log("Replace experimenter notes [%s] with [%s]" % (current_experimenter_notes, notes))
         round_data.experimenter_notes = notes
         round_data.save()
-        return JsonResponse({'success': True})
-    else:
-        return JsonResponse({
-            'success': False,
-            'message': "Experimenter notes were unchanged, no need to save '%s'" % notes
-        })
-
-
-@group_required(PermissionGroup.experimenter)
-def get_experiment_model(request, pk):
-    return _get_experiment(request, pk).to_json()
+    return JsonResponse({'success': True})
 
 
 @group_required(PermissionGroup.experimenter, PermissionGroup.demo_experimenter)
@@ -103,7 +92,7 @@ def get_round_data(request):
     # a hot spot..
     pk = request.GET.get('pk')
     round_data = get_object_or_404(RoundData.objects.select_related('experiment__experimenter'), pk=pk,
-                                   experiment__experimenter__pk=request.user.experimenter.pk)
+                                   experiment__experimenter=request.user.experimenter)
     group_data_values = [
         gdv.to_dict(cacheable=True)
         for gdv in round_data.group_data_value_set.select_related('group', 'parameter').all()
