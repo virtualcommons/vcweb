@@ -69,7 +69,7 @@ def is_email_available(request):
 @group_required(PermissionGroup.experimenter, PermissionGroup.demo_experimenter)
 def save_experimenter_notes(request):
     experiment_id = request.POST.get('experiment_id')
-    notes = request.POST.get('notes')
+    notes = request.POST.get('notes', '')
     round_data_id = request.POST.get('round_data_id', None)
     round_data = None
     experiment = _get_experiment(request, experiment_id)
