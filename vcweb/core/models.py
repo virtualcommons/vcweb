@@ -289,6 +289,16 @@ class ExperimentMetadata(models.Model):
         ordering = ['title', 'namespace']
 
 
+class ActivityLog(models.Model):
+    LogType = Choices('Experimenter', 'Scheduled', 'System')
+    log_message = models.TextField()
+    date_created = models.DateTimeField(auto_now_add=True)
+    # log_type = models.CharField(max_length=64, choices=LogType, default=LogType.System)
+
+    def __unicode__(self):
+        return u"%s - %s" % (self.date_created.strftime("%m-%d-%Y %H:%M"), self.log_message)
+
+
 class OstromlabFaqEntry(models.Model):
     question = models.TextField(help_text=_("FAQ Question"))
     answer = models.TextField(help_text=_("FAQ Answer"))
@@ -1160,7 +1170,7 @@ class Experiment(models.Model):
                             defaults=parameter_defaults[parameter])
                         logger.debug("prdv: %s (%s)", participant_data_value, created)
 
-    def log(self, log_message, *args, **kwargs):
+    def log(self, log_message, log_type=ActivityLog.LogType.System, *args, **kwargs):
         if log_message:
             message = "%s: %s" % (self, log_message)
             logger.debug(message, *args)
@@ -1422,10 +1432,9 @@ class Experiment(models.Model):
 
     def all_round_data(self):
         # FIXME: figure out a better way to convert these to json that doesn't involve manual remapping of attribute
-        # names or be consistent so that things on the client side are named
-        # the same as the server side
+        # names or be consistent so that things on the client side are named the same as the server side
         all_round_data = []
-        for round_data in self.round_data_set.select_related('round_configuration').reverse():
+        for round_data in self.round_data_set.select_related('round_configuration').order_by('-pk'):
             rc = round_data.round_configuration
             all_round_data.append({
                 'pk': round_data.pk,
@@ -2114,7 +2123,7 @@ class Group(models.Model, DataValueMixin):
         else:
             return None
 
-    def log(self, log_message):
+    def log(self, log_message, log_type=ActivityLog.LogType.System):
         if log_message:
             logger.debug(log_message)
             self.activity_log_set.create(round_configuration=self.current_round, log_message=log_message)
@@ -2839,14 +2848,6 @@ class Like(ParticipantRoundDataValue):
         return super(Like, self).to_dict(cacheable=cacheable)
 
 
-class ActivityLog(models.Model):
-    log_message = models.TextField()
-    date_created = models.DateTimeField(auto_now_add=True)
-
-    def __unicode__(self):
-        return u"%s - %s" % (self.date_created.strftime("%m-%d-%Y %H:%M"), self.log_message)
-
-
 class GroupActivityLog(ActivityLog):
     group = models.ForeignKey(Group, related_name='activity_log_set')
     round_configuration = models.ForeignKey(RoundConfiguration)
@@ -2996,7 +2997,7 @@ class ParticipantSignupQuerySet(models.query.QuerySet):
         return criteria
 
     def with_attendance(self, attendance, **kwargs):
-        attendance_key = 'attendance__in' if isinstance(attendance, (list, tuple)) else 'attendance'
+        attendance_key = 'attendance__in' if isinstance(attendance, (list, set, tuple)) else 'attendance'
         criteria = self._experiment_metadata_criteria({attendance_key: attendance}, **kwargs)
         return self.filter(**criteria)
 
@@ -3242,8 +3243,10 @@ def weekly_schedule_tasks(sender, start=None, **kwargs):
        experiment status changes (run or archived), invitations sent
     """
     # FIXME add information regarding experiment status changes
-    invalid_permission_participants = Participant.objects.active().exclude(user__groups__name=PermissionGroup.participant)
-    invalid_permission_experimenters = Experimenter.objects.filter(user__is_active=True).exclude(user__email__contains=('mailinator.com')).exclude(user__groups__name=PermissionGroup.experimenter)
+    invalid_permission_participants = Participant.objects.active().exclude(
+        user__groups__name=PermissionGroup.participant.value)
+    invalid_permission_experimenters = Experimenter.objects.filter(user__is_active=True).exclude(
+        user__email__contains=('mailinator.com')).exclude(user__groups__name=PermissionGroup.experimenter.value)
 
     # invalid users who are experimenter as well as participant
     participant_users = Participant.objects.active().values_list('user__id', flat=True)
@@ -3256,10 +3259,14 @@ def weekly_schedule_tasks(sender, start=None, **kwargs):
     # Invitations sent in last week
     invites_last_week = Invitation.objects.filter(date_created__gt=last_week_datetime).count()
 
-    email = create_markdown_email(template="email/audit-email.txt", context={
-                                    "invalid_users": invalid_users,
-                                    "participants": invalid_permission_participants,
-                                    "experimenters": invalid_permission_experimenters,
-                                    "signups": signup_last_week, "invites": invites_last_week
-                                 }, subject="VCWEB Audit", to_email=[settings.DEFAULT_EMAIL])
-    mail.get_connection().send_messages([email,])
+    email = create_markdown_email(template="email/audit-email.txt",
+                                  context={
+                                      "invalid_users": invalid_users,
+                                      "participants": invalid_permission_participants,
+                                      "experimenters": invalid_permission_experimenters,
+                                      "signups": signup_last_week,
+                                      "invites": invites_last_week
+                                  },
+                                  subject="VCWEB Audit",
+                                  to_email=[settings.DEFAULT_EMAIL])
+    email.send()

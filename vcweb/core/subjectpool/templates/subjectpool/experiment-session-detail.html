@@ -15,6 +15,7 @@
             {{ session_detail.scheduled_end_date.time }}</p>
             <p><strong>Location: </strong> {{ session_detail.location }}</p>
             <p><strong>Capacity: </strong> {{ session_detail.capacity }}</p>
+            <p><strong>Waitlist enabled: </strong> {{ session_detail.waitlist }}</p>
         </div>
         <div class="alert alert-warning">
             {% if formset.forms|length > 0 %}

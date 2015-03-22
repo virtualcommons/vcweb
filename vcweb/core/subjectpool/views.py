@@ -49,7 +49,7 @@ def experimenter_index(request):
         'potentialParticipantsCount': potential_participants_count,
     }
     form = SessionInviteForm()
-    return render(request, "experimenter/subject-pool-index.html",
+    return render(request, "subjectpool/experimenter-index.html",
                   {"view_model_json": dumps(session_data), "form": form})
 
 
@@ -288,7 +288,7 @@ def manage_participant_attendance(request, pk=None):
         formset = attendanceformset(queryset=ParticipantSignup.objects.select_related(
             'invitation__participant__user').filter(invitation__in=invitations_sent))
 
-    return render(request, 'experimenter/session_detail.html',
+    return render(request, 'subjectpool/experiment-session-detail.html',
                   {'session_detail': es, 'formset': formset})
 
 
@@ -350,7 +350,8 @@ def submit_experiment_session_signup(request):
 
     if registered or waitlist:
         # Check for any already registered or waitlisted participant signups for the current user
-        ps = ParticipantSignup.objects.registered_or_waitlisted(invitation__participant=user.participant, invitation__experiment_session__experiment_metadata__pk=experiment_metadata_pk)
+        ps = ParticipantSignup.objects.registered_or_waitlisted(invitation__participant=user.participant,
+                                                                experiment_metadata_pk=experiment_metadata_pk)
 
         ps = ps.first() if len(ps) > 0 else ParticipantSignup()
 
@@ -428,4 +429,4 @@ def experiment_session_signup(request):
             still eligible to participate in future experiments and may receive future invitations for this
             experiment."""))
 
-    return render(request, "participant/experiment-session-signup.html", {"invitation_list": invitation_list})
+    return render(request, "subjectpool/experiment-session-signup.html", {"invitation_list": invitation_list})

@@ -1,4 +1,4 @@
-Django==1.7.6
+Django==1.7.7
 Fabric==1.10.1
 Markdown==2.6.1
 Pillow==2.7.0
@@ -35,7 +35,6 @@ wsgiref==0.1.2
 xlrd==0.9.3
 xlwt==0.7.5
 dealer==2.0.4
-uwsgi==2.0.9
+uwsgi==2.0.10
 # virtualcommons forked django-cas
 git+http://git@github.com/virtualcommons/django-cas.git#egg=cas
-

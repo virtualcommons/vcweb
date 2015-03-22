@@ -174,8 +174,7 @@ VCWEB_EXPERIMENTS = (
     'vcweb.experiment.irrigation',
 )
 
-VCWEB_APPS = ('vcweb.core',) + VCWEB_EXPERIMENTS
-
+VCWEB_APPS = ('vcweb.core', 'vcweb.core.subjectpool',) + VCWEB_EXPERIMENTS
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + VCWEB_APPS
 

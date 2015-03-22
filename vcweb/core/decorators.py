@@ -25,7 +25,7 @@ def is_anonymous(user):
     return user is None or not user.is_authenticated()
 
 
-def anonymous_required(view_function=None, redirect_to='core:dashboard'):
+def anonymous_required(view_function=None, redirect_to='home'):
     return create_user_decorator(view_function, is_anonymous, redirect_to=redirect_to)
 
 
@@ -47,29 +47,26 @@ def is_participant(user):
 def group_required(*permission_groups, **kwargs):
     """Requires user membership in at least one of the groups passed in."""
     def in_groups(u):
-        if u.is_authenticated() and (is_participant(u) or is_experimenter(u)):
-            group_names = [pgroup.value for pgroup in permission_groups]
+        if u.is_authenticated() and u.is_active:
+            group_names = [pg.value for pg in permission_groups]
             return u.groups.filter(name__in=group_names).exists()
     return user_passes_test(in_groups)
 
 
-def create_user_decorator(view_function, is_valid_user, redirect_to='core:dashboard'):
-
-    def decorator(fn):
+def create_user_decorator(view_function, is_valid_user, redirect_to='core:login'):
+    def _decorator(fn):
+        @wraps(fn)
         def _decorated_view(request, *args, **kwargs):
-            if is_valid_user(request.user):
-                logger.debug('user was valid: %s', request.user)
+            user = request.user
+            if is_valid_user(user):
+                logger.debug('checked if user %s was valid with %s', user, is_valid_user)
                 return fn(request, *args, **kwargs)
             else:
-                logger.debug('user was invalid, redirecting to %s', redirect_to)
+                logger.debug('user %s was deemed invalid with %s, redirecting to %s', user, is_valid_user, redirect_to)
                 return redirect(redirect_to)
-
-        _decorated_view.__name__ = fn.__name__
-        _decorated_view.__dict__ = fn.__dict__
-        _decorated_view.__doc__ = fn.__doc__
         return _decorated_view
 
-    return decorator if view_function is None else decorator(view_function)
+    return _decorator if view_function is None else _decorator(view_function)
 
 
 def retry(exceptiontocheck, tries=4, delay=3, backoff=2, logger=None):

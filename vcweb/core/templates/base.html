@@ -4,6 +4,7 @@
 {% load raven %}
 {% url 'about' as about %}
 {% url 'home' as home %}
+{% url 'contact_form' as contact %}
 {% url 'core:dashboard' as dashboard %}
 {% url 'core:login' as login %}
 {% url 'core:logout' as logout %}
@@ -42,21 +43,21 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a class='navbar-brand {% active request home %}' href='{{ home }}'><img class='pull-left' src='{% static "images/vcweb-logo.png" %}' width='30' height='23' alt='the virtual commons'>virtual commons </a>
+            <a class='navbar-brand {{ request|active:home }}' href='{{ home }}'><img class='pull-left' src='{% static "images/vcweb-logo.png" %}' width='30' height='23' alt='the virtual commons'>virtual commons </a>
         </div>
         <div class="collapse navbar-collapse" role='navigation'>
             <ul class='nav navbar-nav'>
                 {% if user.is_authenticated %}
                 {% if user.participant %}
-                <li class='{% active_re request participate %}'><a href='{{ participate }}'><i class='fa fa-users'></i> Participate</a></li>
+                <li class='{{ request|active_re:participate }}'><a href='{{ participate }}'><i class='fa fa-users'></i> Participate</a></li>
                 {% elif user.experimenter %}
-                <li class='{% active_re request dashboard %}'><a href='{{ dashboard }}'><i class='fa fa-tachometer'></i> Dashboard</a></li>
+                <li class='{{ request|active_re:dashboard }}'><a href='{{ dashboard }}'><i class='fa fa-tachometer'></i> Dashboard</a></li>
                 {% if not user.experimenter.is_demo_experimenter %}
-                <li class='{% active_re request subjectpool %}'><a href='{{ subjectpool }}'><i class='fa fa-users'></i> Subject recruitment</a></li>
+                <li class='{{ request|active_re:subjectpool }}'><a href='{{ subjectpool }}'><i class='fa fa-users'></i> Subject recruitment</a></li>
                 {% endif %}
                 {% endif %}
                 {% endif %}
-                <li class='{% active_re request "contact" %}'><a href='/contact'><i class='fa fa-bell-o'></i> Contact us</a></li>
+                <li class='{{ request|active:contact }}'><a href='{{ contact }}'><i class='fa fa-bell-o'></i> Contact us</a></li>
                 <li><a target='_blank' href='{{ issues_url }}'><i class='fa fa-bullhorn'></i> Report a bug</a></li>
                 {% comment %} <li><a href='#' id="report-issue" data-toggle="modal" data-target="#bugModal" ><i class='fa fa-bullhorn'></i> Report a bug</a></li> {% endcomment %}
             </ul>
@@ -64,7 +65,7 @@
             {% block login %}
             <ul class='nav navbar-nav navbar-right'>
                 {% if user.is_authenticated %}
-                <li class='{% active request login %} dropdown'>
+                <li class='{{ request|active:login %} dropdown'>
                 <a class='dropdown-toggle' data-toggle='dropdown' href='#'>{{ user.email }} <i class='fa fa-chevron-down'></i></a>
                     <ul class='dropdown-menu'>
                         <li><a href='{{ profile }}'><i class='fa fa-user'></i> Account</a></li>
@@ -72,7 +73,7 @@
                     </ul>
                 </li>
                 {% else %}
-                <li class='{% active request login %}'>
+                <li class='{{ request|active:login %}'>
                     {% if DEBUG %}
                     <a href='{{ login }}'>
                     {% else %}
