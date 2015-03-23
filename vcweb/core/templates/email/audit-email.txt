@@ -3,6 +3,13 @@ Greetings,
 This email contains the results of periodically performed audit tasks:
 - Signups in last week: **{{ signups }}** 
 - Invitations sent in last week: **{{ invites }}**
+
+{% if invalid_users|length > 0 %}
+- The following is the list users who have experimenter as well as participant access
+{% for user in invalid_users %}
+-  **{{forloop.counter}}** username: {{ user.username }} email: {{ user.email }}
+{% endfor %}
+{% endif %}
 {% if participants|length > 0 %}
 - The following participants don't have proper permissions
 {% for participant in participants %}
