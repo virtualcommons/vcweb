@@ -3235,22 +3235,22 @@ def update_daily_experiments(sender, timestamp=None, start=None, **kwargs):
             e.activate()
 
 
-@receiver(signals.system_weekly_tick, dispatch_uid='schedule-weekly-tasks')
-def weekly_schedule_tasks(sender, start=None, **kwargs):
+def get_audit_data():
     """
     1) perform permissions checks on participants & experimenters
     2) generate weekly activity log email with aggregate stats on participant signups,
        experiment status changes (run or archived), invitations sent
     """
     # FIXME add information regarding experiment status changes
-    invalid_permission_participants = Participant.objects.active().exclude(
+
+    invalid_permission_participants = Participant.objects.select_related('user').active().exclude(
         user__groups__name=PermissionGroup.participant.value)
-    invalid_permission_experimenters = Experimenter.objects.filter(user__is_active=True).exclude(
+    invalid_permission_experimenters = Experimenter.objects.select_related('user').filter(user__is_active=True).exclude(
         user__email__contains=('mailinator.com')).exclude(user__groups__name=PermissionGroup.experimenter.value)
 
     # invalid users who are experimenter as well as participant
     participant_users = Participant.objects.active().values_list('user__id', flat=True)
-    invalid_users = Experimenter.objects.filter(user__id__in=participant_users)
+    invalid_users = Experimenter.objects.select_related('user').filter(user__id__in=participant_users)
 
     last_week_datetime = datetime.now() - timedelta(days=7)
     # participant signup in last week
@@ -3259,14 +3259,16 @@ def weekly_schedule_tasks(sender, start=None, **kwargs):
     # Invitations sent in last week
     invites_last_week = Invitation.objects.filter(date_created__gt=last_week_datetime).count()
 
-    email = create_markdown_email(template="email/audit-email.txt",
-                                  context={
-                                      "invalid_users": invalid_users,
-                                      "participants": invalid_permission_participants,
-                                      "experimenters": invalid_permission_experimenters,
-                                      "signups": signup_last_week,
-                                      "invites": invites_last_week
-                                  },
-                                  subject="VCWEB Audit",
-                                  to_email=[settings.DEFAULT_EMAIL])
+    return {
+        "invalid_users": invalid_users, "participants": invalid_permission_participants,
+        "experimenters": invalid_permission_experimenters, "signups": signup_last_week,
+        "invites": invites_last_week
+    }
+
+
+@receiver(signals.system_weekly_tick, dispatch_uid='schedule-weekly-tasks')
+def weekly_schedule_tasks(sender, start=None, **kwargs):
+
+    email = create_markdown_email(template="email/audit-email.txt", context= get_audit_data(),
+                                  subject="VCWEB Audit", to_email=[settings.DEFAULT_EMAIL])
     email.send()

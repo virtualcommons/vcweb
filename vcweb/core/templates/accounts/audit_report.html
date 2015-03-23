@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block page %}
+<h2> Audit report of past seven days </h2><br/>
+<div class="row">
+    <div class="col-md-2">
+       <div class="panel panel-primary">
+          <div class="panel-heading">
+            <h3 class="panel-title text-center" id="panel-title">Signups</h3>
+          </div>
+          <div class="panel-body">
+            <h1 class="text-center">{{signups}}</h1>
+          </div>
+        </div> 
+    </div> 
+    <div class="col-md-2">
+       <div class="panel panel-primary">
+          <div class="panel-heading">
+            <h3 class="panel-title text-center" id="panel-title">Invitations Sent</h3>
+          </div>
+          <div class="panel-body">
+            <h1 class="text-center">{{invites}}</h1>
+          </div>
+        </div> 
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                <h3 class="panel-title" id="panel-title">Invalid Users</h3>
+            </div>
+            <div class="panel-body">
+                {% if invalid_users|length > 0 %}
+                <table class="table">
+                    <thead><tr><th>Sr.No</th><th>Username</th><th>Email</th></thead>
+                    <tbody>
+                    {% for user in invalid_users %}
+                        <tr><td>{{forloop.counter}}</td><td>{{ user.username }}</td><td>{{ user.email }}</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                    All the Users are valid 
+                {% endif %}
+            </div> 
+        </div> 
+    </div>
+</div>
+<div class="row"> 
+    <div class="col-md-12">
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                <h3 class="panel-title" id="panel-title">Participants with improper permissions</h3>
+            </div>
+            <div class="panel-body">
+                {% if participants|length > 0 %}
+                <table class="table">
+                    <thead><tr><th>Sr.No</th><th>Username</th><th>Email</th></thead>
+                    <tbody>
+                    {% for participant in participants %}
+                        <tr><td>{{forloop.counter}}</td><td>{{ participant.username }}</td><td>{{ participant.email }}</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                    All the participants have proper permissions
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                <h3 class="panel-title" id="panel-title">Experimenters with improper permissions</h3>
+            </div>
+            <div class="panel-body">
+                {% if experimenters|length > 0 %}
+                <table class="table">
+                    <thead><tr><th>Sr.No</th><th>Username</th><th>Email</th></thead>
+                    <tbody>
+                    {% for experimenter in experimenters %}
+                        <tr><td>{{forloop.counter}}</td><td>{{ experimenter.username }}</td><td>{{ experimenter.email }}</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                    All the experimenters have proper permissions
+                {% endif %}
+            </div> 
+        </div>
+    </div> 
+</div>
+{% endblock page %}

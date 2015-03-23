@@ -13,7 +13,8 @@ from .views import (dashboard, LoginView, LogoutView, monitor, RegisterEmailList
                     edit_experiment_configuration, delete_experiment_configuration, clone_experiment_configuration,
                     unsubscribe, update_round_param_value, update_experiment_param_value,
                     update_experiment_configuration, OstromlabFaqList, cas_asu_registration,
-                    cas_asu_registration_submit, account_profile, update_account_profile, update_participants,)
+                    cas_asu_registration_submit, account_profile, update_account_profile, update_participants,
+                    audit_report)
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +33,7 @@ urlpatterns = [
     url(r'^accounts/check-email$', is_email_available, name='check_email'),
     url(r'^ostromlab/faq$', OstromlabFaqList.as_view(), name='ostromlab_faq'),
     url(r'^accounts/unsubscribe$', unsubscribe, name='unsubscribe'),
+    url(r'^accounts/audit-report$', audit_report, name='audit_report'),
     url(r'^participate/?$', ParticipateView.as_view(), name='participate'),
     url(r'^participate/survey-completed', completed_survey, name='survey_completed'),
     url(r'^participate/(?P<pk>\d+)/check-survey-completed', check_survey_completed, name='check_survey_completed'),

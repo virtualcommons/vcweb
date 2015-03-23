@@ -32,7 +32,7 @@ from .forms import (LoginForm, ParticipantAccountForm, ExperimenterAccountForm, 
 from .models import (User, ChatMessage, Participant, ParticipantExperimentRelationship, ParticipantGroupRelationship,
                      ExperimentConfiguration, Experiment, Institution, BookmarkedExperimentMetadata, OstromlabFaqEntry,
                      ExperimentParameterValue, RoundConfiguration, RoundParameterValue, ParticipantSignup,
-                     get_model_fields, PermissionGroup)
+                     get_model_fields, PermissionGroup, get_audit_data)
 
 from ..redis_pubsub import RedisPubSub
 
@@ -1173,63 +1173,15 @@ def unsubscribe(request):
                   {'message': "You aren't currently subscribed to our experiment session mailing list."})
 
 
-"""
-def create_github_issue(data):
-    headers = {'Authorization': 'token ' + settings.GITHUB_ACCESS_TOKEN, 'Content-Type': 'application/json'}
-    issues_url = "{0}/{1}".format(settings.GITHUB_URL,
-                                  "/".join(["repos", settings.GITHUB_REPO_OWNER, settings.GITHUB_REPO, "issues"]))
-    logger.debug(json.dumps(data))
-    return requests.post(issues_url, headers=headers, data=json.dumps(data))
-
-class BugReportFormView(FormView):
-    form_class = BugReportForm
-    template_name = 'forms/bug-report.html'
-    success_url = '/thanks/'  # Not used. Kept it so Django doesn't throw error of success_url not provided
-
-    def form_valid(self, form):
-        response = super(BugReportFormView, self).form_valid(form)
-
-        # Creating Issue
-        if self.request.user:
-            user_id = self.request.user.pk
-        else:
-            user_id = None
-
-        context = {
-            "issue_text": form.cleaned_data['body'],
-            "user_id": user_id,
-            "url": self.request.POST.get('url'),
-        }
-        plaintext_template = get_template('github-issue.html')
-        c = Context(context)
-        plaintext_content = plaintext_template.render(c)
-
-        data = {
-            'title': form.cleaned_data['title'],
-            'body': plaintext_content,
-            'labels': settings.GITHUB_ISSUE_LABELS,
-        }
-
-        r = create_github_issue(data)
-
-        if(r.ok):
-            res = json.loads(r.text or r.content)
-            logger.debug("Issue created with response %s", res)
-            return self.render_to_json_response(SUCCESS_DICT)
-        else:
-            res = json.loads(r.text or r.content)
-            logger.debug("Issue creation failed with response %s", res)
-            return self.render_to_json_response(FAILURE_DICT)
-
-    def render_to_json_response(self, context, **response_kwargs):
-        data = dumps(context)
-        response_kwargs['content_type'] = 'application/json'
-        return HttpResponse(data, **response_kwargs)
-"""
-
-
 class AntiSpamContactFormView(ContactFormView):
     form_class = AntiSpamContactForm
 
     def form_valid(self, form):
         return super(AntiSpamContactFormView, self).form_valid(form)
+
+
+@login_required
+@require_GET
+@group_required(PermissionGroup.experimenter)
+def audit_report(request):
+    return render(request, 'accounts/audit_report.html', get_audit_data())
