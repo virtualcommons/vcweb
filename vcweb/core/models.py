@@ -3260,6 +3260,8 @@ def get_audit_data():
     invites_last_week = Invitation.objects.filter(date_created__gt=last_week_datetime).count()
 
     return {
+        "from_date": last_week_datetime.strftime("%m-%d-%Y"),
+        "to_date": datetime.now().strftime("%m-%d-%Y"),
         "invalid_users": invalid_users, "participants": invalid_permission_participants,
         "experimenters": invalid_permission_experimenters, "signups": signup_last_week,
         "invites": invites_last_week
