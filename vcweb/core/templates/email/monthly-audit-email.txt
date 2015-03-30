@@ -1,0 +1,10 @@
+Greetings,
+
+The following is the list of participants who no longer hold undergraduate class status:
+{% if participants|length > 0 %}
+{% for participant in participants %}
+-  **{{forloop.counter}}** username: {{ participant.username }} email: {{ participant.email }}
+{% endfor %}
+{% else %}
+- All the participants have proper class status
+{% endif %}

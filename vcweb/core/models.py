@@ -10,6 +10,8 @@ import markdown
 import random
 import string
 import hashlib
+import urllib2
+import xml.etree.ElementTree as ET
 
 from django.conf import settings
 from django.contrib.auth.forms import PasswordResetForm
@@ -31,7 +33,7 @@ from model_utils import Choices
 from model_utils.managers import PassThroughManager
 
 from . import signals, simplecache
-from .decorators import log_signal_errors
+from .decorators import log_signal_errors, retry
 from .http import dumps
 
 from vcweb.redis_pubsub import RedisPubSub
@@ -42,7 +44,6 @@ logger = logging.getLogger(__name__)
 """
 Permissions Enum for Auth Permission Groups
 """
-
 
 class PermissionGroup(Enum):
     participant = 'Participants'
@@ -60,6 +61,94 @@ class PermissionGroup(Enum):
 
     def __str__(self):
         return self.value
+
+
+class ASUWebDirectoryProfile(object):
+
+    """
+    A class that encapsulates the complexity of getting the user profile from the WEB Directory
+    """
+
+    def __init__(self, username):
+        self.username = username
+        logger.debug("checking %s", self.profile_url)
+        xml_data = self.urlopen_with_retry()
+        logger.debug(xml_data)
+        parsed = ET.parse(xml_data)
+        root = parsed.getroot()
+        self.profile_data = root.find('person')
+        logger.debug("profile data %s", self.profile_data)
+
+    @retry(urllib2.URLError, tries=3, delay=3, backoff=2, logger=logger)
+    def urlopen_with_retry(self):
+        return urllib2.urlopen(urllib2.Request(self.profile_url, headers={"Accept": "application/xml"}))
+
+    def __str__(self):
+        return "{} {} ({}) (email: {}) (major: {}) (class: {})".format(self.first_name, self.last_name, self.username,
+                                                                       self.email, self.major,
+                                                                       self.class_status)
+
+    @property
+    def profile_url(self):
+        return settings.WEB_DIRECTORY_URL + self.username
+
+    @property
+    def first_name(self):
+        try:
+            return self.profile_data.find('firstName').text
+        except:
+            return None
+
+    @property
+    def last_name(self):
+        try:
+            return self.profile_data.find('lastName').text
+        except:
+            return None
+
+    @property
+    def email(self):
+        try:
+            return self.profile_data.find('email').text.lower()
+        except:
+            return None
+
+    @property
+    def plans(self):
+        try:
+            return self.profile_data.find('plans')
+        except:
+            return None
+
+    @property
+    def plan(self):
+        try:
+            return self.plans.find('plan')
+        except:
+            return None
+
+    @property
+    def major(self):
+        try:
+            return self.plan.find('acadPlanDescr').text
+        except:
+            return None
+
+    @property
+    def class_status(self):
+        try:
+            return self.plan.find('acadCareerDescr').text
+        except:
+            return None
+
+    @property
+    def is_undergraduate(self):
+        return self.class_status == "Undergraduate"
+
+    @property
+    def is_graduate(self):
+        return self.class_status == "Graduate"
+
 
 
 """
@@ -3271,6 +3360,21 @@ def get_audit_data():
 @receiver(signals.system_weekly_tick, dispatch_uid='schedule-weekly-tasks')
 def weekly_schedule_tasks(sender, start=None, **kwargs):
 
-    email = create_markdown_email(template="email/audit-email.txt", context= get_audit_data(),
+    email = create_markdown_email(template="email/weekly-audit-email.txt", context=get_audit_data(),
                                   subject="VCWEB Audit", to_email=[settings.DEFAULT_EMAIL])
     email.send()
+
+
+@receiver(signals.system_monthly_tick, dispatch_uid='schedule-monthly-tasks')
+def validate_student_class_status(sender, start=None, **kwargs):
+    participants = Participant.objects.select_related('user').all()
+    invalid_participants = []
+    for participant in participants:
+        if participant.email != participant.username:
+            print participant.username
+            directory_profile = ASUWebDirectoryProfile(participant.username)
+            if not directory_profile.is_undergraduate:
+                invalid_participants.append(participant)
+
+    email = create_markdown_email(template="email/monthly-audit-email.txt", context={'participants': invalid_participants},
+                                  subject="VCWEB Monthly Audit", to_email=[settings.DEFAULT_EMAIL])

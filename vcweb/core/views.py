@@ -2,8 +2,6 @@ from collections import defaultdict
 import itertools
 import logging
 import mimetypes
-import urllib2
-import xml.etree.ElementTree as ET
 import unicodecsv
 import uuid
 
@@ -24,7 +22,7 @@ from contact_form.views import ContactFormView
 
 from .api import SUCCESS_DICT, FAILURE_DICT, create_message_event
 from .http import JsonResponse, dumps
-from .decorators import (anonymous_required, retry, is_participant, is_experimenter, ownership_required, group_required)
+from .decorators import (anonymous_required, is_participant, is_experimenter, ownership_required, group_required)
 from .forms import (LoginForm, ParticipantAccountForm, ExperimenterAccountForm, UpdateExperimentForm,
                     AsuRegistrationForm, RegisterEmailListParticipantsForm, RegisterTestParticipantsForm,
                     BookmarkExperimentMetadataForm, ExperimentConfigurationForm, ExperimentParameterValueForm,
@@ -32,7 +30,7 @@ from .forms import (LoginForm, ParticipantAccountForm, ExperimenterAccountForm, 
 from .models import (User, ChatMessage, Participant, ParticipantExperimentRelationship, ParticipantGroupRelationship,
                      ExperimentConfiguration, Experiment, Institution, BookmarkedExperimentMetadata, OstromlabFaqEntry,
                      ExperimentParameterValue, RoundConfiguration, RoundParameterValue, ParticipantSignup,
-                     get_model_fields, PermissionGroup, get_audit_data)
+                     get_model_fields, PermissionGroup, get_audit_data, ASUWebDirectoryProfile)
 
 from ..redis_pubsub import RedisPubSub
 
@@ -844,93 +842,6 @@ def check_survey_completed(request, pk=None):
     return JsonResponse({
         'survey_completed': experiment.get_participant_group_relationship(participant).survey_completed,
     })
-
-
-class ASUWebDirectoryProfile(object):
-
-    """
-    A class that encapsulates the complexity of getting the user profile from the WEB Directory
-    """
-
-    def __init__(self, username):
-        self.username = username
-        logger.debug("checking %s", self.profile_url)
-        xml_data = self.urlopen_with_retry()
-        logger.debug(xml_data)
-        parsed = ET.parse(xml_data)
-        root = parsed.getroot()
-        self.profile_data = root.find('person')
-        logger.debug("profile data %s", self.profile_data)
-
-    @retry(urllib2.URLError, tries=3, delay=3, backoff=2, logger=logger)
-    def urlopen_with_retry(self):
-        return urllib2.urlopen(urllib2.Request(self.profile_url, headers={"Accept": "application/xml"}))
-
-    def __str__(self):
-        return "{} {} ({}) (email: {}) (major: {}) (class: {})".format(self.first_name, self.last_name, self.username,
-                                                                       self.email, self.major,
-                                                                       self.class_status)
-
-    @property
-    def profile_url(self):
-        return settings.WEB_DIRECTORY_URL + self.username
-
-    @property
-    def first_name(self):
-        try:
-            return self.profile_data.find('firstName').text
-        except:
-            return None
-
-    @property
-    def last_name(self):
-        try:
-            return self.profile_data.find('lastName').text
-        except:
-            return None
-
-    @property
-    def email(self):
-        try:
-            return self.profile_data.find('email').text.lower()
-        except:
-            return None
-
-    @property
-    def plans(self):
-        try:
-            return self.profile_data.find('plans')
-        except:
-            return None
-
-    @property
-    def plan(self):
-        try:
-            return self.plans.find('plan')
-        except:
-            return None
-
-    @property
-    def major(self):
-        try:
-            return self.plan.find('acadPlanDescr').text
-        except:
-            return None
-
-    @property
-    def class_status(self):
-        try:
-            return self.plan.find('acadCareerDescr').text
-        except:
-            return None
-
-    @property
-    def is_undergraduate(self):
-        return self.class_status == "Undergraduate"
-
-    @property
-    def is_graduate(self):
-        return self.class_status == "Graduate"
 
 
 def get_cas_user(tree):
