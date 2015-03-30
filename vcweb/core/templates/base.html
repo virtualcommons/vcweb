@@ -12,6 +12,7 @@
 {% url 'core:profile' as profile %}
 {% url 'core:register' as register %}
 {% url 'core:report_issues' as issues_url %}
+{% url 'core:audit_report' as audit_report %}
 {% url 'subjectpool:experimenter_index' as subjectpool %}
 <!DOCTYPE html>
 <html lang="en">
@@ -68,6 +69,9 @@
                 <li class='{{ request|active:login %} dropdown'>
                 <a class='dropdown-toggle' data-toggle='dropdown' href='#'>{{ user.email }} <i class='fa fa-chevron-down'></i></a>
                     <ul class='dropdown-menu'>
+                        {% if user.is_superuser %}
+                        <li><a href='{{ audit_report }}'><i class='fa fa-pie-chart'></i> Audit Report</a></li>
+                        {% endif %}
                         <li><a href='{{ profile }}'><i class='fa fa-user'></i> Account</a></li>
                         <li><a href='{{ logout }}'><i class='fa fa-sign-out'></i> Sign out</a></li>
                     </ul>
