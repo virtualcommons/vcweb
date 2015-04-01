@@ -36,6 +36,17 @@
                 </div>
             </form>
         </div>
+        <div class="alert alert-warning">
+            <span id="add-participant-error" class="alert-danger"></span>
+            <form class="form-inline" id="addParticipant">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="participantEmail">Add Participant with Email: </label>
+                    <input type="text" id="participantEmail" name="participantEmail" class="form-control input-sm" />
+                    <button type="submit" class="btn btn-default input-sm">Add Participant</button>
+                </div>
+            </form>
+        </div>
         {% for dict in formset.errors %}
             {% for error in dict.values %}
                 <div class="alert alert-error">
@@ -43,7 +54,6 @@
                 </div>
             {% endfor %}
         {% endfor %}
-
         <h3>Registered Participants</h3>
         <form method="POST" id="participant-info" class="form-inline">
             {% csrf_token %}
@@ -99,6 +109,25 @@
                 if(optionVal != -1) {
                     $("#participant-table").find("select").val(optionVal);
                 }
+            });
+
+            $("#addParticipant").submit(function(event) {
+                $.post("{% url 'subjectpool:add_participant' session_detail.pk %}", $(event.target).serialize(), function(data) {
+                    console.log(data.success);
+                    if(data.success) {
+                        // reload page to show the added participant
+                        location.reload();
+                    } else {
+                        $("#add-participant-error").text("ERROR: " + data.error);
+                    }
+                }).fail(function(data) {
+                    if(data.status == 404) {
+                        $("#add-participant-error").text("ERROR: Participant not found in the system. Please contact the administrator");
+                    } else {
+                        $("#add-participant-error").text("ERROR: Something went wrong. Please try again, If issue persists please contact the administrator");
+                    }
+                });
+                event.preventDefault();
             });
 
             /* API method to get paging information */

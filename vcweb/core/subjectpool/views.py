@@ -292,6 +292,41 @@ def manage_participant_attendance(request, pk=None):
                   {'session_detail': es, 'formset': formset})
 
 
+@group_required(PermissionGroup.experimenter)
+@ownership_required(ExperimentSession)
+@require_POST
+def add_participant(request, pk=None):
+    user_email = request.POST.get('participantEmail')
+    participant = get_object_or_404(Participant.objects.select_related('user'), user__email=user_email)
+    invitations = Invitation.objects.filter(participant=participant, experiment_session__pk=pk)
+    logger.debug("Found %s invitations for participant %s while adding him to experiment session %s", len(invitations), participant, pk)
+
+    es = get_object_or_404(ExperimentSession, pk=pk)
+
+    # First check the experiment session should be over
+    if es.scheduled_end_date < datetime.now():
+        logger.debug("Experimeter %s tried adding participant %s to experiment session %s that isn't still over",
+                     request.user, participant, pk)
+        return JsonResponse({'success': False, 'error': "Can't add a participant to yet not finished experiment session"})
+
+    # second check the participant must have recevied invitations
+    if len(invitations) == 0:
+        logger.debug("Experimeter %s tried adding participant %s to experiment session %s, who hasn't recevied invitation for the same",
+                     request.user, participant, pk)
+        return JsonResponse({'success': False, 'error': "Can't add a participant who hasn't received invitation"})
+
+    signups = ParticipantSignup.objects.filter(invitation__in=invitations).count()
+
+    # third and final check, the participant must not have already signedup for the experiment session
+    if signups > 0:
+        logger.debug("Experimeter %s tried adding participant %s to experiment session %s, who is already signed up for the same",
+                     request.user, participant, pk)
+        return JsonResponse({'success': False, 'error': 'Participant is already signed up of the experiment session'})
+    else:
+        ParticipantSignup(invitation=invitations[0], attendance=ParticipantSignup.ATTENDANCE.participated).save()
+        return JsonResponse({'success': True})
+
+
 @group_required(PermissionGroup.participant)
 @require_POST
 def cancel_experiment_session_signup(request):

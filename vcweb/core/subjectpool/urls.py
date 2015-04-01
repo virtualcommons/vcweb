@@ -4,13 +4,14 @@ from vcweb.core.subjectpool.views import (experimenter_index, manage_experiment_
                                           manage_participant_attendance, send_invitations, get_invitations_count,
                                           invite_email_preview, experiment_session_signup,
                                           submit_experiment_session_signup, cancel_experiment_session_signup,
-                                          download_experiment_session)
+                                          download_experiment_session, add_participant)
 
 urlpatterns = [
     url(r'^$', experimenter_index, name='experimenter_index'),
     url(r'^session/manage/(?P<pk>\-?\d+)$', manage_experiment_session, name='manage_experiment_session'),
     url(r'^session/events$', get_session_events, name='session_events'),
     url(r'^session/detail/event/(?P<pk>\d+)$', manage_participant_attendance, name='session_event_detail'),
+    url(r'^session/(?P<pk>\d+)/participant/add/$', add_participant, name='add_participant'),
     url(r'^session/invite$', send_invitations, name='send_invites'),
     url(r'^session/invite/count$', get_invitations_count, name='get_invitations_count'),
     url(r'^session/email-preview$', invite_email_preview, name='invite_email_preview'),
