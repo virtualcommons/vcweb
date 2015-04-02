@@ -377,7 +377,7 @@ def submit_experiment_session_signup(request):
         ps.save()
 
         messages.success(request, _(message))
-        send_markdown_email(template="email/confirmation-email.txt",
+        send_markdown_email(template="subjectpool/email/confirmation-email.txt",
                             context={'session': invitation.experiment_session},
                             subject="Confirmation Email",
                             to_email=[user.email])

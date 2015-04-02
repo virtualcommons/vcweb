@@ -7,7 +7,7 @@ class InvitationEmail(object):
 
     def __init__(self, request):
         self.request = request
-        self.plaintext_template = get_template('email/invitation-email.txt')
+        self.plaintext_template = get_template('subjectpool/email/invitation-email.txt')
 
     @property
     def site_url(self):
