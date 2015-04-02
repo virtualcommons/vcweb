@@ -76,8 +76,7 @@ class ParticipantAttendanceForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(ParticipantAttendanceForm, self).__init__(*args, **kwargs)
-        self.fields['attendance'].widget.attrs[
-            'class'] = 'form-control input-sm'
+        self.fields['attendance'].widget.attrs['class'] = 'form-control input-sm'
 
     class Meta:
         model = ParticipantSignup

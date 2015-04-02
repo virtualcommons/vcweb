@@ -320,74 +320,16 @@ class RegistrationView(FormView, AnonymousMixin):
 @group_required(PermissionGroup.experimenter, PermissionGroup.participant)
 @require_POST
 def update_account_profile(request):
-    # FIXME: refactor, perhaps split into update experimenter / update participant and reduce code duplication via CBV
     user = request.user
     if is_experimenter(user):
-        form = ExperimenterAccountForm(request.POST or None)
-        if form.is_valid():
-            email = form.cleaned_data.get('email').lower()
-            institution_name = form.cleaned_data.get('institution')
-            e = user.experimenter
-            if institution_name:
-                institution, created = Institution.objects.get_or_create(name=institution_name)
-                e.institution = institution
-            else:
-                e.institution = None
-                logger.debug('Institution is empty')
-
-            if user.email != email:
-                if User.objects.filter(email=email).exists():
-                    return JsonResponse({
-                        'success': False,
-                        'message': 'This email is already registered with our system, please try another.'
-                    })
-            for attr in ('first_name', 'last_name', 'email'):
-                setattr(e.user, attr, form.cleaned_data.get(attr))
-            e.save()
-            e.user.save()
-            return JsonResponse({
-                'success': True,
-                'message': 'Profile updated successfully.'
-            })
-        return JsonResponse({'success': False,
-                             'message': 'Something went wrong. Please try again.'})
+        form = ExperimenterAccountForm(request.POST or None, instance=user.experimenter)
     else:
-        form = ParticipantAccountForm(request.POST or None)
-        if form.is_valid():
-            email = form.cleaned_data.get('email').lower()
-            institution_name = form.cleaned_data.get('institution')
-            p = user.participant
-            if institution_name:
-                ins, created = Institution.objects.get_or_create(name=institution_name)
-                p.institution = ins
-            else:
-                p.institution = None
-                logger.debug('Institution is empty')
+        form = ParticipantAccountForm(request.POST or None, instance=user.participant)
 
-            if user.email != email:
-                if User.objects.filter(email=email).exists():
-                    return JsonResponse({
-                        'success': False,
-                        'message': 'This email is already registered with our system, please try another.'
-                    })
-            for attr in ('major', 'class_status', 'gender', 'can_receive_invitations', 'favorite_food',
-                         'favorite_sport', 'favorite_color', 'favorite_movie_genre'):
-                setattr(p, attr, form.cleaned_data.get(attr))
-
-            for attr in ('first_name', 'last_name', 'email'):
-                setattr(p.user, attr, form.cleaned_data.get(attr))
-            p.save()
-            p.user.save()
-
-            return JsonResponse({
-                'success': True,
-                'message': 'Updated profile successfully.'
-            })
-
-        return JsonResponse({
-            'success': False,
-            'message': 'Please fill in all the fields on this page to receive invitations.'
-        })
+    if form.is_valid():
+        form.save()
+        return JsonResponse({ 'success': True, 'message': 'Profile updated successfully.'})
+    return JsonResponse({'success': False, 'message': 'Something went wrong. Please try again.'})
 
 
 @login_required

@@ -16,7 +16,7 @@ from django.forms.util import ErrorDict
 from django.utils.translation import ugettext_lazy as _
 
 from .autocomplete_light_registry import InstitutionAutocomplete, ParticipantMajorAutocomplete
-from .models import (Experimenter, Institution, Participant, ExperimentMetadata, ExperimentConfiguration,
+from .models import (User, CommonsUser, Experimenter, Institution, Participant, ExperimentMetadata, ExperimentConfiguration,
                      ExperimentParameterValue, RoundConfiguration, RoundParameterValue)
 
 from contact_form.forms import ContactForm
@@ -149,12 +149,44 @@ class AccountForm(forms.ModelForm):
             for attr in ('first_name', 'last_name', 'email', 'institution'):
                 self.fields[attr].initial = getattr(instance, attr)
 
+    def clean(self):
+        data = super(AccountForm, self).clean()
+        email_address = data.get('email')
+        validate_email(email_address)
+
+        if not email_address:
+            raise forms.ValidationError(
+                _("Please enter a valid email address"))
+
+        if self.instance.email != email_address:
+            if User.objects.filter(email=email_address).exists():
+                raise forms.ValidationError(_("This email is already registered with our system, please try another.'"))
+        return data
+
+    def save(self, commit=True):
+        profile = super(AccountForm, self).save(commit=False)
+        institution_name = self.cleaned_data.get('institution')
+        if institution_name:
+            institution, created = Institution.objects.get_or_create(name=institution_name)
+            profile.institution = institution
+        else:
+            profile.institution = None
+            logger.debug('Institution is empty')
+
+        for attr in ('first_name', 'last_name', 'email'):
+            setattr(profile.user, attr, self.cleaned_data.get(attr))
+
+        if commit:
+            profile.save()
+            profile.user.save()
+        return profile
+
 
 class ParticipantAccountForm(AccountForm):
 
     class Meta:
         model = Participant
-        fields = ['first_name', 'last_name', 'email', 'gender', 'can_receive_invitations', 'class_status',
+        fields = ['gender', 'can_receive_invitations', 'class_status',
                   'major', 'favorite_sport', 'favorite_food', 'favorite_color', 'favorite_movie_genre']
         labels = {
             'can_receive_invitations': _('Receive invitations for experiments?')
@@ -165,8 +197,8 @@ class ParticipantAccountForm(AccountForm):
 
     def clean(self):
         data = super(ParticipantAccountForm, self).clean()
+
         email_address = data.get('email')
-        validate_email(email_address)
         can_receive_invitations = data.get('can_receive_invitations')
         major = data.get('major')
         gender = data.get('gender')
@@ -175,9 +207,6 @@ class ParticipantAccountForm(AccountForm):
         favorite_color = data.get('favorite_color')
         favorite_sport = data.get('favorite_sport')
         favorite_movie_genre = data.get('favorite_movie_genre')
-        if not email_address:
-            raise forms.ValidationError(
-                _("Please enter a valid email address"))
 
         if can_receive_invitations and not all([major, gender, class_status, favorite_food, favorite_color,
                                                 favorite_sport, favorite_movie_genre]):
