@@ -125,15 +125,26 @@ class AsuRegistrationForm(forms.ModelForm):
 
     class Meta:
         model = Participant
-        fields = ['first_name', 'last_name', 'email', 'gender', 'institution', 'can_receive_invitations',
-                  'class_status', 'major', 'favorite_sport', 'favorite_food', 'favorite_color', 'favorite_movie_genre']
+        fields = ['first_name', 'last_name', 'email', 'gender', 'class_status', 'major', 'favorite_sport',
+                  'favorite_food', 'favorite_color', 'favorite_movie_genre']
         widgets = {
             'major': autocomplete_light.TextWidget(ParticipantMajorAutocomplete)
         }
 
+    def save(self, commit=True):
+        profile = super(AsuRegistrationForm, self).save(commit=False)
+        profile.can_receive_invitations = True
+        profile.institution = Institution.objects.get(name="Arizona State University")
+        user = profile.user
+        user.email = self.cleaned_data.get('email').lower()
+        user.first_name = self.cleaned_data.get('first_name')
+        user.last_name = self.cleaned_data.get('last_name')
+        if commit:
+            user.save()
+            profile.save()
+
 
 class AccountForm(forms.ModelForm):
-    # FIXME: remove duplication across this and AsuRegistrationForm
     required_css_class = 'required'
 
     first_name = forms.CharField(widget=widgets.TextInput)

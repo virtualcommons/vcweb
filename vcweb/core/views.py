@@ -183,24 +183,12 @@ def cas_asu_registration(request):
 @group_required(PermissionGroup.participant)
 @require_POST
 def cas_asu_registration_submit(request):
-    form = AsuRegistrationForm(request.POST or None)
+    participant = request.user.participant
+    form = AsuRegistrationForm(request.POST or None, instance=participant)
     if form.is_valid():
-        user = request.user
-        participant = user.participant
-        user.email = form.cleaned_data['email'].lower()
-        participant.can_receive_invitations = True
-        for attr in ('gender', 'favorite_color', 'favorite_movie_genre', 'class_status', 'favorite_sport',
-                     'favorite_food', 'class_status', 'major',):
-            setattr(participant, attr, form.cleaned_data.get(attr))
-
-        user.first_name = form.cleaned_data['first_name']
-        user.last_name = form.cleaned_data['last_name']
-        user.save()
-        participant.save()
-        messages.info(request,
-                      _("You've been successfully registered with our mailing list. Thanks!"))
-        logger.debug(
-            "created new participant from asurite registration: %s", participant)
+        form.save()
+        messages.info(request,_("You've been successfully registered with our mailing list. Thanks!"))
+        logger.debug("created new participant from asurite registration: %s", participant)
         return redirect('core:dashboard')
     else:
         return redirect('core:cas_asu_registration')
@@ -315,6 +303,16 @@ class RegistrationView(FormView, AnonymousMixin):
         return reverse('core:dashboard')
 """
 
+@login_required
+@require_GET
+def account_profile(request):
+    user = request.user
+    if is_participant(user):
+        form = ParticipantAccountForm(instance=user.participant)
+    else:
+        form = ExperimenterAccountForm(instance=user.experimenter)
+    return render(request, 'accounts/profile.html', {'form': form})
+
 
 @login_required
 @group_required(PermissionGroup.experimenter, PermissionGroup.participant)
@@ -330,17 +328,6 @@ def update_account_profile(request):
         form.save()
         return JsonResponse({ 'success': True, 'message': 'Profile updated successfully.'})
     return JsonResponse({'success': False, 'message': 'Something went wrong. Please try again.'})
-
-
-@login_required
-@require_GET
-def account_profile(request):
-    user = request.user
-    if is_participant(user):
-        form = ParticipantAccountForm(instance=user.participant)
-    else:
-        form = ExperimenterAccountForm(instance=user.experimenter)
-    return render(request, 'accounts/profile.html', {'form': form})
 
 
 class ParticipantMixin(object):
@@ -838,7 +825,7 @@ def create_cas_participant(username, cas_tree):
         # If this exception is thrown it means that User Logged in via CAS is a new user
         logger.debug("No user found with username %s", username)
         # Create vcweb Participant only if the user is an undergrad student
-        if not directory_profile.is_undergraduate:
+        if not directory_profile.is_graduate:
             logger.error("CAS authenticated user %s is not an undergrad student", username)
             return None
 
