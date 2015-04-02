@@ -45,10 +45,10 @@ class ExperimentSessionForm(forms.ModelForm):
         if self.request_type == 'delete':
             logger.warn("Deleting experiment session %s", es)
             es.delete()
-        elif commit:
+        else:
             es.creator = self.user
-            es.date_created = datetime.now()
-            es.save()
+            if commit:
+                es.save()
         return es
 
     class Meta:

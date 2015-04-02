@@ -4,22 +4,22 @@
 {% endblock %}
 {% block page %}
     <div id='page'>
-        <a class="btn btn-default" href="{% url 'subjectpool:experimenter_index' %}"><i class="fa fa-arrow-left"></i> Back</a>
+        <a class="btn btn-default" href="{% url 'subjectpool:subjectpool_index' %}"><i class="fa fa-arrow-left"></i> Back</a>
         <div id="session-detail" class="callout callout-info">
             <p><strong>Experiment: </strong>
-            {{ session_detail.experiment_metadata.title }}
-            <p><strong>Date/Time: </strong> {{ session_detail.scheduled_date.date }}, {{ session_detail.scheduled_date.time }} -
-            {% if session_detail.scheduled_end_date.date != session_detail.scheduled_date.date %}
-            {{ session_detail.scheduled_end_date.date }},
+            {{ session.experiment_metadata.title }}
+            <p><strong>Date/Time: </strong> {{ session.scheduled_date.date }}, {{ session.scheduled_date.time }} -
+            {% if session.scheduled_end_date.date != session.scheduled_date.date %}
+            {{ session.scheduled_end_date.date }},
             {% endif %}
-            {{ session_detail.scheduled_end_date.time }}</p>
-            <p><strong>Location: </strong> {{ session_detail.location }}</p>
-            <p><strong>Capacity: </strong> {{ session_detail.capacity }}</p>
-            <p><strong>Waitlist enabled: </strong> {{ session_detail.waitlist }}</p>
+            {{ session.scheduled_end_date.time }}</p>
+            <p><strong>Location: </strong> {{ session.location }}</p>
+            <p><strong>Capacity: </strong> {{ session.capacity }}</p>
+            <p><strong>Waitlist enabled: </strong> {{ session.waitlist }}</p>
         </div>
         <div class="alert alert-warning">
             {% if formset.forms|length > 0 %}
-                <a target="_blank" href="/subject-pool/session/{{ session_detail.pk }}/download/">Download Registered Participants</a>
+                <a target="_blank" href="/subject-pool/session/{{ session.pk }}/download/">Download Registered Participants</a>
             {% endif %}
             <form class="form-inline">
                 <div class="form-group">
@@ -112,7 +112,7 @@
             });
 
             $("#addParticipant").submit(function(event) {
-                $.post("{% url 'subjectpool:add_participant' session_detail.pk %}", $(event.target).serialize(), function(data) {
+                $.post("{% url 'subjectpool:add_participant' session.pk %}", $(event.target).serialize(), function(data) {
                     console.log(data.success);
                     if(data.success) {
                         // reload page to show the added participant
@@ -142,7 +142,8 @@
             search_input.addClass('form-control input-sm');
             search_input.css('width', '150px');
 
-
+            // hack to make sure that the table has all the rows before making post
+            // required to make django formset to work
             $("#submit-attendance").click(function() {
                 oTable.fnFilter('');
             });

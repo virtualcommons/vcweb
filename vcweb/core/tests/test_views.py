@@ -250,7 +250,7 @@ class SubjectPoolViewTest(SubjectPoolTest):
         e = self.create_experimenter()
         self.assertTrue(self.login_experimenter(e))
 
-        response = self.get(self.reverse('subjectpool:experimenter_index'))
+        response = self.get(self.reverse('subjectpool:subjectpool_index'))
         self.assertEqual(200, response.status_code)
 
     def test_send_invitations(self):

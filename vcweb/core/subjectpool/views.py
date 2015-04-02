@@ -1,11 +1,3 @@
-from datetime import datetime
-from time import mktime
-import logging
-import random
-import unicodecsv
-import markdown
-
-
 from django.conf import settings
 from django.contrib import messages
 from django.core.mail import EmailMultiAlternatives
@@ -13,12 +5,8 @@ from django.db import transaction
 from django.forms.models import modelformset_factory
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
-from django.template import Context
-from django.template.loader import get_template
 from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.http import require_GET, require_POST
-
-from .forms import (SessionInviteForm, ExperimentSessionForm, ParticipantAttendanceForm, CancelSignupForm)
 
 from vcweb.core.decorators import group_required, ownership_required
 from vcweb.core.http import JsonResponse, dumps
@@ -26,31 +14,39 @@ from vcweb.core.models import (Participant, ParticipantSignup, PermissionGroup, 
                                Invitation, send_markdown_email)
 from vcweb.core.views import mimetypes
 
+from .forms import (SessionInviteForm, ExperimentSessionForm, ParticipantAttendanceForm, CancelSignupForm)
+from .models import InvitationEmail
+
+from datetime import datetime
+from time import mktime
+
+import logging
+import random
+import unicodecsv
+import markdown
 
 logger = logging.getLogger(__name__)
 
 
 @group_required(PermissionGroup.experimenter)
 @require_GET
-def experimenter_index(request):
+def subjectpool_index(request):
     """
-    Provides experimenter subject recruitment interface with all active experiment sessions and past experiment
-    sessions.
+    Provides subject recruitment interface with all the active and past experiment sessions.
     """
     experimenter = request.user.experimenter
-    data = ExperimentSession.objects.select_related('experiment_metadata').filter(creator=request.user)
+    es_list = ExperimentSession.objects.select_related('experiment_metadata').filter(creator=request.user)
+    session_list = [session.to_dict() for session in es_list]
     experiment_metadata_list = [em.to_dict() for em in ExperimentMetadata.objects.bookmarked(experimenter)]
-    session_list = [session.to_dict() for session in data]
     potential_participants_count = Participant.objects.active().count()
-    session_data = {
-        "session_list": session_list,
-        "experiment_metadata_list": experiment_metadata_list,
+    data = {
+        'session_list': session_list,
+        'experiment_metadata_list': experiment_metadata_list,
         'allEligibleParticipants': potential_participants_count,
         'potentialParticipantsCount': potential_participants_count,
     }
-    form = SessionInviteForm()
-    return render(request, "subjectpool/experimenter-index.html",
-                  {"view_model_json": dumps(session_data), "form": form})
+    return render(request, "subjectpool/index.html",
+                  {"view_model_json": dumps(data), "form": SessionInviteForm()})
 
 
 @group_required(PermissionGroup.experimenter)
@@ -64,7 +60,7 @@ def manage_experiment_session(request, pk):
     return JsonResponse({'success': False, 'errors': form.errors})
 
 
-@group_required(PermissionGroup.experimenter, PermissionGroup.demo_experimenter)
+@group_required(PermissionGroup.experimenter)
 @require_GET
 def get_session_events(request):
     """
@@ -148,19 +144,6 @@ def get_invitations_count(request):
     return JsonResponse({'success': False, 'invitesCount': 0, 'errors': form.errors})
 
 
-def get_invitation_email_content(custom_invitation_text, experiment_session_ids):
-    plaintext_template = get_template('email/invitation-email.txt')
-    c = Context({
-        'invitation_text': custom_invitation_text,
-        'session_list': ExperimentSession.objects.filter(pk__in=experiment_session_ids),
-        'SITE_URL': settings.SITE_URL,
-    })
-    plaintext_content = plaintext_template.render(c)
-    html_content = markdown.markdown(plaintext_content)
-
-    return plaintext_content, html_content
-
-
 @group_required(PermissionGroup.experimenter)
 @require_POST
 def send_invitations(request):
@@ -224,7 +207,9 @@ def send_invitations(request):
                 Invitation.objects.bulk_create(invitations)
 
                 if settings.ENVIRONMENT.is_production:
-                    plaintext_content, html_content = get_invitation_email_content(invitation_text, session_pk_list)
+                    ie = InvitationEmail(request)
+                    plaintext_content = ie.get_plaintext_content(invitation_text, session_pk_list)
+                    html_content = markdown.markdown(plaintext_content)
                     msg = EmailMultiAlternatives(subject=invitation_subject, body=plaintext_content,
                                                  from_email=from_email, to=[from_email], bcc=recipient_list)
                     msg.attach_alternative(html_content, "text/html")
@@ -232,34 +217,29 @@ def send_invitations(request):
                 else:
                     logger.debug("Sending invitation emails in non-production environment is disabled: %s",
                                  recipient_list)
-
-            return JsonResponse({
-                'success': True,
-                'message': message,
-                'invitesCount': len(final_participants)
-            })
+            return JsonResponse({'success': True, 'message': message, 'invitesCount': len(final_participants)})
         else:
             return JsonResponse({
                 'success': False,
                 'message': "Please select experiment sessions from the same experiment to send invitations."
             })
-    else:
-        # Form is not valid
-        return JsonResponse({'success': False, 'errors': form.errors})
+    # Form is not valid
+    return JsonResponse({'success': False, 'errors': form.errors})
 
 
 @group_required(PermissionGroup.experimenter)
 @require_POST
 def invite_email_preview(request):
     """
-    Generates email Preview for the provided invitation details
+    Generates preview email for the provided invitation details
     """
     form = SessionInviteForm(request.POST or None)
     message = "Please fill in all the form fields to preview the invitation email."
     if form.is_valid():
-        session_pk_list = request.POST.get('session_pk_list').split(",")
-        plaintext_content, html_content = get_invitation_email_content(form.cleaned_data.get('invitation_text'),
-                                                                       session_pk_list)
+        session_ids = request.POST.get('session_pk_list').split(",")
+        invitation_text = form.cleaned_data.get('invitation_text')
+        plaintext_content = InvitationEmail(request).get_plaintext_content(invitation_text, session_ids)
+        html_content = markdown.markdown(plaintext_content)
         return JsonResponse({'success': True, 'content': html_content})
     return JsonResponse({'success': False, 'message': message})
 
@@ -284,12 +264,14 @@ def manage_participant_attendance(request, pk=None):
             messages.success(request, 'Your changes were successfully saved.')
             if formset.has_changed():
                 formset.save()
+        else:
+            logger.debug("The formset was invalid with errors %s", formset.errors)
+            messages.error(request, _("Invalid data. Please Try again."))
     else:
         formset = attendanceformset(queryset=ParticipantSignup.objects.select_related(
             'invitation__participant__user').filter(invitation__in=invitations_sent))
 
-    return render(request, 'subjectpool/experiment-session-detail.html',
-                  {'session_detail': es, 'formset': formset})
+    return render(request, 'subjectpool/experiment-session-detail.html', {'session': es, 'formset': formset})
 
 
 @group_required(PermissionGroup.experimenter)
@@ -303,13 +285,13 @@ def add_participant(request, pk=None):
 
     es = get_object_or_404(ExperimentSession, pk=pk)
 
-    # First check the experiment session should be over
+    # First check, the experiment session should be over
     if es.scheduled_end_date < datetime.now():
         logger.debug("Experimeter %s tried adding participant %s to experiment session %s that isn't still over",
                      request.user, participant, pk)
         return JsonResponse({'success': False, 'error': "Can't add a participant to yet not finished experiment session"})
 
-    # second check the participant must have recevied invitations
+    # second check, the participant must have recevied invitations
     if len(invitations) == 0:
         logger.debug("Experimeter %s tried adding participant %s to experiment session %s, who hasn't recevied invitation for the same",
                      request.user, participant, pk)
@@ -322,9 +304,9 @@ def add_participant(request, pk=None):
         logger.debug("Experimeter %s tried adding participant %s to experiment session %s, who is already signed up for the same",
                      request.user, participant, pk)
         return JsonResponse({'success': False, 'error': 'Participant is already signed up of the experiment session'})
-    else:
-        ParticipantSignup(invitation=invitations[0], attendance=ParticipantSignup.ATTENDANCE.participated).save()
-        return JsonResponse({'success': True})
+
+    ParticipantSignup(invitation=invitations[0], attendance=ParticipantSignup.ATTENDANCE.participated).save()
+    return JsonResponse({'success': True})
 
 
 @group_required(PermissionGroup.participant)
