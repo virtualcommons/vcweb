@@ -113,4 +113,28 @@
         </div>
     </div> 
 </div>
+<div class="row">
+    <div class="col-md-12">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title" id="panel-title">List of Institutions with total number of participants belonging to it</h3>
+            </div>
+            <div class="panel-body">
+                {% if institution_list|length > 0 %}
+                <table class="table">
+                    <thead><tr><th>Sr.No</th><th>Institution</th><th>Participant Count</th></thead>
+                    <tbody>
+                    {% for institution in institution_list %}
+                        <tr><td>{{forloop.counter}}</td><td>{{ institution.institution__name }}</td><td>{{ institution.total }}</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                    All the experimenters have proper permissions
+                {% endif %}
+            </div> 
+        </div>
+    </div> 
+</div>
+
 {% endblock page %}

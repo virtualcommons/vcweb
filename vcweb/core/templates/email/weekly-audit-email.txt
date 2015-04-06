@@ -26,3 +26,11 @@ This email contains the results of periodically performed audit tasks:
 {% else %}
 - All the experimenters have proper permissions
 {% endif %}
+{% if institution_list|length > 0 %}
+- The following is the list of institutions along with the count for participants belonging to that institution
+{% for institute in institution_list %}
+-  **{{forloop.counter}}** Institute: {{ institute.institution__name }} email: {{ institute.total }}
+{% endfor %}
+{% else %}
+- No Institutions found.
+{% endif %}
