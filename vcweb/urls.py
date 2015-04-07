@@ -11,7 +11,7 @@ from vcweb.core.views import AntiSpamContactFormView
 
 urlpatterns = [
     url(r'^$', TemplateView.as_view(template_name='index.html'), name='home'),
-    url(r'^about/$', TemplateView.as_view(template_name='about.html'), name='about'),
+    url(r'^about/$', TemplateView.as_view(template_name='index.html'), name='about'),
     url(r'^contact/$', AntiSpamContactFormView.as_view(), name='contact_form'),
     url(r'^contact/sent/$', TemplateView.as_view(template_name='contact_form/contact_form_sent.html'),
         name='contact_form_sent'),
