@@ -26,7 +26,6 @@ from django.db.models import Max, Sum, Count
 from django.db.models.loading import get_model
 from django.dispatch import receiver
 from django.template.defaultfilters import slugify
-from django.template import Context
 from django.template.loader import select_template, get_template
 from django.utils.translation import ugettext_lazy as _
 from model_utils import Choices
@@ -44,6 +43,7 @@ logger = logging.getLogger(__name__)
 """
 Permissions Enum for Auth Permission Groups
 """
+
 
 class PermissionGroup(Enum):
     participant = 'Participants'
@@ -148,13 +148,6 @@ class ASUWebDirectoryProfile(object):
     @property
     def is_graduate(self):
         return self.class_status == "Graduate"
-
-
-
-"""
-Contains all data models used in the core as well as a number of helper functions.
-FIXME: growing monolithically unwieldy, break up
-"""
 
 
 class DefaultValue(object):
@@ -1136,7 +1129,7 @@ class Experiment(models.Model):
         # thing
         user.set_password(password)
         user.save()
-        c = Context({
+        plaintext_content = plaintext_template.render({
             'participant_experiment_relationship': participant_experiment_relationship,
             'participant': participant,
             'experiment': self,
@@ -1144,7 +1137,6 @@ class Experiment(models.Model):
             'sender': sender,
             'SITE_URL': settings.SITE_URL,
         })
-        plaintext_content = plaintext_template.render(c)
         html_content = markdown.markdown(plaintext_content)
         subject = self.get_registration_email_subject()
         experimenter_email = self.experimenter.email
@@ -3128,7 +3120,7 @@ class ParticipantSignup(models.Model):
     """ Provides participated, discharged, absent, and initial attendance enum values """
     invitation = models.ForeignKey(Invitation, related_name='signup_set')
     date_created = models.DateTimeField(auto_now_add=True)
-    attendance = models.PositiveIntegerField(max_length=1, choices=ATTENDANCE, default=ATTENDANCE.registered)
+    attendance = models.PositiveIntegerField(choices=ATTENDANCE, default=ATTENDANCE.registered)
 
     objects = PassThroughManager.for_queryset_class(ParticipantSignupQuerySet)()
 
@@ -3261,8 +3253,7 @@ def create_markdown_email(template=None, context=None, subject=None, from_email=
     it.
     """
     plaintext_template = get_template(template)
-    c = Context(context)
-    plaintext_content = plaintext_template.render(c)
+    plaintext_content = plaintext_template.render(context)
     html_content = markdown.markdown(plaintext_content)
     msg = EmailMultiAlternatives(subject=subject, body=plaintext_content, from_email=from_email, to=to_email, bcc=bcc)
     msg.attach_alternative(html_content, "text/html")

@@ -6,7 +6,6 @@ from django.conf import settings
 from django.core import mail
 from django.core.mail import EmailMultiAlternatives
 from django.db import transaction
-from django.template import Context
 from django.template.loader import select_template
 from django.utils.timesince import timesince
 
@@ -132,7 +131,7 @@ class EmailGenerator(object):
     def get_context(self, group):
         experiment = self.experiment
         number_of_chat_messages = ChatMessage.objects.for_group(group, round_data=self.round_data).count()
-        return Context({
+        return {
             'experiment': experiment,
             'experiment_completed': experiment.is_last_round,
             'payment_information': self.experiment_configuration.payment_information,
@@ -146,7 +145,7 @@ class EmailGenerator(object):
             'daily_earnings': self.daily_earnings_currency(group),
             'total_earnings': self.total_earnings_currency(group),
             'has_leaderboard': self.has_leaderboard
-        })
+        }
 
     def generate(self, group):
         if not self.should_generate_emails(group):

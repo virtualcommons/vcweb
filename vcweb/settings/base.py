@@ -3,7 +3,6 @@ import os
 import logging
 
 DEBUG = True
-TEMPLATE_DEBUG = DEBUG
 
 
 class Environment(Enum):
@@ -93,16 +92,25 @@ SECRET_KEY = 'keep it secret. keep it safe'
 
 CSRF_FAILURE_VIEW = 'vcweb.core.views.csrf_failure'
 
-TEMPLATE_CONTEXT_PROCESSORS = (
-    'django.contrib.auth.context_processors.auth',
-    "django.core.context_processors.debug",
-    'django.core.context_processors.request',
-    'django.core.context_processors.static',
-    "django.core.context_processors.tz",
-    'django.contrib.messages.context_processors.messages',
-    'vcweb.core.context_processors.common',
-    'dealer.contrib.django.context_processor',
-)
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.contrib.auth.context_processors.auth',
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.template.context_processors.static',
+                'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.tz',
+                'dealer.contrib.django.context_processor',
+                'vcweb.core.context_processors.common',
+            ],
+        },
+    },
+]
 
 MIDDLEWARE_CLASSES = (
     'raven.contrib.django.raven_compat.middleware.Sentry404CatchMiddleware',
@@ -135,12 +143,6 @@ CACHES = {
         }
     }
 }
-
-TEMPLATE_DIRS = (
-    # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
-)
 
 DJANGO_APPS = (
     'django.contrib.auth',

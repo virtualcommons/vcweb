@@ -213,6 +213,9 @@ class Activity(MPTTModel):
         return unicode(self.label)
         # return u'%s : %s' % (self.label, self.points)
 
+    class MPTTMeta:
+        level_attr = 'mptt_level'
+
     class Meta:
         ordering = ['level', 'name']
 
