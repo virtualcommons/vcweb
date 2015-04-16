@@ -5,19 +5,19 @@ Pillow==2.7.0
 PyYAML==3.11
 certifi==14.05.14
 coverage==3.7.1
-django-autocomplete-light==2.0.9
-django-bootstrap3==5.1.1
+django-autocomplete-light==2.1.0
+django-bootstrap3==5.3.1
 django-contact-form==1.0
-django-extensions==1.5.1
+django-extensions==1.5.2
 django-kronos==0.6
 django-localflavor==1.1
 django-model-utils==2.2
-django-mptt==0.6.1
+django-mptt==0.7.1
 django-redis==3.8.3
 django-social-auth==0.7.28
 ecdsa==0.13
 enum34==1.0.4
-httplib2==0.9
+httplib2==0.9.1
 oauth2==1.5.211
 paramiko==1.15.2
 psycopg2==2.6
@@ -30,10 +30,10 @@ sockjs-tornado==1.0.1
 tornado==4.1
 tornado-redis==2.4.18
 redis==2.10.3
-unicodecsv==0.11.0
+unicodecsv==0.12.0
 wsgiref==0.1.2
 xlrd==0.9.3
-xlwt==0.7.5
+xlwt==1.0.0
 dealer==2.0.4
 uwsgi==2.0.10
 # virtualcommons forked django-cas

@@ -187,7 +187,7 @@ def cas_asu_registration_submit(request):
     form = AsuRegistrationForm(request.POST or None, instance=participant)
     if form.is_valid():
         form.save()
-        messages.info(request,_("You've been successfully registered with our mailing list. Thanks!"))
+        messages.info(request, _("You've been successfully registered with our mailing list. Thanks!"))
         logger.debug("created new participant from asurite registration: %s", participant)
         return redirect('core:dashboard')
     else:
@@ -270,8 +270,7 @@ class LogoutView(TemplateView):
 
 
 """
-Open registration currently disabled.
-
+NOTE: Open registration currently disabled.
 class RegistrationView(FormView, AnonymousMixin):
     form_class = RegistrationForm
     template_name = 'accounts/register.html'
@@ -289,8 +288,7 @@ class RegistrationView(FormView, AnonymousMixin):
         if experimenter_requested:
             experimenter_request = ExperimenterRequest.objects.create(user=user)
             logger.debug("creating new experimenter request: %s", experimenter_request)
-        participant = Participant.objects.create(
-            user=user, institution=institution)
+        participant = Participant.objects.create(user=user, institution=institution)
         logger.debug("Creating new participant: %s", participant)
         request = self.request
         # auth + login the newly created user
@@ -301,7 +299,9 @@ class RegistrationView(FormView, AnonymousMixin):
 
     def get_success_url(self):
         return reverse('core:dashboard')
+
 """
+
 
 @login_required
 @require_GET
@@ -326,7 +326,7 @@ def update_account_profile(request):
 
     if form.is_valid():
         form.save()
-        return JsonResponse({ 'success': True, 'message': 'Profile updated successfully.'})
+        return JsonResponse({'success': True, 'message': 'Profile updated successfully.'})
     return JsonResponse({'success': False, 'message': 'Something went wrong. Please try again.'})
 
 
@@ -1024,4 +1024,4 @@ class AntiSpamContactFormView(ContactFormView):
 @require_GET
 @group_required(PermissionGroup.experimenter)
 def audit_report(request):
-    return render(request, 'accounts/audit_report.html', get_audit_data())
+    return render(request, 'admin/audit_report.html', get_audit_data())

@@ -7,7 +7,7 @@ from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.views.generic.base import TemplateView
 
-from vcweb.core.views import AntiSpamContactFormView
+from .core.views import AntiSpamContactFormView
 
 urlpatterns = [
     url(r'^$', TemplateView.as_view(template_name='index.html'), name='home'),
@@ -23,9 +23,9 @@ urlpatterns = [
     url(r'^accounts/password/reset/done/$', auth_views.password_reset_done,
         {'template_name': 'accounts/password_reset_done.html'}, name='password_reset_done'),
     url(r'^accounts/password/reset/confirm/(?P<uidb64>[0-9A-Za-z]+)-(?P<token>.+)/$',
-        auth_views.password_reset_confirm, name='password_reset_confirm'),
-    url(r'^accounts/password/reset/complete/$', auth_views.password_reset_complete,
-        name='password_reset_complete'),
+        auth_views.password_reset_confirm,
+        name='password_reset_confirm'),
+    url(r'^accounts/password/reset/complete/$', auth_views.password_reset_complete, name='password_reset_complete'),
 
     # FIXME: ideally this should be set up dynamically by iterating through each
     # ExperimentMetadata instance and using their namespace (e.g., replace all
@@ -37,10 +37,9 @@ urlpatterns = [
     #    url(r'^broker/', include('vcweb.experiment.broker.urls', namespace='broker', app_name='broker')),
     url(r'^admin/', include(admin.site.urls)),
     url(r'^autocomplete/', include('autocomplete_light.urls')),
-    url(r'^cas/login', 'cas.views.login'),
-    url(r'^cas/logout', 'cas.views.logout'),
-    url(r'^cas/error', TemplateView.as_view(template_name='cas_access_forbidden.html'),
-        name='cas_error'),  # core catches everything else
+    url(r'^cas/login', 'cas.views.login', name='cas_login'),
+    url(r'^cas/logout', 'cas.views.logout', name='cas_logout'),
+    url(r'^cas/error', TemplateView.as_view(template_name='cas_access_forbidden.html'), name='cas_error'),
     # subject pool urls
     url(r'^subject-pool/', include('vcweb.core.subjectpool.urls',
                                    app_name='subjectpool', namespace='subjectpool')),
@@ -55,9 +54,7 @@ def experiment_urls():
         experiment_name = experiment.rpartition('.')[2]
 # include all experiment urls.py under the experiment name's namespace
         yield url(r'^' + experiment_name + '/',
-                  include(experiment + '.urls',
-                          namespace=experiment_name,
-                          app_name=experiment_name))
+                  include(experiment + '.urls', namespace=experiment_name, app_name=experiment_name))
 
 urlpatterns += experiment_urls()
 # core urls catches everything else

@@ -32,8 +32,7 @@ USE_TZ = False
 
 SITE_URL = 'http://localhost:8000'
 
-BASE_DIR = os.path.dirname(
-    os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)))
+BASE_DIR = os.path.dirname(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)))
 
 # GITHUB
 GITHUB_URL = "https://api.github.com"
@@ -56,7 +55,6 @@ ADMINS = (
 MANAGERS = ADMINS
 
 DATA_DIR = 'data'
-GRAPH_DATABASE_PATH = os.path.join(DATA_DIR, 'neo4j')
 
 DATABASES = {
     'default': {
@@ -202,8 +200,7 @@ STATICFILES_FINDERS = (
 )
 STATIC_URL = '/static/'
 STATIC_ROOT = '/var/www/vcweb/static/'
-STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, 'vcweb', 'static').replace('\\', '/'),)
+STATICFILES_DIRS = (os.path.join(BASE_DIR, 'vcweb', 'static'),)
 
 # Absolute path to the directory that holds media (user uploads).
 # Example: "/home/media/media.lawrence.com/"
@@ -256,7 +253,7 @@ LOGGING = {
         'console': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
+            'formatter': 'simple',
         },
         'vcweb.file': {
             'level': 'DEBUG',
@@ -268,23 +265,18 @@ LOGGING = {
         },
     },
     'loggers': {
-        'django.db.backends': {
-            'level': 'ERROR',
-            'handlers': ['console'],
-            'propagate': False,
-        },
         'raven': {
             'level': 'DEBUG',
-            'handlers': ['console'],
+            'handlers': ['vcweb.file', 'console'],
             'propagate': False,
         },
         'sentry.errors': {
             'level': 'DEBUG',
-            'handlers': ['console'],
+            'handlers': ['vcweb.file', 'console'],
             'propagate': False,
         },
-        'vcweb': {
-            'level': 'DEBUG',
+        'django.db.backends': {
+            'level': 'ERROR',
             'handlers': ['vcweb.file', 'console'],
             'propagate': False,
         },
