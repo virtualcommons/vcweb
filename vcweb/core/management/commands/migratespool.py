@@ -3,7 +3,6 @@ import logging
 
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
-import mysql.connector
 
 from vcweb.core.models import Participant, Institution, set_full_name
 from vcweb.core.models import OstromlabFaqEntry
@@ -21,8 +20,7 @@ class Command(BaseCommand):
                  " FROM user u inner join participant p on u.id=p.id "
                  " WHERE u.active=1")
         cursor.execute(query)
-        asu_institution = Institution.objects.get(
-            name='Arizona State University')
+        asu_institution = Institution.objects.get(name='Arizona State University')
         existing_users = []
         new_users = []
         new_participants = []
@@ -43,7 +41,6 @@ class Command(BaseCommand):
                     self.stdout.write(
                         "Skipping {} that registered on {}".format(class_status, date_created))
                     skipped_participants.append("%s %s" % (username, email))
-            #self.stdout.write(u"Looking at {} {} class {}".format(username, email, class_status))
             try:
                 u = User.objects.get(email=email)
                 self.stdout.write(u"user already exists: {}".format(u))
@@ -94,6 +91,7 @@ class Command(BaseCommand):
             self.stdout.write("faq entry %s (%s)" % (faq_entry, created))
 
     def handle(self, *args, **options):
+        import mysql.connector
         # open db connection to subject pool
         cnx = mysql.connector.connect(
             user='spool', password='spool.migration', host='127.0.0.1', database='spool')
