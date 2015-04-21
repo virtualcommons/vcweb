@@ -1,7 +1,6 @@
 # Local Development Django settings for vcweb
 from .base import *
-DEBUG = True
-TEMPLATE_DEBUG = DEBUG
+DEBUG = not ENVIRONMENT.is_production
 
 DATABASES = {
     'default': {

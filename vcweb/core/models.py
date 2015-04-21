@@ -531,7 +531,7 @@ class ExperimentConfigurationQuerySet(models.query.QuerySet):
         return self.filter(experiment_metadata__namespace__in=('lighterprints', 'forestry'), is_public=True, **kwargs)
 
 
-class ExperimentConfiguration(models.Model, ParameterValueMixin):
+class ExperimentConfiguration(ParameterValueMixin, models.Model):
 
     """
     The configuration for a given Experiment instance.  One ExperimentConfiguration can be applied to many Experiment
@@ -1600,7 +1600,7 @@ class Experiment(models.Model):
         ordering = ['date_created', 'status']
 
 
-class RoundConfiguration(models.Model, ParameterValueMixin):
+class RoundConfiguration(ParameterValueMixin, models.Model):
     RoundType = Choices(
         ('WELCOME', _('Initial welcome page')),
         ('GENERAL_INSTRUCTIONS', _('General introduction')),

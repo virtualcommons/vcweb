@@ -166,7 +166,7 @@ def get_shared_resource_level_dv(group=None, round_data=None, cluster=None):
     if round_data is None:
         round_data = group.current_round_data
     if cluster is None:
-        group_relationship = GroupRelationship.objects.select_related('group_cluster').get(group=group)
+        group_relationship = GroupRelationship.objects.select_related('cluster').get(group=group)
         cluster = group_relationship.cluster
     return cluster.get_data_value(parameter=get_resource_level_parameter(), round_data=round_data)
 

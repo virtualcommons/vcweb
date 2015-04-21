@@ -29,11 +29,10 @@ class Command(BaseCommand):
             # Adding permissions that are currently used in templates.
             # Need to revisit in future when more permissions are being used.
             if p == PermissionGroup.participant:
-                perms = Permission.objects.filter(content_type__name='user')
+                perms = Permission.objects.filter(content_type__model='user')
                 groups[p].permissions = perms
             elif p == PermissionGroup.experimenter:
-                perms = Permission.objects.filter(
-                    content_type__name='experiment')
+                perms = Permission.objects.filter(content_type__model='experiment')
                 groups[p].permissions = perms
 
         participant_list = Participant.objects.select_related(

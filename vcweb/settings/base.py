@@ -1,8 +1,6 @@
 from enum import Enum
-import os
 import logging
-
-DEBUG = True
+import os
 
 
 class Environment(Enum):
@@ -26,11 +24,13 @@ class Environment(Enum):
 # valid values: 'DEVELOPMENT', 'STAGING', 'PRODUCTION'
 ENVIRONMENT = Environment.DEVELOPMENT
 
+DEBUG = True
 
 USE_TZ = False
 
 SITE_URL = 'http://localhost:8000'
 
+# set BASE_DIR one level up since we're in a settings directory.
 BASE_DIR = os.path.dirname(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)))
 
 # GITHUB
@@ -154,15 +154,15 @@ DJANGO_APPS = (
 )
 
 THIRD_PARTY_APPS = (
-    'autocomplete_light',
     'raven.contrib.django.raven_compat',
     'contact_form',
-    'kronos',
     'django_extensions',
     'mptt',
     'bootstrap3',
     'cas',
     'django_redis',
+    'autocomplete_light',
+    'kronos',
 )
 
 
@@ -235,7 +235,7 @@ LOGGING = {
     'version': 1,
     'disable_existing_loggers': True,
     'root': {
-        'level': 'WARNING',
+        'level': 'DEBUG',
         'handlers': ['sentry', 'vcweb.file', 'console'],
     },
     'formatters': {
@@ -305,8 +305,6 @@ CAS_CUSTOM_FORBIDDEN = 'cas_error'
 # reset in local.py to enable more verbose logging (e.g.,
 # DISABLED_TEST_LOGLEVEL = logging.NOTSET)
 DISABLED_TEST_LOGLEVEL = logging.WARNING
-
-TEST_RUNNER = 'vcweb.core.tests.runner.VcwebTestRunner'
 
 # revision reporting support using dealer
 DEALER_TYPE = 'git'

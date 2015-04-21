@@ -38,17 +38,14 @@ class DemoExperimenter(object):
         groups = {}
         for p in PermissionGroup:
             groups[p] = Group.objects.create(name=p)
-        demo_experimenter_user.groups.add(
-            groups[PermissionGroup.demo_experimenter])
-        Experimenter.objects.create(
-            user=demo_experimenter_user, approved=True, institution=asu)
+        demo_experimenter_user.groups.add(groups[PermissionGroup.demo_experimenter])
+        Experimenter.objects.create(user=demo_experimenter_user, approved=True, institution=asu)
 
     @staticmethod
     def rollback(apps, schema_editor):
         Experimenter = apps.get_model('core', 'Experimenter')
         User = apps.get_model('auth', 'User')
-        demo_experimenter_user = User.objects.get(
-            username=settings.DEMO_EXPERIMENTER_EMAIL)
+        demo_experimenter_user = User.objects.get(username=settings.DEMO_EXPERIMENTER_EMAIL)
         Experimenter.objects.get(user=demo_experimenter_user).delete()
         demo_experimenter_user.delete()
 
@@ -70,7 +67,7 @@ class InitialParticipantParameters(object):
             display_name='Chat message',
             scope='participant',
             type='string',
-            description='Chat message that can be broadcast (to the group or the entire experiment, depends on the experiment implementation) or targeted to another participant',
+            description='Chat message that can be broadcast to multiple participants or targeted to a specific participant',
         )
         Parameter.objects.create(
             name='like',
@@ -84,7 +81,7 @@ class InitialParticipantParameters(object):
             display_name='Comment',
             scope='participant',
             type='string',
-            description='Comment attached to some other participant data value (activity performed, like, chat message, etc.)',
+            description='Comment attached to some other participant data value (e.g., an activity performed or harvest decision)',
         )
 
     @staticmethod
@@ -101,8 +98,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(
-            DemoExperimenter.forward, DemoExperimenter.rollback),
-        migrations.RunPython(
-            InitialParticipantParameters.forward, InitialParticipantParameters.rollback),
+        migrations.RunPython(DemoExperimenter.forward, DemoExperimenter.rollback),
+        migrations.RunPython(InitialParticipantParameters.forward, InitialParticipantParameters.rollback),
     ]

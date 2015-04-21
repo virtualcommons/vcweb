@@ -1,7 +1,6 @@
 # Production Django settings for vcweb
 from .base import *
 DEBUG = False
-TEMPLATE_DEBUG = DEBUG
 ENVIRONMENT = Environment.PRODUCTION
 
 DATABASES = {
