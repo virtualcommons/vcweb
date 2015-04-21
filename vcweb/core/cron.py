@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core import management
 from django.dispatch import receiver
 from datetime import datetime
@@ -5,7 +6,7 @@ from kronos import register
 
 from . import signals
 from .decorators import log_signal_errors
-from .models import get_audit_data
+from .models import get_audit_data, create_markdown_email
 
 import logging
 logger = logging.getLogger(__name__)
@@ -30,16 +31,12 @@ def system_monthly_tick():
 
 
 @receiver(signals.system_weekly_tick, dispatch_uid='schedule-weekly-tasks')
-def weekly_schedule_tasks(sender, start=None, **kwargs):
+def run_weekly_audit(sender, start=None, **kwargs):
     email = create_markdown_email(template="email/weekly-audit-email.txt", context=get_audit_data(),
                                   subject="VCWEB Audit", to_email=[settings.DEFAULT_EMAIL])
     email.send()
 
+
 @receiver(signals.system_monthly_tick, dispatch_uid='schedule-monthly-tasks')
 def validate_class_status(sender, start=None, **kwargs):
     management.call_command('validate_student_class_status')
-
-
-#@register('@weekly')
-# def refresh_foursquare_categories():
-#    fetch_foursquare_categories(refresh=True)

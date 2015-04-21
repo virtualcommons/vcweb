@@ -236,7 +236,7 @@ LOGGING = {
     'disable_existing_loggers': True,
     'root': {
         'level': 'DEBUG',
-        'handlers': ['sentry', 'vcweb.file', 'console'],
+        'handlers': ['vcweb.file', 'console'],
     },
     'formatters': {
         'verbose': {
@@ -279,7 +279,7 @@ LOGGING = {
         },
         'django.db.backends': {
             'level': 'ERROR',
-            'handlers': ['vcweb.file', 'console'],
+            'handlers': ['console'],
             'propagate': False,
         },
     }
