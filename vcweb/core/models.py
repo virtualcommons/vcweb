@@ -3316,6 +3316,12 @@ def update_daily_experiments(sender, timestamp=None, start=None, **kwargs):
 
 
 def get_audit_data():
+    """
+    1) perform permissions checks on participants & experimenters
+    2) generate weekly activity log email with aggregate stats on participant signups,
+       experiment status changes (run or archived), invitations sent
+    """
+
     # FIXME add information regarding experiment status changes
     invalid_permission_participants = Participant.objects.select_related('user').active().exclude(
         user__groups__name=PermissionGroup.participant.value)
@@ -3344,30 +3350,3 @@ def get_audit_data():
         "invites": invites_last_week, "institution_list": institution_list,
     }
 
-
-@receiver(signals.system_weekly_tick, dispatch_uid='schedule-weekly-tasks')
-def weekly_schedule_tasks(sender, start=None, **kwargs):
-    """
-    1) perform permissions checks on participants & experimenters
-    2) generate weekly activity log email with aggregate stats on participant signups,
-       experiment status changes (run or archived), invitations sent
-    """
-    email = create_markdown_email(template="email/weekly-audit-email.txt", context=get_audit_data(),
-                                  subject="VCWEB Audit", to_email=[settings.DEFAULT_EMAIL])
-    email.send()
-
-
-@receiver(signals.system_monthly_tick, dispatch_uid='schedule-monthly-tasks')
-def validate_student_class_status(sender, start=None, **kwargs):
-    # FIXME: Need to verify that ASU web directory can handle this many requests in short span
-    participants = Participant.objects.select_related('user').all()
-    invalid_participants = []
-    for participant in participants:
-        if participant.email != participant.username:
-            directory_profile = ASUWebDirectoryProfile(participant.username)
-            if not directory_profile.is_undergraduate:
-                invalid_participants.append(participant)
-
-    email = create_markdown_email(template="email/monthly-audit-email.txt", context={'participants': invalid_participants},
-                                  subject="VCWEB Monthly Audit", to_email=[settings.DEFAULT_EMAIL])
-    email.send()
