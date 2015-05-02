@@ -1,11 +1,11 @@
-Django==1.8.0
+Django==1.8.1
 Fabric==1.10.1
-Markdown==2.6.1
+Markdown==2.6.2
 Pillow==2.7.0
 PyYAML==3.11
 certifi==14.05.14
 coverage==3.7.1
-django-autocomplete-light==2.0.9
+django-autocomplete-light==2.1.1
 django-bootstrap3==5.3.1
 django-contact-form==1.0
 django-extensions==1.5.2
@@ -25,7 +25,7 @@ pycrypto==2.6.1
 python-coveralls==2.5.0
 python-openid==2.2.5
 raven==5.2.0
-requests==2.6.0
+requests==2.6.2
 sockjs-tornado==1.0.1
 tornado==4.1
 tornado-redis==2.4.18

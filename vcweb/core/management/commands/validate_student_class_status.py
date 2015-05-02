@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 from django.conf import settings
-from .models import Participant, ASUWebDirectoryProfile, create_markdown_email
+from vcweb.core.models import Participant, ASUWebDirectoryProfile, create_markdown_email
 
 import unicodecsv as csv
 import logging
