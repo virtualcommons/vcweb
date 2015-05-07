@@ -3315,7 +3315,7 @@ def update_daily_experiments(sender, timestamp=None, start=None, **kwargs):
             e.activate()
 
 
-def get_audit_data():
+def get_audit_data(user_count=10, user_login_timedelta=7):
     """
     1) perform permissions checks on participants & experimenters
     2) generate weekly activity log email with aggregate stats on participant signups,
@@ -3340,7 +3340,10 @@ def get_audit_data():
     invites_last_week = Invitation.objects.filter(date_created__gt=last_week_datetime).count()
 
     # Participants count grouped by institute they belong to
-    institution_list = Participant.objects.all().values('institution__name').annotate(total=Count('institution')).order_by('-total')
+    institution_list = Participant.objects.all().values('institution__name', 'institution__pk').annotate(total=Count('institution')).order_by('-total')
+
+    # recent user logins
+    recent_logins = User.objects.filter(last_login__gte=datetime.today() - timedelta(user_login_timedelta))[:user_count]
 
     return {
         "from_date": last_week_datetime.strftime("%m-%d-%Y"),
@@ -3348,5 +3351,6 @@ def get_audit_data():
         "invalid_users": invalid_users, "participants": invalid_permission_participants,
         "experimenters": invalid_permission_experimenters, "signups": signup_last_week,
         "invites": invites_last_week, "institution_list": institution_list,
+        "recent_logins": recent_logins,
     }
 

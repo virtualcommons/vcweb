@@ -7,13 +7,13 @@ This email contains the results of periodically performed audit tasks:
 {% if invalid_users|length > 0 %}
 - The following is the list users who have experimenter as well as participant access
 {% for user in invalid_users %}
--  **{{forloop.counter}}** username: {{ user.username }} email: {{ user.email }}
+-  **{{ user.pk }}** username: {{ user.username }} email: {{ user.email }}
 {% endfor %}
 {% endif %}
 {% if participants|length > 0 %}
 - The following participants don't have proper permissions
 {% for participant in participants %}
--  **{{forloop.counter}}** username: {{ participant.username }} email: {{ participant.email }}
+-  **{{participant.pk}}** username: {{ participant.username }} email: {{ participant.email }}
 {% endfor %}
 {% else %}
 - All the participants have proper permissions
@@ -21,7 +21,7 @@ This email contains the results of periodically performed audit tasks:
 {% if experimenters|length > 0 %}
 - The following experimenters don't have proper permissions
 {% for experimenter in experimenters %}
--  **{{forloop.counter}}** username: {{ experimenter.username }} email: {{ experimenter.email }}
+-  **{{experimenter.pk}}** username: {{ experimenter.username }} email: {{ experimenter.email }}
 {% endfor %}
 {% else %}
 - All the experimenters have proper permissions
@@ -29,8 +29,16 @@ This email contains the results of periodically performed audit tasks:
 {% if institution_list|length > 0 %}
 - The following is the list of institutions along with the count for participants belonging to that institution
 {% for institute in institution_list %}
--  **{{forloop.counter}}** Institute: {{ institute.institution__name }} email: {{ institute.total }}
+-  **{{ institute.institution__pk }}** Institute: {{ institute.institution__name }} email: {{ institute.total }}
 {% endfor %}
 {% else %}
 - No Institutions found.
+{% endif %}
+{% if recent_logins|length > 0 %}
+- The following is the list of users who recently logged in the system
+{% for user in recent_logins %}
+-  **{{ user.pk }}** UserName: {{ user.username }} Last Login: {{ user.last_login }}
+{% endfor %}
+{% else %}
+- No recent user logins found.
 {% endif %}
