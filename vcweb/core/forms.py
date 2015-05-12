@@ -16,7 +16,7 @@ from django.forms.util import ErrorDict
 from django.utils.translation import ugettext_lazy as _
 
 from .autocomplete_light_registry import InstitutionAutocomplete, ParticipantMajorAutocomplete
-from .models import (User, CommonsUser, Experimenter, Institution, Participant, ExperimentMetadata, ExperimentConfiguration,
+from .models import (User, Experimenter, Institution, Participant, ExperimentMetadata, ExperimentConfiguration,
                      ExperimentParameterValue, RoundConfiguration, RoundParameterValue)
 
 from contact_form.forms import ContactForm
@@ -166,8 +166,7 @@ class AccountForm(forms.ModelForm):
         validate_email(email_address)
 
         if not email_address:
-            raise forms.ValidationError(
-                _("Please enter a valid email address"))
+            raise forms.ValidationError(_("Please enter a valid email address"))
 
         if self.instance.email != email_address:
             if User.objects.filter(email=email_address).exists():
@@ -197,8 +196,8 @@ class ParticipantAccountForm(AccountForm):
 
     class Meta:
         model = Participant
-        fields = ['gender', 'can_receive_invitations', 'class_status',
-                  'major', 'favorite_sport', 'favorite_food', 'favorite_color', 'favorite_movie_genre']
+        fields = ['gender', 'can_receive_invitations', 'class_status', 'major', 'favorite_sport', 'favorite_food',
+                  'favorite_color', 'favorite_movie_genre']
         labels = {
             'can_receive_invitations': _('Receive invitations for experiments?')
         }
@@ -208,19 +207,8 @@ class ParticipantAccountForm(AccountForm):
 
     def clean(self):
         data = super(ParticipantAccountForm, self).clean()
-
-        email_address = data.get('email')
         can_receive_invitations = data.get('can_receive_invitations')
-        major = data.get('major')
-        gender = data.get('gender')
-        class_status = data.get('class_status')
-        favorite_food = data.get('favorite_food')
-        favorite_color = data.get('favorite_color')
-        favorite_sport = data.get('favorite_sport')
-        favorite_movie_genre = data.get('favorite_movie_genre')
-
-        if can_receive_invitations and not all([major, gender, class_status, favorite_food, favorite_color,
-                                                favorite_sport, favorite_movie_genre]):
+        if can_receive_invitations and not all([data.get(key) for key in ParticipantAccountForm.Meta.fields]):
             raise forms.ValidationError(_("Please fill in all fields to be eligible for experiment invitations."))
         return data
 
@@ -270,6 +258,9 @@ class ExperimentConfigurationForm(forms.ModelForm):
 
 
 class ExperimentParameterValueForm(forms.ModelForm):
+    """
+    FIXME: refactor KO-specific attributes if possible, look into cleaning up save/commit semantics
+    """
     required_css_class = 'required'
 
     def __init__(self, post_dict=None, instance=None, pk=None, **kwargs):
@@ -277,8 +268,7 @@ class ExperimentParameterValueForm(forms.ModelForm):
             instance = ExperimentParameterValue.objects.get(pk=pk)
         super(ExperimentParameterValueForm, self).__init__(post_dict, instance=instance, **kwargs)
 
-        self.fields['parameter'].queryset = self.fields[
-            'parameter'].queryset.filter(scope='experiment')
+        self.fields['parameter'].queryset = self.fields['parameter'].queryset.filter(scope='experiment')
 
         for name, field in self.fields.items():
             if isinstance(field.widget, CheckboxInput):
@@ -501,7 +491,7 @@ class GeoCheckinForm(forms.Form):
     longitude = forms.DecimalField(max_digits=8, decimal_places=5)
     accuracy = forms.FloatField(required=False)
     altitude = forms.FloatField(required=False)
-    altitudeAccuracy = forms.FloatField(required=False)
+    altitude_accuracy = forms.FloatField(required=False)
     heading = forms.FloatField(required=False)
     speed = forms.FloatField(required=False)
 

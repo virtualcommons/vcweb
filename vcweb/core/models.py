@@ -52,7 +52,7 @@ class PermissionGroup(Enum):
     demo_experimenter = 'Demo Experimenters'
 
     def get_django_group(self):
-        key = 'permissions.%s' % self.name
+        key = 'permissions.{0}'.format(self.name)
         g = cache.get(key)
         if not g:
             g = AuthGroup.objects.get(name=self.value)
@@ -163,10 +163,10 @@ class DefaultValue(object):
         return self.value
 
     def __str__(self):
-        return '%s' % self.value
+        return str(self.value)
 
     def __unicode__(self):
-        return u'%s' % self.value
+        return unicode(self.value)
 
 
 class ParameterValueMixin(object):
@@ -217,11 +217,11 @@ class ParameterValueMixin(object):
             k, v = kwargs.popitem()
             if '_value' not in k:
                 logger.error("invalid attribute accessor trying to set %s.%s=%s", pv, k, v)
-                raise ValueError("Invalid attribute accessor %s" % k)
+                raise ValueError("Invalid attribute accessor {0}".format(k))
             setattr(pv, k, v)
             pv.save()
         else:
-            raise ValueError("single value required set_parameter_value, received %s instead" % kwargs)
+            raise ValueError("single value required set_parameter_value, received {0} instead".format(kwargs))
         return pv
 
 
@@ -300,7 +300,7 @@ class ExperimentMetadataQuerySet(models.query.QuerySet):
                 'experiment_metadata', flat=True)
             if bem_pks:
                 bem_pks_str = ','.join([str(x) for x in bem_pks])
-                return self.extra(select={'bookmarked': "id in (%s)" % bem_pks_str})
+                return self.extra(select={'bookmarked': "id in ({0})".format(bem_pks_str)})
         return self.extra(select={'bookmarked': False})
         # self.filter(**kwargs).annotate(bookmarked=models.Q(pk__in=bem_pks))
 
@@ -363,9 +363,9 @@ class ExperimentMetadata(models.Model):
 
     def __unicode__(self):
         if self.namespace:
-            return u"%s /%s" % (self.title, self.namespace)
+            return u"{0} /{1}".format(self.title, self.namespace)
         else:
-            return u"%s (subject recruitment shell experiment with no namespace)"
+            return u"{0} /none".format(self.title)
 
     class Meta:
         ordering = ['title', 'namespace']
@@ -378,7 +378,7 @@ class ActivityLog(models.Model):
     # log_type = models.CharField(max_length=64, choices=LogType, default=LogType.System)
 
     def __unicode__(self):
-        return u"%s - %s" % (self.date_created.strftime("%m-%d-%Y %H:%M"), self.log_message)
+        return u"{0} - {1}".format(self.date_created.strftime("%m-%d-%Y %H:%M"), self.log_message)
 
 
 class OstromlabFaqEntry(models.Model):
@@ -389,7 +389,7 @@ class OstromlabFaqEntry(models.Model):
     contributor = models.ForeignKey(User)
 
     def __unicode__(self):
-        return u"%s\n\t%s" % (self.question, self.answer)
+        return u"{0}: {1}".format(self.question, self.answer)
 
     class Meta:
         ordering = ['question', '-date_created']
@@ -467,7 +467,7 @@ class CommonsUser(models.Model):
         return self.user.is_superuser
 
     def __unicode__(self):
-        return u"%s (%s)" % (self.full_name, self.user.email)
+        return u"{0} ({1})".format(self.full_name, self.user.email)
 
     class Meta:
         abstract = True
@@ -749,8 +749,6 @@ class Experiment(models.Model):
 
     @property
     def is_time_expired(self):
-        # logger.error("current round elapsed time: %s vs duration %s", self.current_round_elapsed_time.total_seconds,
-        #             self.current_round.duration)
         return self.current_round_elapsed_time >= timedelta(self.current_round.duration)
 
     @property
@@ -799,31 +797,27 @@ class Experiment(models.Model):
 
     @property
     def channel_name(self):
-        return "%s.%s" % (self.namespace, self.pk)
+        return u"{0}.{1}".format(self.namespace, self.pk)
 
     @property
     def status_label(self):
-        return u"%s, %s" % (self.get_status_display(), self.current_round.get_round_type_display())
+        return u"{0}, {1}".format(self.get_status_display(), self.current_round.get_round_type_display())
 
     @property
     def sequence_label(self):
         cr = self.current_round
+        final_sequence_number = self.experiment_configuration.final_sequence_number
+        _label = u"Round {0}/{1}".format(cr.sequence_number, final_sequence_number)
         if cr.is_repeating_round:
-            return u"Round %s/%s (repeating round %d of %d)" % (self.current_round_sequence_number,
-                                                                self.experiment_configuration.final_sequence_number,
-                                                                self.current_repeated_round_sequence_number +
-                                                                1,
-                                                                cr.repeat)
-        else:
-            return u"Round %d of %d" % (cr.sequence_number, self.experiment_configuration.final_sequence_number)
+            _label += u" (repeating round {} of {})".format(self.current_repeated_round_sequence_number + 1,
+                                                            cr.repeat)
+        return _label
 
     @property
     def status_line(self):
-        return u"%s #%s (%s), %s" % (
-            self.experiment_metadata.title,
-            self.pk,
-            self.experiment_configuration.name,
-            self.sequence_label)
+        return u"{0} #{1} | {2}".format(self.experiment_configuration,
+                                        self.pk,
+                                        self.sequence_label)
 
     @property
     def number_of_participants(self):
@@ -855,14 +849,14 @@ class Experiment(models.Model):
 
     @property
     def monitor_url(self):
-        return "%s/monitor" % self.controller_url
+        return "{}/monitor".format(self.experimenter_url)
 
     @property
-    def controller_url(self):
-        return "/experiment/%s" % self.pk
+    def experimenter_url(self):
+        return "/experiment/{}".format(self.pk)
 
     def get_participant_url(self, uri):
-        return '/{0}/{1}'.format(self.get_absolute_url(), uri)
+        return '{0}/{1}'.format(self.get_absolute_url(), uri)
 
     @property
     def participant_url(self):
@@ -874,14 +868,14 @@ class Experiment(models.Model):
         would typically use request.build_absolute_uri for this but we don't always have access to a request when
         sending the email out (e.g., nightly cron-driven activation)
         """
-        return "%s%s" % (settings.SITE_URL, self.participant_url)
+        return settings.SITE_URL + self.participant_url
 
     @property
     def participant_emails(self):
         return self.participant_set.all().values_list('user__email', flat=True)
 
     def get_absolute_url(self):
-        return "%s/%s" % (self.experiment_metadata.namespace, self.pk)
+        return "/{}/{}".format(self.experiment_metadata.namespace, self.pk)
 
     @property
     def participant_template(self):
@@ -1030,7 +1024,7 @@ class Experiment(models.Model):
         if subject is None:
             subject = self.experiment_configuration.registration_email_subject
             if subject is None:
-                subject = 'VCWEB experiment registration for %s' % self.display_name
+                subject = 'VCWEB experiment registration for {}'.format(self.display_name)
         return subject
 
     def notify_participants(self, message, group=None, notify_experimenter=False):
@@ -1120,7 +1114,7 @@ class Experiment(models.Model):
         Override the email template by creating <experiment-namespace>/email/experiment-registration.txt templates
         """
         participant = participant_experiment_relationship.participant
-        plaintext_template = select_template(['%s/email/experiment-registration.txt' % self.namespace,
+        plaintext_template = select_template(['{}/email/experiment-registration.txt'.format(self.namespace),
                                               'email/experiment-registration.txt'])
         user = participant.user
         if password is None or not password.strip():
@@ -1163,7 +1157,7 @@ class Experiment(models.Model):
         demo_participants_group = PermissionGroup.demo_participant.get_django_group()
 
         for i in xrange(1, count + 1):
-            email_address = u's%d%s@%s' % (i, username_suffix, email_suffix)
+            email_address = u's{0}{1}@{2}'.format(i, username_suffix, email_suffix)
             userqs = User.objects.select_for_update().filter(
                 models.Q(email=email_address) | models.Q(username=email_address))
             if userqs.exists():
@@ -1253,20 +1247,20 @@ class Experiment(models.Model):
 
     def log(self, log_message, log_type=ActivityLog.LogType.System, *args, **kwargs):
         if log_message:
-            message = "%s: %s" % (self, log_message)
+            message = "{}: {}".format(self, log_message)
             logger.debug(message, *args)
             self.activity_log_set.create(round_configuration=self.current_round, log_message=message)
 
     def configuration_file_name(self, file_ext='.xml'):
         if not file_ext.startswith('.'):
             file_ext = '.' + file_ext
-        return '%s_experiment-configuration_%s%s' % (slugify(self.display_name), self.pk, file_ext)
+        return '{}_experiment-configuration_{}{}'.format(slugify(self.display_name), self.pk, file_ext)
 
     def data_file_name(self, file_ext='.csv'):
         if not file_ext.startswith('.'):
             file_ext = '.' + file_ext
-        return "%s_%s_%s%s" % (
-            slugify(self.experiment_metadata.title), self.pk, datetime.now().strftime("%m-%d-%Y-%H%M"), file_ext)
+        return "{}_{}_{}{}".format(slugify(self.experiment_metadata.title), self.pk,
+                                   datetime.now().strftime("%m-%d-%Y-%H%M"), file_ext)
 
     def parameters(self, scope=None):
         parameter_set = self.experiment_metadata.parameters
@@ -1296,25 +1290,24 @@ class Experiment(models.Model):
                     if not session_id:
                         logger.error("Cannot create a new set of groups because no session id has been set on %s.",
                                      round_configuration)
-                        raise ValueError(
-                            "Cannot preserve existing groups without round_configuration.session id %s"
-                            % round_configuration)
+                        raise ValueError("Cannot preserve existing groups without round_configuration.session id {}".format(
+                            round_configuration))
             else:
                 logger.debug("deleting existing groups")
                 # FIXME: fairly expensive operation to log all group members
                 gqs = gs.all()
                 for g in gqs:
-                    self.log("reallocating/deleting group %s" %
-                             g.participant_group_relationship_set.all())
-                gqs.delete()
-        # allocate participants to groups
-        current_group = self.group_set.create(
-            number=1, max_size=max_group_size, session_id=session_id)
+                    self.log("reallocating/deleting group {}".format(
+                        g.participant_group_relationship_set.all()))
+                    gqs.delete()
+        # existing groups, if any, should have been handled. now allocate participants to fresh groups
+        current_group = self.group_set.create(number=1, max_size=max_group_size, session_id=session_id)
         for p in participants:
-            # FIXME: simplify logic where possible
             # create a new group
             pgr = current_group.add_participant(p)
             current_group = pgr.group
+        # Groups have all been populated. Check to see if group clusters should be created now to share data and
+        # resources across multiple groups.
         self.create_group_clusters()
 
     def create_group_clusters(self):
@@ -1349,13 +1342,11 @@ class Experiment(models.Model):
 
     def invoke(self, action_name, experimenter=None):
         if action_name in Experiment.ALLOWED_ACTIONS and experimenter == self.experimenter:
-            logger.debug(
-                "experimenter %s invoking action %s", experimenter, action_name)
+            self.log("experimenter %s invoking action %s", experimenter, action_name)
             action = getattr(self, action_name)
             return action()
         else:
-            raise AttributeError(
-                "Invalid experiment action %s requested of experiment %s" % (action_name, self))
+            self.log("Invalid experiment action %s requested of experiment %s" % (action_name, self))
 
     def advance_to_next_round(self):
         if self.is_round_in_progress:
@@ -1987,11 +1978,11 @@ class ParameterizedValue(models.Model):
 
     @property
     def cache_key(self):
+        """
+        redis / memcached cache key to retrieve a recent value for this ParameterizedValue
+        """
         p = self.parameter
-        if p.is_foreign_key:
-            return "%s-%s" % (p.name, self.int_value)
-        else:
-            return "%s-%s" % (p.name, self.pk)
+        return "{0}_{1}".format(p.name, self.int_value if p.is_foreign_key else self.pk)
 
     @property
     def cached_value(self):
@@ -2132,7 +2123,7 @@ class Group(models.Model, DataValueMixin):
 
     @property
     def name(self):
-        return u"Group %s" % self.identifier
+        return u"Group {0}".format(self.identifier)
 
     @property
     def identifier(self):
@@ -2142,15 +2133,6 @@ class Group(models.Model, DataValueMixin):
         if quotient > 0:
             group_identifier = string.ascii_uppercase[quotient - 1] + group_identifier
         return group_identifier
-
-    @property
-    def channel(self):
-        """ should return a unique chat / event channel to communicate on """
-        return u"%s.%d" % (self.experiment.event_channel_name, self.number)
-
-    @property
-    def experiment_channel(self):
-        return self.experiment.event_channel_name
 
     @property
     def size(self):
@@ -2207,12 +2189,13 @@ class Group(models.Model, DataValueMixin):
     def log(self, log_message, log_type=ActivityLog.LogType.System):
         if log_message:
             logger.debug(log_message)
-            self.activity_log_set.create(round_configuration=self.current_round, log_message=log_message)
+            self.activity_log_set.create(round_configuration=self.current_round, log_message=log_message,
+                                         log_type=log_type)
 
     def add(self, parameter=None, amount=0):
         # could be a float or an int..
         update_dict = {parameter.value_field_name: models.F(parameter.value_field_name) + amount}
-        self.log("adding %s to this group's %s parameter" % (amount, parameter))
+        self.log("adding {0} to this group's {1} parameter".format(amount, parameter))
         updated_rows = self.data_value_set.filter(round_data=self.current_round_data, parameter=parameter).update(
             **update_dict)
         if updated_rows != 1:
@@ -2342,7 +2325,7 @@ class GroupCluster(models.Model, DataValueMixin):
         return GroupRelationship.objects.create(cluster=self, group=group)
 
     def __unicode__(self):
-        return u"GroupCluster #%s %s (%s)" % (self.pk, self.session_id, self.experiment)
+        return u"GroupCluster #{0} {1} ({2})".format(self.pk, self.session_id, self.experiment)
 
     class Meta:
         ordering = ['date_created']
@@ -2354,7 +2337,7 @@ class GroupRelationship(models.Model):
     group = models.ForeignKey(Group, related_name='relationship_set')
 
     def __unicode__(self):
-        return u"%s -> %s" % (self.group, self.cluster)
+        return u"{0} -> {1}".format(self.group, self.cluster)
 
     class Meta:
         ordering = ['date_created']
@@ -2385,7 +2368,7 @@ class RoundData(models.Model):
         rc = self.round_configuration
         round_number = rc.round_number
         if rc.is_repeating_round:
-            return "%s.%s" % (round_number, self.repeating_round_sequence_number + 1)
+            return "{0}.{1}".format(round_number, self.repeating_round_sequence_number + 1)
         else:
             return round_number
 
@@ -2394,10 +2377,7 @@ class RoundData(models.Model):
         return self.round_configuration.session_id
 
     def __unicode__(self):
-        if self.round_configuration.is_repeating_round:
-            return u"Repeating round data %s.%s" % (self.round_configuration.sequence_number,
-                                                    self.repeating_round_sequence_number)
-        return u"Round data %s" % self.round_configuration.sequence_label
+        return u"Data for round {0}".format(self.round_number)
 
     class Meta:
         ordering = ['round_configuration', 'repeating_round_sequence_number']
@@ -2554,17 +2534,16 @@ class Participant(CommonsUser):
         self.user.is_active = False
         self.user.save()
         upcoming_signups = ParticipantSignup.objects.upcoming(participant=self)
-        logger.warn(
-            "deactivating user %s and deleting upcoming signups %s", self, upcoming_signups)
+        logger.warn("deactivating user %s and deleting upcoming signups %s", self, upcoming_signups)
         upcoming_signups.delete()
 
     def __unicode__(self):
         if self.full_name:
             return unicode(self.full_name)
-        return self.email
+        return self.user.email
 
     def all_data_string(self):
-        return u"(email: %s) (class: %s) (major: %s) (gender: %s) (username: %s)" % (
+        return u"email: {0}, class: {1}, major: {2}, gender: {3}, username: {4}".format(
             self.user.email, self.class_status, self.major, self.gender, self.user.username)
 
     class Meta:
@@ -2633,8 +2612,7 @@ class ParticipantGroupRelationshipQuerySet(models.query.QuerySet):
             return self.select_related('group', 'participant__user').get(group__experiment=experiment,
                                                                          participant=participant)
         except ParticipantGroupRelationship.DoesNotExist:
-            logger.warning(
-                "Participant %s does not belong to a group in %s", participant, experiment)
+            logger.warning("Participant %s does not belong to a group in %s", participant, experiment)
             return None
 
 
@@ -2671,7 +2649,7 @@ class ParticipantGroupRelationship(models.Model, DataValueMixin):
 
     @property
     def participant_handle(self):
-        return "Participant %s" % self.participant_number
+        return u"Participant {0}".format(self.participant_number)
 
     @property
     def experiment(self):
@@ -2934,7 +2912,7 @@ class GroupActivityLog(ActivityLog):
     round_configuration = models.ForeignKey(RoundConfiguration)
 
     def __unicode__(self):
-        return u"%s %s" % (self.group, super(GroupActivityLog, self).__unicode__())
+        return u"{0} {1}".format(self.group, super(GroupActivityLog, self).__unicode__())
 
 
 class ExperimentActivityLog(ActivityLog):
@@ -3340,7 +3318,8 @@ def get_audit_data(user_count=10, user_login_timedelta=7):
     invites_last_week = Invitation.objects.filter(date_created__gt=last_week_datetime).count()
 
     # Participants count grouped by institute they belong to
-    institution_list = Participant.objects.all().values('institution__name', 'institution__pk').annotate(total=Count('institution')).order_by('-total')
+    institution_list = Participant.objects.all().values(
+        'institution__name', 'institution__pk').annotate(total=Count('institution')).order_by('-total')
 
     # recent user logins
     recent_logins = User.objects.filter(last_login__gte=datetime.today() - timedelta(user_login_timedelta))[:user_count]
@@ -3353,4 +3332,3 @@ def get_audit_data(user_count=10, user_login_timedelta=7):
         "invites": invites_last_week, "institution_list": institution_list,
         "recent_logins": recent_logins,
     }
-
