@@ -375,7 +375,7 @@ class ActivityLog(models.Model):
     LogType = Choices('Experimenter', 'Scheduled', 'System')
     log_message = models.TextField()
     date_created = models.DateTimeField(auto_now_add=True)
-    # log_type = models.CharField(max_length=64, choices=LogType, default=LogType.System)
+    log_type = models.CharField(max_length=64, choices=LogType, default=LogType.System)
 
     def __unicode__(self):
         return u"{0} - {1}".format(self.date_created.strftime("%m-%d-%Y %H:%M"), self.log_message)
