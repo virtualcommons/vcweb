@@ -109,7 +109,7 @@
 {{ block.super }}
 <script>
     var viewModelObject = $.parseJSON("{{ dashboardViewModelJson|escapejs }}");
-    var is_demo_experimenter = ("True" === "{{ user.experimenter.is_demo_experimenter }}")
+    var isDemoExperimenter = ("True" === "{{ user.experimenter.is_demo_experimenter }}")
 
     $(function() {
         preserveLastSelectedTab();
@@ -244,18 +244,18 @@
                     });
             };
             model.canClearExperiment = function(experimentModel) {
-                return !is_demo_experimenter && 
+                return !isDemoExperimenter && 
                     experimentModel.status() === 'INACTIVE' && experimentModel.participantCount() > 0;
             };
             model.canRegisterParticipants = function(experimentModel) {
-                return !is_demo_experimenter && 
+                return !isDemoExperimenter && 
                     !experimentModel.isArchived() && (experimentModel.participantCount() === 0);
             };
             model.canArchive = function(experimentModel) {
-                return !is_demo_experimenter && !experimentModel.isArchived();
+                return !isDemoExperimenter && !experimentModel.isArchived();
             }
             model.canClone = function(experimentModel) {
-                return !is_demo_experimenter;
+                return !isDemoExperimenter;
             }
             model.highlightExperimentConfig = function(elem) { 
                 $(elem).addClass('new-cloned-experiment-config');
