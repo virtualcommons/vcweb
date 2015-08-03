@@ -1,6 +1,5 @@
 from collections import Counter
 from operator import itemgetter
-from urllib import urlencode
 import logging
 
 from django.contrib import messages
@@ -111,7 +110,6 @@ experiment_model_defaults = {
         'isResourceEmpty': 0,
     },
     'selectedHarvestDecision': False,
-    'isInstructionsRound': False,
     'waitThirtySeconds': False,
     'totalHarvest': 0,
     'sessionOneStorage': 0,
@@ -121,13 +119,11 @@ experiment_model_defaults = {
     'averageHarvest': 0,
     'averageStorage': 0,
     'numberAlive': '4 out of 4',
-    'isSurveyEnabled': False,
     'surveyCompleted': False,
     'regrowth': 0,
     'surveyUrl': 'http://survey.qualtrics.com/SE/?SID=SV_0vzmIj5UsOgjoTX',
 }
-# FIXME: bloated method with too many special cases, try to refactor
-
+# FIXME: bloated method with too many special cases, refactor
 
 def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
     ec = experiment.experiment_configuration
@@ -147,17 +143,27 @@ def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
     experiment_model_dict['maxHarvestDecision'] = get_max_harvest_decision(ec)
     experiment_model_dict['templateName'] = current_round.template_name
     experiment_model_dict['isPracticeRound'] = current_round.is_practice_round
-    # FIXME: only show the tour on the first practice round, this is a bit brittle.  better setup might be to have a
-    # dedicated boolean flag on RoundConfiguration?
+    # FIXME: only show the tour on the first practice round, this is brittle. better to have a dedicated boolean flag on
+    # RoundConfiguration?
     experiment_model_dict['showTour'] = current_round.is_practice_round and not previous_round.is_practice_round
     # instructions round parameters
+    experiment_model_dict['isInstructionsRound'] = current_round.is_instructions_round
+    experiment_model_dict['chatEnabled'] = current_round.chat_enabled
+    experiment_model_dict['isSurveyEnabled'] = current_round.is_survey_enabled
+
     if current_round.is_instructions_round:
-        experiment_model_dict['isInstructionsRound'] = True
         experiment_model_dict['participantsPerGroup'] = ec.max_group_size
         experiment_model_dict['regrowthRate'] = regrowth_rate
         experiment_model_dict['initialResourceLevel'] = get_initial_resource_level(current_round)
-    if current_round.is_playable_round:
-        experiment_model_dict['chatEnabled'] = current_round.chat_enabled
+
+    if current_round.is_survey_enabled:
+        survey_url = current_round.build_survey_url(pid=participant_group_relationship.pk,
+                                                    eid=experiment.pk,
+                                                    tid=experiment.experiment_configuration.treatment_id)
+        experiment_model_dict['surveyUrl'] = survey_url
+        experiment_model_dict['surveyCompleted'] = participant_group_relationship.survey_completed
+        logger.debug("survey enabled, setting survey url to %s", survey_url)
+
 
     if current_round.is_debriefing_round:
         experiment_model_dict['totalHarvest'] = get_total_harvest(participant_group_relationship,
@@ -167,21 +173,6 @@ def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
                 experiment, participant_group_relationship.participant)
             experiment_model_dict['sessionOneStorage'] = session_one_storage.int_value
             experiment_model_dict['sessionTwoStorage'] = session_two_storage.int_value
-
-    if current_round.is_survey_enabled:
-        query_parameters = urlencode({
-            'pid': participant_group_relationship.pk,
-            'eid': experiment.pk,
-            'tid': experiment.experiment_configuration.treatment_id,
-        })
-        survey_url = current_round.survey_url
-        separator = '?'
-        if separator in survey_url:
-            separator = '&'
-        experiment_model_dict['surveyUrl'] = "{0}{1}{2}".format(current_round.survey_url, separator, query_parameters)
-        experiment_model_dict['isSurveyEnabled'] = True
-        experiment_model_dict['surveyCompleted'] = participant_group_relationship.survey_completed
-        logger.debug("survey was enabled, setting survey url to %s", experiment_model_dict['surveyUrl'])
 
     # participant data
     experiment_model_dict['participantNumber'] = participant_group_relationship.participant_number
@@ -200,8 +191,7 @@ def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
         regrowth = experiment_model_dict['regrowth'] = get_regrowth_dv(own_group, current_round_data).value
         c = Counter(map(itemgetter('alive'), experiment_model_dict['playerData']))
         experiment_model_dict['numberAlive'] = "%s out of %s" % (c[True], sum(c.values()))
-        # FIXME: refactor duplication between myGroup and otherGroup data
-        # loading
+        # FIXME: refactor duplication between myGroup and otherGroup data loading
         experiment_model_dict['myGroup'] = {
             'resourceLevel': own_resource_level,
             'regrowth': regrowth,

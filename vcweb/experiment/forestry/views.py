@@ -1,7 +1,7 @@
 import logging
 
 from django.db import transaction
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import render, get_object_or_404
 
 from vcweb.core.decorators import group_required
 from vcweb.core.http import JsonResponse, dumps
@@ -20,13 +20,9 @@ logger = logging.getLogger(__name__)
 def participate(request, experiment_id=None):
     participant = request.user.participant
     experiment = get_object_or_404(Experiment.objects.select_related('experiment_metadata', 'experiment_configuration'),
-                                   pk=experiment_id)
+                                   pk=experiment_id,
+                                   experiment_metadata=get_experiment_metadata())
     pgr = experiment.get_participant_group_relationship(participant)
-
-    if experiment.experiment_metadata != get_experiment_metadata():
-        # redirect to appropriate experiment page
-        return redirect('core:dashboard')
-
     return render(request, experiment.participant_template, {
         'experiment': experiment,
         'participant_experiment_relationship': experiment.get_participant_experiment_relationship(participant),
@@ -57,10 +53,10 @@ def submit_decision(request, experiment_id=None):
             }
             return JsonResponse(response_dict)
     else:
-        logger.debug("form was invalid: %s", form)
+        logger.debug("invalid form: %s", form)
     for field in form:
         if field.errors:
-            logger.debug("field %s had errors %s", field, field.errors)
+            logger.debug("field %s errors %s", field, field.errors)
     return JsonResponse({'success': False})
 
 
@@ -171,12 +167,9 @@ def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
 
         if harvest_decision.submitted:
             # user has already submit a harvest decision for this round
-            experiment_model_dict[
-                'harvestDecision'] = harvest_decision.int_value
+            experiment_model_dict['harvestDecision'] = harvest_decision.int_value
             logger.debug("Already submitted, setting harvest decision to %s",
                          experiment_model_dict['harvestDecision'])
-
-        experiment_model_dict['chatMessages'] = [
-            cm.to_dict() for cm in ChatMessage.objects.for_group(own_group)]
+        experiment_model_dict['chatMessages'] = [cm.to_dict() for cm in ChatMessage.objects.for_group(own_group)]
 
     return experiment_model_dict
