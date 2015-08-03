@@ -88,7 +88,6 @@ experiment_model_defaults = {
         'isResourceEmpty': 0,
     },
     'selectedHarvestDecision': False,
-    'isInstructionsRound': False,
     'lastHarvestDecision': 0,
     'groupData': [],
     'regrowth': 0,
@@ -112,17 +111,19 @@ def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
     experiment_model_dict['participantGroupId'] = participant_group_relationship.pk
 
     # instructions round parameters
+    experiment_model_dict['isInstructionsRound'] = current_round.is_instructions_round
     if current_round.is_instructions_round:
-        experiment_model_dict['isInstructionsRound'] = True
         experiment_model_dict['participantsPerGroup'] = ec.max_group_size
         # experiment_model_dict['regrowthRate'] = regrowth_rate
         experiment_model_dict[
             'initialResourceLevel'] = get_initial_resource_level(current_round)
 
+    if current_round.is_survey_enabled:
+        experiment_model_dict['surveyUrl'] = current_round.build_survey_url(pid=participant_group_relationship.pk)
+        logger.debug("setting survey to %s", experiment_model_dict['surveyUrl'])
+
     if current_round.is_playable_round or current_round.is_debriefing_round:
-
         experiment_model_dict['chatEnabled'] = current_round.chat_enabled
-
         own_group = participant_group_relationship.group
         own_resource_level = get_resource_level(own_group)
         experiment_model_dict['resourceLevel'] = own_resource_level
@@ -169,7 +170,7 @@ def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
             # user has already submit a harvest decision for this round
             experiment_model_dict['harvestDecision'] = harvest_decision.int_value
             logger.debug("Already submitted, setting harvest decision to %s",
-                         experiment_model_dict['harvestDecision'])
+                         harvest_decision.int_value)
         experiment_model_dict['chatMessages'] = [cm.to_dict() for cm in ChatMessage.objects.for_group(own_group)]
 
     return experiment_model_dict

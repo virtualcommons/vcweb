@@ -98,9 +98,10 @@
     <p>
         You will play several rounds equivalent to years or wood harvest seasons.
         Initially your group has an area of forest with <span data-bind='text:initialResourceLevel'></span>
-        initial resource units. Each round you and every other participant in your group will have to make a
+        resource units. Each round you and every other participant in your group will have to make a
         decision about how many resource units you want to harvest.  At the start you
-        can harvest a maximum of <span data-bind='text:maxHarvestDecision'></span> units and a minimum of 0 units from the resource.
+        can harvest a maximum of <span data-bind='text:maxHarvestDecision'></span> resource units and a minimum of 0
+        units from the resource.
     </p>
     <h3>Maximum harvest table</h3>
     <table class='table table-bordered table-condensed'>
@@ -146,14 +147,14 @@
     There are two ways to submit a harvest decision:
 </p>
 <ol>
-    <li>Select a harvest amount and click "Ok, I'm ready"</li>
+    <li>Select a harvest amount and click &quot;Ok, I&39;m ready&quot;</li>
     <li>Select a harvest amount and wait for the end of the session</li>
 </ol>
 <p>
     At the end of each actual experimental round a countdown will alert you when there are 10 seconds remaining to
     make a harvest choice. When the countdown reaches zero, any value you have selected will be auto-submitted.
     If you do not select a harvest value, the default value of 0 will automatically be selected. You may change your
-    harvest decision multiple times before clicking "Ok, I'm Ready" until the 1-minute time limit is up.
+    harvest decision multiple times before clicking &quot;Ok, I&39;m ready&quot;"Ok, I'm Ready" until the 1-minute time limit is up.
 </p>
 <ul class='pager'>
     <li class='previous'>
@@ -311,6 +312,24 @@
         <div data-bind='template: { name: "tree-template", data: myGroup }'></div>
     </div>
 </div>
+</script>
+<script type='text/html' id='DEBRIEFING_WITH_SURVEY'>
+    <h2>Survey</h2>
+    <p>
+    We would like to ask you some questions before we continue to the next round.
+    </p>
+    <div class='qualtrics-survey'>
+        <iframe width="100%" height="800" data-bind='attr: { src: surveyUrl }'>
+            Your browser doesn&39;t appear to support iframes, please <a target='_blank' data-bind='attr: { href: surveyUrl }'>follow this link to take the survey.</a>
+        </iframe>
+    </div>
+    <p>
+    If you have any questions, or have trouble accessing the survey, please let the experimenter know.
+    </p>
+</script>
+
+    
+
 </script>
 <script type='text/html' id='FINAL_DEBRIEFING'>
     <h2>Experiment Results</h2>
@@ -629,6 +648,23 @@
             model.disableChatForm = function() {
                 model.setFormDisabled("#chat-form", true);
             }
+            model.checkSurveyCompleted = function(response) {
+                var surveyCompleted = response.survey_completed;
+                model.surveyCompleted(surveyCompleted);
+                if (surveyCompleted) {
+                    model.clearCurrentInterval();
+                    model.showPostSurveyInstructions();
+                }
+            }
+            model.showPostSurveyInstructions = function() {
+                if (! model.surveyCompleted()) {
+                    return;
+                }
+                model.clearCurrentInterval();
+                $('#content').removeClass('col-md-12').addClass('col-md-8');
+                $('#sidebar').show();
+                model.activateTemplate("PAID_EXPERIMENT_INSTRUCTIONS");
+            };
             model.initializeChat = function() {
                 var chatEnabled = model.chatEnabled();
                 // FIXME: get rid of form disabling?
