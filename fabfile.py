@@ -25,7 +25,6 @@ env.project_name = 'vcweb'
 env.project_conf = 'vcweb.settings'
 env.deploy_user = 'vcweb'
 env.deploy_group = 'vcweb'
-env.database = 'default'
 env.deploy_parent_dir = '/opt/'
 env.hg_url = 'https://bitbucket.org/virtualcommons/vcweb'
 env.git_url = 'https://github.com/virtualcommons/vcweb.git'
@@ -149,9 +148,27 @@ def prod():
 
 @roles('localhost')
 @task
+def setup():
+    execute(setup_postgres)
+    local('cp vcweb/settings/local.py.example vcweb/settings/local.py')
+
+
+@roles('localhost')
+@task
 def setup_postgres():
-    local("psql -c 'create role %(db_user)s CREATEDB;'" % env)
-    local("psql -c 'create database %(db_name)s;' -U %(db_user)s" % env)
+    env.db_name = vcweb_settings.DATABASES['default']['NAME']
+    env.db_user = vcweb_settings.DATABASES['default']['USER']
+    local("createuser {} -e --createdb -U postgres".format(env.db_name))
+    local("createdb {} -U {}".format(env.db_name, env.db_name))
+
+
+@task(aliases=['idb', 'initdb'])
+def initialize_database_schema():
+    """
+    Creates the Django DB schema by running makemigrations and then a migrate.
+    """
+    local('python manage.py makemigrations')
+    local('python manage.py migrate')
 
 
 def _restart_command(systemd=True):
