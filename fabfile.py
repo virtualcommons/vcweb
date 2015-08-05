@@ -149,8 +149,8 @@ def prod():
 @roles('localhost')
 @task
 def setup():
-    execute(setup_postgres)
     local('cp vcweb/settings/local.py.example vcweb/settings/local.py')
+    execute(setup_postgres)
 
 
 @roles('localhost')
