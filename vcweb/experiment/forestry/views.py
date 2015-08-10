@@ -109,14 +109,13 @@ def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
     experiment_model_dict['isPracticeRound'] = current_round.is_practice_round
     experiment_model_dict['showTour'] = current_round.is_practice_round and not previous_round.is_practice_round
     experiment_model_dict['participantGroupId'] = participant_group_relationship.pk
+    experiment_model_dict['participantsPerGroup'] = ec.max_group_size
 
     # instructions round parameters
     experiment_model_dict['isInstructionsRound'] = current_round.is_instructions_round
     if current_round.is_instructions_round:
-        experiment_model_dict['participantsPerGroup'] = ec.max_group_size
         # experiment_model_dict['regrowthRate'] = regrowth_rate
-        experiment_model_dict[
-            'initialResourceLevel'] = get_initial_resource_level(current_round)
+        experiment_model_dict['initialResourceLevel'] = get_initial_resource_level(current_round)
 
     if current_round.is_survey_enabled:
         experiment_model_dict['surveyUrl'] = current_round.build_survey_url(pid=participant_group_relationship.pk)

@@ -759,8 +759,7 @@ def completed_survey(request):
         pgr.save()
         success = True
     except ParticipantGroupRelationship.DoesNotExist:
-        logger.debug(
-            "No ParticipantGroupRelationship found with id %s", pgr_id)
+        logger.debug("no ParticipantGroupRelationship found with id %s", pgr_id)
     return JsonResponse({'success': success})
 
 

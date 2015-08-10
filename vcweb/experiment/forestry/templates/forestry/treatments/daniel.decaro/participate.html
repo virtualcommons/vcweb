@@ -58,7 +58,7 @@
 <script type='text/html' id='WAITING_ROOM'>
 <h3>Waiting for other participants</h3>
 <div>
-    Please wait.  The experiment will continue shortly once all the participants are ready.
+    Please wait quietly. The experiment will continue shortly once all the participants are ready.
     <p>
         <span class='badge' data-bind='css: { "badge-important": readyParticipants() < (participantCount() / 2), "badge-success": readyParticipants() > (participantCount() / 2)}, text: readyParticipants'></span> of <span class='badge badge-success' data-bind='text: participantCount'></span> participants are ready.
     </p>
@@ -81,9 +81,6 @@
     <i class='text-success fa fa-info-circle'></i>
     Please also make sure to turn off, silence, and disable vibration alerts on your cell phones and any mobile devices before the experiment begins.
     </div>
-    <div>
-    Thank you for your cooperation.
-    </div>
 </div>
 </script>
 <script type='text/html' id='GENERAL_INSTRUCTIONS'>
@@ -92,37 +89,122 @@
     <p>
         Welcome. Please read the following instructions carefully.
     </p>
+    <h3>The Tree Task</h3>
     <p>
-        Thank you for participating in this experiment. The following exercise is a way to actively
-        participate in a project about individual decisions and natural resources. Imagine that you or your
-        family must make decisions about the use of a forest. You and <span data-bind="text: participantsPerGroup()-1"></span>
-        other randomly selected participants have been placed into a group with access to this shared forest.
+        For this experiment, you will be in a forest that will be presented on the
+        computer, and your task will be to decide how you want to harvest trees from
+        the forest. As described below, the decisions you make will determine your
+        payment.
+    </p>
+    <h4>Your Earnings</h4>
+    <p>
+        In the beginning, the forest will have a total of <span data-bind='text:initialResourceLevel'></span>
+        trees. You will be in the forest for several rounds, which represent &quot;years&quot;. Every year, you can
+        harvest up to <span data-bind='text:maxHarvestDecision'></span> trees, as long as there are enough trees
+        remaining in the forest. You will earn <i class='fa fa-usd'></i>
+        <span data-bind='text: formatCurrency(parseFloat(dollarsPerTree))'></span> for every tree that you harvest. The total number
+        of trees you harvest today will determine your final payment.
     </p>
     <p>
-        You will play several rounds equivalent to years or wood harvest seasons.
-        Initially your group has an area of forest with <span data-bind='text:initialResourceLevel'></span>
-        resource units. Each round you and every other participant in your group will have to make a
-        decision about how many resource units you want to harvest.  At the start you
-        can harvest a maximum of <span data-bind='text:maxHarvestDecision'></span> resource units and a minimum of 0
-        units from the resource.
+    You have already earned <i class='fa fa-usd'></i> <span data-bind='text: formatCurrency(parseFloat(showUpPayment))'></span>
+    by showing up at this experiment. You can earn more, up to a maximum of about <i class='fa fa-usd'></i>15 &mdash; <i
+    class='fa fa-usd'></i>20, depending on how many trees you harvest during the experiment.
     </p>
-    <h3>Maximum harvest table</h3>
+    <h4>Harvesting Trees</h4>
+    <p>
+    When we begin the tree task, you will be able to select a certain number of trees to harvest each year. The specific
+    amount of trees you can harvest in a particular year depends on how many mature trees there are in the forest at the
+    time. In the beginning, there are <span data-bind='text: initialResourceLevel'></span> trees, so you can harvest
+    anywhere from 0 to <span data-bind='text:maxHarvestDecision'></span> trees, depending on what you want to harvest.
+    You can harvest up to <span data-bind='text:maxHarvestDecision'></span> trees as long as there are at least 40 trees
+    in the forest. You can no longer harvest trees when there are 7 trees or less in the forest, because all usable
+    timber will have been taken already.
+    </p>
+    <p>
+    The table below shows the maximum number of trees you can harvest in a year, depending on the current size of the
+    forest. There is also a copy of the table at your station.
+    </p>
+    <h4>Maximum harvest table</h4>
     <table class='table table-bordered table-condensed'>
         <thead>
           <tr>
-            <th>Resource level</th>
-            <th>Maximum individual harvest</th>
+            <th>Current Size of Forest</th>
+            <th>Maximum Possible harvest</th>
           </tr>
         </thead>
         <tbody>
-            <tr class='harvest-5'><td>25-100</td><td>5</td></tr>
-            <tr class='harvest-4'><td>20-24</td><td>4</td></tr>
-            <tr class='harvest-3'><td>15-19</td><td>3</td></tr>
-            <tr class='harvest-2'><td>10-14</td><td>2</td></tr>
-            <tr class='harvest-1'><td>5-9</td><td>1</td></tr>
-            <tr class='harvest-0'><td>0-4</td><td>0</td></tr>
+            <tr class='harvest-10'><td>40 to 100 trees</td><td>10</td></tr>
+            <tr class='harvest-8'><td>32 to 39 trees</td><td>8</td></tr>
+            <tr class='harvest-6'><td>24 to 31 trees</td><td>6</td></tr>
+            <tr class='harvest-4'><td>16 to 23 trees</td><td>4</td></tr>
+            <tr class='harvest-2'><td>8 to 15 trees</td><td>2</td></tr>
+            <tr class='harvest-0'><td>0 to 7 trees</td><td>0</td></tr>
         </tbody>
     </table>
+    <h4>Tree Growth</h4>
+    <p>
+    Like a real forest, the total number of trees in the forest will increase or decrease depending on the number of
+    trees that were harvested in previous years. The forest can never be larger than <span data-bind='text:
+    initialResourceLevel'></span> trees. However, after some trees are harvested, new trees will grow after each year at
+    a rate of 1 tree for every 10 trees that remain in the forest. For example, if there are a total of 20 trees in the
+    forest at the end of a year, then 2 new trees will grow, and there will be 12 trees in the forest next year. If the
+    forest reaches a size of 9 trees or less, there are not enough mature trees to reproduce and no more new trees will
+    grow.
+    </p>
+    <p>
+    The table below shows how many trees will grow, depending on the size of the forest. There is also a copy of this
+    table at your station.
+    </p>
+    {# FIXME: revisit this, sent Daniel a note about why this table may be problematic #}
+    <h4>Forest Growth Rate</h4>
+    <table class='table table-bordered table-condensed'>
+        <thead>
+          <tr>
+            <th>Current Size of Forest</th>
+            <th>New Trees that will Grow</th>
+            <th>Size of Forest Next Round</th>
+          </tr>
+        </thead>
+        <tbody>
+            <tr><td>100 trees</td><td>0</td><td>100</td></tr>
+            <tr><td>32 to 39 trees</td><td>8</td></tr>
+            <tr><td>24 to 31 trees</td><td>6</td></tr>
+            <tr><td>16 to 23 trees</td><td>4</td></tr>
+            <tr><td>8 to 15 trees</td><td>2</td></tr>
+            <tr><td>0 to 7 trees</td><td>0</td></tr>
+        </tbody>
+    </table>
+    <h3>Groups</h3>
+    <p>
+    You have been randomly assigned to a group with <span data-bind='text: numberOfParticipants() - 1'></span> other
+    participants. All <span data-bind='text: numberOfParticipants()'></span> members of your group will be able to
+    access the forest and harvest trees from it. You will stay in the same group for the entire experiment.
+    </p>
+    <h4>Group Members are Anonymous</h4>
+    <p>
+    The computer has randomly assigned each person in your group a number from 1 to 4. This will be the only way the
+    members of your group will be identified to you. Because group membership was randomly assigned by the computer,
+    <b>neither you, nor the experimenter, will be able to identify which person in the experiment has been assigned to a
+    particular group, or number, within a group.</b> Your anonymity is guaranteed.
+    </p>
+    <h4>Group Members are in the Forest</h4>
+    <p>
+    Group members have access to the forest, and can harvest trees from it each year, just like you. Thus,
+    every year, you and every other person in your group, will have the opportunity to harvest as few or many 
+    trees as they want, within the maximum possible harvest. For example, during the first year, each person 
+    can harvest anywhere from 0 to 10 trees, for a total of 0 to 40 trees harvested. Each person’s harvests 
+    affect the total size of the forest. Therefore, the amount of money you earn depends on your 
+    decisions, as well as the decisions of your group members during the experiment.
+    </p>
+    <h4>Practice Rounds</h4>
+    <p>
+    We will first participate in a practice round so that you can become familiar with the tree task environment and
+    understand how to harvest trees.
+    </p>
+    <p>
+    <b>Do you have any questions so far?</b>If you have any questions at this time, please let the experimenter know,
+    and they will come to your computer station to answer it.
+    </p>
     <ul class='pager'>
         <li class='next'>
             <a href='javascript: void(0);' data-bind='click: activateTemplate.bind($data, "PRACTICE_ROUND_INSTRUCTIONS")'>OK, Continue to practice rounds</a>
@@ -131,34 +213,43 @@
 </div>
 </script>
 <script type='text/html' id='PRACTICE_ROUND_INSTRUCTIONS'>
-<h2>No Payment</h2>
+<h2>Practice Round Instructions</h2>
 <p>
-    There will be no payment for this practice session.
+    During the practice round, you have unlimited time to indicate how many trees you want to harvest, so that you can
+    get used to the controls and become familiar with the information being displayed. The trees you harvest during this
+    practice round <b>will not affect your earnings</b>. During the actual experiment, you will have <span
+    data-bind='text:roundDuration'></span> seconds each round to indicate how many trees you wish to harvest, and the
+    trees you harvest <b>will</b> count towards your earnings. 
 </p>
-<h3>Group and Individual Status</h3>
+<h3>Selecting Trees for Harvest</h3>
 <p>
-    You will be able to observe the status of the members of your group in each round. Likewise, group members will also see your
-    status, and those of your group. You'll be able to text chat with your group members.
+The forest will be displayed in the middle of the screen each year, with a summary of how many trees are
+currently in the forest. At the bottom of the screen, you will see a row of trees numbered from 0 to
+<span data-bind='text:maxHarvestDecision'></span>. 
+These trees represent your harvest options. For example, if you want to harvest <span
+data-bind='text:maxHarvestDecision'></span> trees (your maximum harvest), select the tree labeled &quot;<span
+data-bind='text:maxHarvestDecision'></span>&quot;. If you want to harvest 0 trees (your minimum harvest), select the
+tree labeled “0.” You can harvest any amount of trees from 0 to 10, by selecting the corresponding number of trees. If
+you do not select a number of trees within the time allotted, you will be marked as having selected 0 trees to harvest.
 </p>
-<h3>Time</h3>
-<p>
-    In each actual experiment round you will have a maximum of 60 seconds to make a harvest decision. In order to help you acquaint
-    yourself with the experimental environment, you will have unlimited time to make a harvest decision the practice rounds.
-</p>
-<h3>Harvest Decision</h3>
 <p>
     There are two ways to submit a harvest decision:
 </p>
 <ol>
     <li>Select a harvest amount and click &quot;Ok, I&39;m ready&quot;</li>
-    <li>Select a harvest amount and wait for the end of the session</li>
+    <li>Select a harvest amount and wait for the end of the round. The amount you have chosen will be automatically
+    submitted. A countdown will alert you when there are 10 seconds left. If you do not select a harvest value, a
+    default value of 0 will automatically be selected. You may change your harvest decision multiple times before
+    clicking &quot;Ok, I&39;m ready&quot;"Ok, I'm Ready" until the time is up.
 </ol>
 <p>
-    At the end of each actual experimental round a countdown will alert you when there are 10 seconds remaining to
-    make a harvest choice. When the countdown reaches zero, any value you have selected will be auto-submitted.
-    If you do not select a harvest value, the default value of 0 will automatically be selected. You may change your
-    harvest decision multiple times before clicking &quot;Ok, I&39;m ready&quot; - up until the 1-minute time limit.
+{# FIXME: 
+check with Daniel about having canned practice round harvest decisions so that there is a baseline for all participants
+#}
+Use this opportunity to familiarize yourself with the information displayed, and then decide how many trees you would
+like to harvest. If you have any questions, please let the experimenter know.
 </p>
+
 <ul class='pager'>
     <li class='previous'>
         <a href='javascript:void(0);' data-bind='click: activateTemplate.bind($data, "GENERAL_INSTRUCTIONS")'>Back</a>
@@ -401,7 +492,7 @@
             </td>
             <!-- /ko -->
             <td>
-                <button id='submitDecisionButton' data-bind='enable: submitHarvestDecisionEnabled, click: $root.submitDecision' type='submit' class='btn btn-primary submit-decision-button'>Ok, I&quot;m ready</button>
+                <button id='submitDecisionButton' data-bind='enable: submitHarvestDecisionEnabled, click: $root.submitDecision' type='submit' class='btn btn-primary submit-decision-button'>Ok, I'm ready</button>
             </td>
         </tr>
     </table>

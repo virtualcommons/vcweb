@@ -25,6 +25,7 @@ from django.db import models, transaction
 from django.db.models import Max, Sum, Count
 from django.db.models.loading import get_model
 from django.dispatch import receiver
+from django.template import TemplateDoesNotExist
 from django.template.defaultfilters import slugify
 from django.template.loader import select_template, get_template
 from django.utils.translation import ugettext_lazy as _
@@ -879,7 +880,18 @@ class Experiment(models.Model):
 
     @property
     def participant_template(self):
-        return "%s/participate.html" % self.experiment_metadata.namespace
+        namespace = self.experiment_metadata.namespace
+        treatment_id = self.experiment_configuration.treatment_id
+        default_template_name = '{}/participate.html'.format(namespace)
+        template_names = [default_template_name]
+        if treatment_id:
+            # try to load treatment specific template with template loader
+            template_names.append("{}/treatments/{}/participate.html".format(namespace, treatment_id))
+        try:
+            selected_template = select_template(template_names)
+        except TemplateDoesNotExist:
+            logger.debug("no templates found: tried %s", template_names)
+        return selected_template.template.name
 
     @property
     def number_of_rounds(self):
@@ -1290,8 +1302,9 @@ class Experiment(models.Model):
                     if not session_id:
                         logger.error("Cannot create a new set of groups because no session id has been set on %s.",
                                      round_configuration)
-                        raise ValueError("Cannot preserve existing groups without round_configuration.session id {}".format(
-                            round_configuration))
+                        raise ValueError(
+                            "Cannot preserve existing groups without round_configuration.session id {}".format(
+                                round_configuration))
             else:
                 logger.debug("deleting existing groups")
                 # FIXME: fairly expensive operation to log all group members
