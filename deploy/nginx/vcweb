@@ -8,6 +8,8 @@ server {
     charset     utf-8;
     client_max_body_size 75M;
 
+    rewrite ^/files/(.*)$ /static/files/$1 last;
+
     location /static {
         alias /var/www/vcweb/static;
     }

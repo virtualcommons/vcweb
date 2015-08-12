@@ -25,7 +25,6 @@ from django.db import models, transaction
 from django.db.models import Max, Sum, Count
 from django.db.models.loading import get_model
 from django.dispatch import receiver
-from django.template import TemplateDoesNotExist
 from django.template.defaultfilters import slugify
 from django.template.loader import select_template, get_template
 from django.utils.translation import ugettext_lazy as _
@@ -880,18 +879,24 @@ class Experiment(models.Model):
 
     @property
     def participant_template(self):
+        """
+        Tries to locate and load 'namespace/treatments/<treatment-id>/participate.html' or 'namespace/participate.html'
+        templates, in that order using
+        https://docs.djangoproject.com/en/1.8/ref/templates/api/#django.template.Engine.select_template.
+
+        Returns the template name if found and raises TemplateDoesNotExist if neither is found.
+        """
         namespace = self.experiment_metadata.namespace
         treatment_id = self.experiment_configuration.treatment_id
         default_template_name = '{}/participate.html'.format(namespace)
         template_names = [default_template_name]
         if treatment_id:
-            # try to load treatment specific template with template loader
-            template_names.append("{}/treatments/{}/participate.html".format(namespace, treatment_id))
-        try:
-            selected_template = select_template(template_names)
-        except TemplateDoesNotExist:
-            logger.debug("no templates found: tried %s", template_names)
-        return selected_template.template.name
+            # prioritize treatment-specific namespace/treatments/<treatment-id>/participate.html
+            template_names.insert(0, "{}/treatments/{}/participate.html".format(namespace, treatment_id))
+        selected_template = select_template(template_names)
+        name = selected_template.template.name
+        logger.debug("selected template %s from templates %s", name, template_names)
+        return name
 
     @property
     def number_of_rounds(self):

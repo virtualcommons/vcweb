@@ -2,7 +2,7 @@ import logging
 
 from django.conf.urls import url
 from django.contrib.auth.decorators import login_required
-from django.views.generic import RedirectView
+from django.views.generic import RedirectView, TemplateView
 
 from .api import (get_round_data, save_experimenter_notes, create_experiment, clone_experiment, is_email_available,
                   handle_chat_message, check_ready_participants, participant_ready, )
@@ -24,6 +24,7 @@ URLs for core vcweb app
 urlpatterns = [
     url(r'^cas/asu/$', cas_asu_registration, name='cas_asu_registration'),
     url(r'^cas/asu/submit/$', cas_asu_registration_submit, name='cas_asu_registration_submit'),
+    url(r'^papers/$', TemplateView.as_view(template_name='papers.html')),
     url(r'^dashboard/$', dashboard, name='dashboard'),
     url(r'^accounts/login/$', LoginView.as_view(), name='login'),
     url(r'^accounts/logout/$', login_required(LogoutView.as_view()), name='logout'),

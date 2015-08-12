@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block page %}
+<div class='panel panel-default'>
+    <div class='panel-heading'>
+        <h3 class='panel-title'>Related Publications</h3>
+    </div>
+    <div class='panel-body'>
+        <ul>
+            <li>
+                <a href="{% static 'files/Cardenas_Janssen_Bousquet_Env_Exp_Econ_Handbook.pdf' %}">
+                    <i class='fa fa-file-pdf-o'></i>
+                    Cardenas, J.C, M.A. Janssen, and F. Bousquet, Dynamics of Rules and Resources: Three New Field
+                    Experiments on Water, Forests and Fisheries, <i>Handbook on Experimental Economics and the Environment</i>,
+                    edited by John List and Michael Price, Edward Elgar Publishing.
+                </a>
+                <br>
+                <a href="{% static 'files/Cardenas_Janssen_Bousquet_PROTOCOL.pdf' %}"><mark class='bg-info'>protocol</mark></a></li>
+            <li>
+               <a href="{% static 'files/67_332_1_PB.pdf' %}">
+                   <i class='fa fa-file-pdf-o'></i>
+                   Janssen, M.A., R.L. Goldstone, F. Menczer and E. Ostrom, Effect of rule choice in dynamic interactive
+                   spatial commons, <i>International Journal of the Commons</i>, 2(2): 288-312
+               </a></li>
+            <li><a href="{% static 'files/01_096786_Janssen.pdf' %}">
+                    <i class='fa fa-file-pdf-o'></i>
+                    Janssen, M.A., and E. Ostrom, TURFs in the lab: Institutional Innovation in dynamic interactive spatial
+                    commons, <i>Rationality and Society</i>, 20: 371-397
+                </a>
+                <br>
+                <a href="{% static 'files/ColorfiguresRationalityandSociety.pdf' %}"><mark class='bg-info'>color figures</mark></a>
+            </li>
+            <li><a href="{% static 'files/submitjebo2008.pdf' %}">
+                    <i class='fa fa-file-pdf-o'></i>
+                    Janssen, M.A. How to harvest versus how much to harvest in common pool resources experiments, submitted
+                </a>
+            </li>
+        </ul>
+    </div>
+</div>
+<div class='panel panel-default'>
+    <div class='panel-heading'>
+        <h3 class='panel-title'>Student Thesis</h3>
+    </div>
+    <div class='panel-body'>
+        <ul>
+            <li><a href="{% static 'files/Deepali_Bhagvat_Thesis.pdf' %}">Deepali Bhagvat, Modelling and Rendering Realistic Trees, Master's Thesis.</a></li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
