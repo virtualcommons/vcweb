@@ -58,36 +58,41 @@ def create_forestry_configuration(apps, schema_editor):
 
     add_round(cfg, round_type='WELCOME', sequence_number=0)
     add_round(cfg, round_type='GENERAL_INSTRUCTIONS', sequence_number=1)
-    practice_round = add_round(cfg, round_type='PRACTICE', sequence_number=2, repeat=3, initialize_data_values=True)
+    practice_round = add_round(cfg, round_type='PRACTICE', sequence_number=2, repeat=3, initialize_data_values=True,
+                               duration=45)
     reset_resource_level(practice_round)
 # Phase one, NC
     add_round(cfg, round_type='INSTRUCTIONS', sequence_number=3)
-    phase_one_part_one = add_round(cfg, round_type='REGULAR', sequence_number=4, repeat=6, initialize_data_values=True)
+    phase_one_part_one = add_round(cfg, round_type='REGULAR', sequence_number=4, repeat=6, initialize_data_values=True,
+                                   duration=45)
 # reset resource level
     reset_resource_level(phase_one_part_one)
 
     add_round(cfg, round_type='INSTRUCTIONS', sequence_number=5)
-    phase_one_part_two = add_round(cfg, round_type='REGULAR', sequence_number=6, repeat=6, initialize_data_values=True)
+    phase_one_part_two = add_round(cfg, round_type='REGULAR', sequence_number=6, repeat=6, initialize_data_values=True,
+                                   duration=45)
 # reset resource level again
     reset_resource_level(phase_one_part_two)
     # Survey 1 and Phase 2, C
     add_round(cfg, round_type='INSTRUCTIONS', sequence_number=7, survey_url='https://qualtrics.com/placeholder')
     phase_two_part_one = add_round(cfg, round_type='REGULAR', sequence_number=8, repeat=6, chat_enabled=True,
-                                   initialize_data_values=True)
+                                   initialize_data_values=True, duration=45)
     reset_resource_level(phase_two_part_one)
 
     add_round(cfg, round_type='INSTRUCTIONS', sequence_number=9)
     phase_two_part_two = add_round(cfg, round_type='REGULAR', sequence_number=10, repeat=6, chat_enabled=True,
-                                   initialize_data_values=True)
+                                   initialize_data_values=True, duration=45)
     reset_resource_level(phase_two_part_two)
 
 # Survey 2 and Phase 3, NC/C
     add_round(cfg, round_type='INSTRUCTIONS', sequence_number=11, survey_url='https://qualtrics.com/placeholder')
-    phase_three_part_one = add_round(cfg, round_type='REGULAR', sequence_number=12, repeat=6)
+    phase_three_part_one = add_round(cfg, round_type='REGULAR', sequence_number=12, repeat=6,
+                                     initialize_data_values=True, duration=45)
     reset_resource_level(phase_three_part_one)
 
     add_round(cfg, round_type='INSTRUCTIONS', sequence_number=13)
-    phase_three_part_two = add_round(cfg, round_type='REGULAR', sequence_number=14, repeat=6)
+    phase_three_part_two = add_round(cfg, round_type='REGULAR', sequence_number=14, repeat=6,
+                                     initialize_data_values=True, duration=45)
     reset_resource_level(phase_three_part_two)
 
 # Survey three and final debriefing

@@ -124,20 +124,20 @@
     The table below shows the maximum number of trees you can harvest in a year, depending on the current size of the
     forest. There is also a copy of the table at your station.
     </p>
-    <h4>Maximum harvest table</h4>
+    <h4>Harvest Limits</h4>
     <table class='table table-bordered table-condensed'>
         <thead>
           <tr>
             <th>Current Size of Forest</th>
-            <th>Maximum Possible harvest</th>
+            <th>Maximum harvest for each person</th>
           </tr>
         </thead>
         <tbody>
-            <tr class='harvest-10'><td>40 to 100 trees</td><td>10</td></tr>
-            <tr class='harvest-8'><td>32 to 39 trees</td><td>8</td></tr>
-            <tr class='harvest-6'><td>24 to 31 trees</td><td>6</td></tr>
-            <tr class='harvest-4'><td>16 to 23 trees</td><td>4</td></tr>
-            <tr class='harvest-2'><td>8 to 15 trees</td><td>2</td></tr>
+            <tr class='harvest-10'><td>40 to 100 trees</td><td>0 to 10</td></tr>
+            <tr class='harvest-8'><td>32 to 39 trees</td><td>0 to 8</td></tr>
+            <tr class='harvest-6'><td>24 to 31 trees</td><td>0 to 6</td></tr>
+            <tr class='harvest-4'><td>16 to 23 trees</td><td>0 to 4</td></tr>
+            <tr class='harvest-2'><td>8 to 15 trees</td><td>0 to 2</td></tr>
             <tr class='harvest-0'><td>0 to 7 trees</td><td>0</td></tr>
         </tbody>
     </table>
@@ -146,8 +146,8 @@
     Like a real forest, the total number of trees in the forest will increase or decrease depending on the number of
     trees that were harvested in previous years. The forest can never be larger than <span data-bind='text:
     initialResourceLevel'></span> trees. However, after some trees are harvested, new trees will grow after each year at
-    a rate of 1 tree for every 10 trees that remain in the forest. For example, if there are a total of 20 trees in the
-    forest at the end of a year, then 2 new trees will grow, and there will be 12 trees in the forest next year. If the
+    a rate of 2 trees for every 10 trees that remain in the forest. For example, if there are a total of 20 trees in the
+    forest at the end of a year, then 4 new trees will grow, and there will be 24 trees in the forest next year. If the
     forest reaches a size of 9 trees or less, there are not enough mature trees to reproduce and no more new trees will
     grow.
     </p>
@@ -160,18 +160,23 @@
     <table class='table table-bordered table-condensed'>
         <thead>
           <tr>
-            <th>Current Size of Forest</th>
-            <th>New Trees that will Grow</th>
-            <th>Size of Forest Next Round</th>
+            <th>Current size of forest</th>
+            <th>New trees that will grow</th>
+            <th>Size of forest next round</th>
           </tr>
         </thead>
         <tbody>
             <tr><td>100 trees</td><td>0</td><td>100</td></tr>
-            <tr><td>32 to 39 trees</td><td>8</td></tr>
-            <tr><td>24 to 31 trees</td><td>6</td></tr>
-            <tr><td>16 to 23 trees</td><td>4</td></tr>
-            <tr><td>8 to 15 trees</td><td>2</td></tr>
-            <tr><td>0 to 7 trees</td><td>0</td></tr>
+            <tr><td>90 to 99 trees</td><td>18</td><td>100</td></tr>
+            <tr><td>80 to 89 trees</td><td>16</td><td>96 to 100</td></tr>
+            <tr><td>70 to 79 trees</td><td>14</td><td>84 to 93</td></tr>
+            <tr><td>60 to 69 trees</td><td>12</td><td>72 to 81</td></tr>
+            <tr><td>50 to 59 trees</td><td>10</td><td>60 to 69</td></tr>
+            <tr><td>40 to 49 trees</td><td>8</td><td>48 to 57</td></tr>
+            <tr><td>30 to 39 trees</td><td>6</td><td>36 to 45</td></tr>
+            <tr><td>20 to 29 trees</td><td>4</td><td>24 to 33</td></tr>
+            <tr><td>10 to 19 trees</td><td>2</td><td>12 to 21</td></tr>
+            <tr><td>0 to 9 trees</td><td>0</td><td>0 to 9</td></tr>
         </tbody>
     </table>
     <h3>Groups</h3>
