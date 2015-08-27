@@ -1,13 +1,13 @@
-Django==1.8.3
+Django==1.8.4
 Fabric==1.10.2
 Markdown==2.6.2
 PyYAML==3.11
 certifi==2015.04.28
 coverage==3.7.1
-django-autocomplete-light==2.2.4
-django-bootstrap3==6.1.0
+django-autocomplete-light==2.2.5
+django-bootstrap3==6.2.2
 django-contact-form==1.1
-django-extensions==1.5.5
+django-extensions==1.5.6
 django-kronos==0.8
 django-localflavor==1.1
 django-model-utils==2.3.1

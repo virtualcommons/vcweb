@@ -568,11 +568,41 @@ class ExperimentConfiguration(ParameterValueMixin, models.Model):
 
     objects = PassThroughManager.for_queryset_class(ExperimentConfigurationQuerySet)()
 
-    @property
-    def is_open(self):
-        # TODO: using max_group_size of 0 to signify an open experiment, add a
-        # dedicated boolean field later if necessary
-        return self.max_group_size == 0
+    def add_round(self,
+                  round_type=None, sequence_number=None, template_id=None, repeat=0,
+                  session_id=None, preserve_existing_groups=True, randomize_groups=False,
+                  chat_enabled=False, survey_url=None, initialize_data_values=False):
+        if sequence_number is None:
+            sequence_number = self.last_round_sequence_number + 1
+        if template_id is None:
+            template_id = round_type
+        return self.round_configuration_set.create(
+            round_type=round_type,
+            sequence_number=sequence_number,
+            template_id=template_id,
+            repeat=repeat,
+            session_id=session_id,
+            preserve_existing_groups=preserve_existing_groups,
+            randomize_groups=randomize_groups,
+            chat_enabled=chat_enabled,
+            survey_url=survey_url,
+            initialize_data_values=initialize_data_values,
+        )
+
+    def add_welcome_round(self, **kwargs):
+        return self.add_round(round_type=RoundConfiguration.RoundType.WELCOME, **kwargs)
+
+    def add_general_instructions_round(self, **kwargs):
+        return self.add_round(round_type=RoundConfiguration.RoundType.GENERAL_INSTRUCTIONS, **kwargs)
+
+    def add_practice_round(self, **kwargs):
+        return self.add_round(round_type=RoundConfiguration.RoundType.PRACTICE, **kwargs)
+
+    def add_regular_round(self, **kwargs):
+        return self.add_round(round_type=RoundConfiguration.RoundType.REGULAR, **kwargs)
+
+    def add_debriefing_round(self, **kwargs):
+        return self.add_round(round_type=RoundConfiguration.RoundType.DEBRIEFING, **kwargs)
 
     @property
     def total_number_of_rounds(self):

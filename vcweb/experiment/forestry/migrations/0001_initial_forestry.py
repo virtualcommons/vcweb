@@ -32,10 +32,8 @@ def create_forestry_experiment_metadata(apps, schema_editor):
 def create_forestry_configuration(apps, schema_editor, experiment_metadata=None, experimenter=None):
     ExperimentConfiguration = apps.get_model('core', 'ExperimentConfiguration')
     Parameter = apps.get_model('core', 'Parameter')
-    initial_resource_level_param = Parameter.objects.get(
-        name='initial_resource_level')
-    reset_resource_level_param = Parameter.objects.get(
-        name='reset_resource_level')
+    initial_resource_level_param = Parameter.objects.get(name='initial_resource_level')
+    reset_resource_level_param = Parameter.objects.get(name='reset_resource_level')
 
     forestry_configuration = ExperimentConfiguration.objects.create(
         name='Slovakia NC/C',
