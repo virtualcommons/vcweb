@@ -62,41 +62,44 @@ def create_forestry_configuration(apps, schema_editor):
                                duration=45)
     reset_resource_level(practice_round)
 # Phase one, NC
-    add_round(cfg, round_type='INSTRUCTIONS', sequence_number=3)
+    add_round(cfg, round_type='INSTRUCTIONS', sequence_number=3, template_id='PRACTICE_ROUND_RESULTS')
     phase_one_part_one = add_round(cfg, round_type='REGULAR', sequence_number=4, repeat=6, initialize_data_values=True,
                                    duration=45)
 # reset resource level
     reset_resource_level(phase_one_part_one)
 
-    add_round(cfg, round_type='INSTRUCTIONS', sequence_number=5)
+    add_round(cfg, round_type='INSTRUCTIONS', sequence_number=5, template_id='PHASE_ONE_BLOCK_ONE_RESULTS')
     phase_one_part_two = add_round(cfg, round_type='REGULAR', sequence_number=6, repeat=6, initialize_data_values=True,
                                    duration=45)
 # reset resource level again
     reset_resource_level(phase_one_part_two)
     # Survey 1 and Phase 2, C
-    add_round(cfg, round_type='INSTRUCTIONS', sequence_number=7, survey_url='https://qualtrics.com/placeholder')
+    add_round(cfg, round_type='INSTRUCTIONS', sequence_number=7, survey_url='https://qualtrics.com/placeholder',
+              template_id='PHASE_TWO_INSTRUCTIONS')
     phase_two_part_one = add_round(cfg, round_type='REGULAR', sequence_number=8, repeat=6, chat_enabled=True,
                                    initialize_data_values=True, duration=45)
     reset_resource_level(phase_two_part_one)
 
-    add_round(cfg, round_type='INSTRUCTIONS', sequence_number=9)
+    add_round(cfg, round_type='INSTRUCTIONS', sequence_number=9, template_id='PHASE_TWO_BLOCK_ONE_RESULTS')
     phase_two_part_two = add_round(cfg, round_type='REGULAR', sequence_number=10, repeat=6, chat_enabled=True,
                                    initialize_data_values=True, duration=45)
     reset_resource_level(phase_two_part_two)
 
 # Survey 2 and Phase 3, NC/C
-    add_round(cfg, round_type='INSTRUCTIONS', sequence_number=11, survey_url='https://qualtrics.com/placeholder')
+    add_round(cfg, round_type='INSTRUCTIONS', sequence_number=11, survey_url='https://qualtrics.com/placeholder',
+              template_id='PHASE_THREE_INSTRUCTIONS')
     phase_three_part_one = add_round(cfg, round_type='REGULAR', sequence_number=12, repeat=6,
                                      initialize_data_values=True, duration=45)
     reset_resource_level(phase_three_part_one)
 
-    add_round(cfg, round_type='INSTRUCTIONS', sequence_number=13)
+    add_round(cfg, round_type='INSTRUCTIONS', sequence_number=13, template_id='PHASE_THREE_BLOCK_ONE_RESULTS')
     phase_three_part_two = add_round(cfg, round_type='REGULAR', sequence_number=14, repeat=6,
                                      initialize_data_values=True, duration=45)
     reset_resource_level(phase_three_part_two)
 
 # Survey three and final debriefing
-    add_round(cfg, round_type='DEBRIEFING', sequence_number=15, survey_url='https://qualtrics.com/placeholder')
+    add_round(cfg, round_type='DEBRIEFING', sequence_number=15, survey_url='https://qualtrics.com/placeholder',
+              template_id='DEBRIEFING_WITH_SURVEY')
 
 
 

@@ -106,9 +106,8 @@
         of trees you harvest today will determine your final payment.
     </p>
     <p>
-    You have already earned <i class='fa fa-usd'></i> <span data-bind='text: formatCurrency(parseFloat(showUpPayment))'></span>
-    by showing up at this experiment. You can earn more, up to a maximum of about <i class='fa fa-usd'></i>15 &mdash; <i
-    class='fa fa-usd'></i>20, depending on how many trees you harvest during the experiment.
+    You can earn up to a maximum of about <i class='fa fa-usd'></i>8 &mdash; <i class='fa fa-usd'></i>18, depending on
+    how many trees you harvest during the experiment.
     </p>
     <h4>Harvesting Trees</h4>
     <p>
@@ -121,15 +120,15 @@
     timber will have been taken already.
     </p>
     <p>
-    The table below shows the maximum number of trees you can harvest in a year, depending on the current size of the
-    forest. There is also a copy of the table at your station.
+    You can look at the table below to see the maximum number of trees you can harvest in a year, depending on the
+    current size of the forest. There is also a copy of this table at your station.
     </p>
-    <h4>Harvest Limits</h4>
+    <h4>Maximum Possible Harvest Depending On Forest Size</h4>
     <table class='table table-bordered table-condensed'>
         <thead>
           <tr>
-            <th>Current Size of Forest</th>
-            <th>Maximum harvest for each person</th>
+            <th>Current size of forest</th>
+            <th>Maximum possible harvest</th>
           </tr>
         </thead>
         <tbody>
@@ -146,8 +145,8 @@
     Like a real forest, the total number of trees in the forest will increase or decrease depending on the number of
     trees that were harvested in previous years. The forest can never be larger than <span data-bind='text:
     initialResourceLevel'></span> trees. However, after some trees are harvested, new trees will grow after each year at
-    a rate of 2 trees for every 10 trees that remain in the forest. For example, if there are a total of 20 trees in the
-    forest at the end of a year, then 4 new trees will grow, and there will be 24 trees in the forest next year. If the
+    a rate of 2 trees for every 10 trees that remain in the forest. For example, if there are a total of 10 trees in the
+    forest at the end of a year, then 2 new trees will grow, and there will be 12 trees in the forest next year. If the
     forest reaches a size of 9 trees or less, there are not enough mature trees to reproduce and no more new trees will
     grow.
     </p>
@@ -155,7 +154,6 @@
     The table below shows how many trees will grow, depending on the size of the forest. There is also a copy of this
     table at your station.
     </p>
-    {# FIXME: revisit this, sent Daniel a note about why this table may be problematic #}
     <h4>Forest Growth Rate</h4>
     <table class='table table-bordered table-condensed'>
         <thead>
@@ -221,10 +219,10 @@
 <h2>Practice Round Instructions</h2>
 <p>
     During the practice round, you have unlimited time to indicate how many trees you want to harvest, so that you can
-    get used to the controls and become familiar with the information being displayed. The trees you harvest during this
-    practice round <b>will not affect your earnings</b>. During the actual experiment, you will have <span
+    get used to the controls and become familiar with the information being displayed. The trees you harvest during the
+    practice round <b>do not count towards your earnings</b>. During the actual experiment, you will have <span
     data-bind='text:roundDuration'></span> seconds each round to indicate how many trees you wish to harvest, and the
-    trees you harvest <b>will</b> count towards your earnings. 
+    trees you harvest in actual rounds <b>will</b> count towards your earnings. 
 </p>
 <h3>Selecting Trees for Harvest</h3>
 <p>
@@ -245,12 +243,9 @@ you do not select a number of trees within the time allotted, you will be marked
     <li>Select a harvest amount and wait for the end of the round. The amount you have chosen will be automatically
     submitted. A countdown will alert you when there are 10 seconds left. If you do not select a harvest value, a
     default value of 0 will automatically be selected. You may change your harvest decision multiple times before
-    clicking &quot;Ok, I&39;m ready&quot;"Ok, I'm Ready" until the time is up.
+    clicking &quot;Ok, I&39;m ready&quot; until the time is up.
 </ol>
 <p>
-{# FIXME: 
-check with Daniel about having canned practice round harvest decisions so that there is a baseline for all participants
-#}
 Use this opportunity to familiarize yourself with the information displayed, and then decide how many trees you would
 like to harvest. If you have any questions, please let the experimenter know.
 </p>
@@ -295,21 +290,10 @@ like to harvest. If you have any questions, please let the experimenter know.
 </script>
 <script type='text/html' id='PAID_EXPERIMENT_INSTRUCTIONS'>
     <h2>Paid Experiment Instructions</h2>
-    <h3>Two Sessions</h3>
-    <p>
-        This experiment is composed of two different, unconnected sessions. Your group will be randomly selected for each
-        session, so you will be playing with a different group each time.
-        We will pay you for one of these two sessions, chosen at random.  You have exactly 50% chance of being paid for your earnings in each session.
-    </p>
     <h3>Group and Individual Status</h3>
     <p>
         You will be able to observe the status of the members of your group each round. Likewise group members will see
         your status, and those of the group.
-    </p>
-    <h3>Group Chat</h3>
-    <p>
-        If availabel to chat during the round, you'll be able to text chat with the other members of your group.
-        But once you have made a harvest decision, you will no longer be able to contribute to the chat for that round.
     </p>
     <h3>Harvest Choice</h3>
     <p>
@@ -411,6 +395,49 @@ like to harvest. If you have any questions, please let the experimenter know.
         <div data-bind='template: { name: "tree-template", data: myGroup }'></div>
     </div>
 </div>
+</script>
+<script type='text/html' id='PHASE_ONE_BLOCK_ONE_RESULTS'>
+</script>
+<script type='text/html' id='PHASE_TWO_INSTRUCTIONS'>
+<h2>Instructions</h2>
+<p>
+We are about to begin another phase of the Forest task. Please read the following instructions carefully.
+</p>
+<h3>New Forest</h3>
+<p>
+You and your group members will now be moved to a new forest. Just like before, the forest has 
+<span data-bind='text: initialResourceLevel'></span>
+</p>
+<h2>Group Chat</h2>
+<p>
+From this point forward, you will be able to communicate with the members of your group. During Year 1, you can
+communicate for 5 minutes, before harvesting any trees. The ability to harvest trees will be disabled during
+communication. After the first year, you will be able to communicate with your group members during each standard
+45-second year, as each member of your group decides how much to harvest.
+</p>
+<h3>How to Communicate</h3>
+<p>
+You may have noticed the &quot;Chat&quot; window on the right-hand side of the screen. If you want to communicate with
+the people in your group, simply type your message in the &quot;Chat&quot; window. A text message will then be displayed
+to every member of your group.
+</p>
+<ol>
+<li>During Year 1, you will be able to chat for five minutes before making a harvest selection.</li>
+<li>During Years 2-6, you will be able to chat during the <span data-bind='text: roundDuration'></span> second round as
+you make your selection.</li>
+</ol>
+<h3>Guidelines for Communication</h3>
+<p>
+You are free to communicate as much or little as you want, and you can discuss anything you like with the following exceptions:
+</p>
+<ol>
+<li>You cannot discuss side payments that would result in exchange of money outside the experiment</li>
+<li>You cannot make physical threats</li>
+</ol>
+</script>
+<script type='text/html' id='PHASE_TWO_BLOCK_ONE_RESULTS'>
+</script>
+<script type='text/html' id='PHASE_THREE_INSTRUCTIONS'>
 </script>
 <script type='text/html' id='DEBRIEFING_WITH_SURVEY'>
     <h2>Survey</h2>
