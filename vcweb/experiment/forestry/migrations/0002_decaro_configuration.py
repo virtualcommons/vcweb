@@ -102,8 +102,6 @@ def create_forestry_configuration(apps, schema_editor):
               template_id='DEBRIEFING_WITH_SURVEY')
 
 
-
-
 def rollback_forestry_configuration(apps, schema_editor):
     ExperimentConfiguration = apps.get_model('core', 'ExperimentConfiguration')
     ExperimentConfiguration.objects.get(treatment_id='daniel.decaro/t1').delete()

@@ -569,14 +569,15 @@ class ExperimentConfiguration(ParameterValueMixin, models.Model):
     objects = PassThroughManager.for_queryset_class(ExperimentConfigurationQuerySet)()
 
     def add_round(self,
-                  round_type=None, sequence_number=None, template_id=None, repeat=0,
-                  session_id=None, preserve_existing_groups=True, randomize_groups=False,
-                  chat_enabled=False, survey_url=None, initialize_data_values=False):
+                  duration=45, round_type=None, sequence_number=None, template_id=None, repeat=0, session_id=None,
+                  preserve_existing_groups=True, randomize_groups=False, chat_enabled=False, survey_url=None,
+                  initialize_data_values=False):
         if sequence_number is None:
             sequence_number = self.last_round_sequence_number + 1
         if template_id is None:
             template_id = round_type
         return self.round_configuration_set.create(
+            duration=duration,
             round_type=round_type,
             sequence_number=sequence_number,
             template_id=template_id,
