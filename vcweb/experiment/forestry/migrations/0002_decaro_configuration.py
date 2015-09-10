@@ -5,9 +5,9 @@ from django.db import models, migrations
 
 
 def add_round(cfg,
-              round_type=None, sequence_number=None, template_id=None, repeat=0,
-              session_id='', preserve_existing_groups=True, randomize_groups=False,
-              chat_enabled=False, survey_url=None, initialize_data_values=False):
+              round_type=None, sequence_number=None, template_id=None, repeat=0, duration=45, session_id='',
+              preserve_existing_groups=True, randomize_groups=False, chat_enabled=False, survey_url=None,
+              initialize_data_values=False):
     if sequence_number is None:
         sequence_number = cfg.round_configuration_set.count() + 1
     if template_id is None:
