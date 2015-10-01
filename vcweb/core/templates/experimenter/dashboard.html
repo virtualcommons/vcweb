@@ -152,7 +152,7 @@
                 window.location = url;
             };
             model.controllerUrl = function(experimentModel, urlAction) {
-                return experimentModel.controller_url() + "/" + urlAction;
+                return experimentModel.url() + "/" + urlAction;
             };
             function pendingExperimentCallback(data) {
                 if (data.success) {

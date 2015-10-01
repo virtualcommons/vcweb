@@ -1391,11 +1391,11 @@ class Experiment(models.Model):
 
     def invoke(self, action_name, experimenter=None):
         if action_name in Experiment.ALLOWED_ACTIONS and experimenter == self.experimenter:
-            self.log("experimenter %s invoking action %s", experimenter, action_name)
+            self.log("experimenter {} invoking action {}".format(experimenter, action_name))
             action = getattr(self, action_name)
             return action()
         else:
-            self.log("Invalid experiment action %s requested of experiment %s" % (action_name, self))
+            self.log("Experimenter {} tried to invoke invalid action {} on {}".format(action_name, self))
 
     def advance_to_next_round(self):
         if self.is_round_in_progress:
@@ -1569,6 +1569,7 @@ class Experiment(models.Model):
             })
         return all_round_data
 
+    # FIXME: replace with DRF
     def to_dict(self, include_round_data=False, default_value_dict=None, attrs=None, *args, **kwargs):
         experiment_dict = dict(default_value_dict or {}, **kwargs)
         start_time = self.current_round_start_time.strftime('%c') if self.current_round_start_time else 'N/A'
@@ -1584,6 +1585,7 @@ class Experiment(models.Model):
             'exchangeRate': float(self.experiment_configuration.exchange_rate),
             'readyParticipants': self.number_of_ready_participants,
             'status': self.status,
+            'url': self.experimenter_url,
             'pk': self.pk
         })
         if include_round_data:
