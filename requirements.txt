@@ -37,4 +37,4 @@ dealer==2.0.4
 uwsgi==2.0.11.1
 certifi
 # virtualcommons forked django-cas
-git+http://git@github.com/virtualcommons/django-cas.git#egg=cas
+git+https://git@github.com/virtualcommons/django-cas.git#egg=cas
