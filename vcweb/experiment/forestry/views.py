@@ -89,6 +89,7 @@ experiment_model_defaults = {
     },
     'selectedHarvestDecision': False,
     'lastHarvestDecision': 0,
+    'dollarsPerTree': 0.10,
     'groupData': [],
     'regrowth': 0,
 }
@@ -126,6 +127,7 @@ def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
         own_group = participant_group_relationship.group
         own_resource_level = get_resource_level(own_group)
         experiment_model_dict['resourceLevel'] = own_resource_level
+        experiment_model_dict['dollarsPerTree'] = ec.exchange_rate
 
         # Create GroupData object to access group members data
         gd = GroupData(participant_group_relationship, previous_round_data, current_round_data)

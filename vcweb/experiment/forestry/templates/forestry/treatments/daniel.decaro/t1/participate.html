@@ -7,7 +7,7 @@
 {% block page %}
 <div class='row' id='page'>
     <div id='content' class='col-md-8'>
-        <div data-bind='template: { name: templateId(), afterRender: afterRenderTemplate}'></div>
+        <div data-bind='template: { name: templateId, afterRender: afterRenderTemplate}'></div>
         <div id="progress-modal" class="modal fade" role="dialog">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -28,7 +28,7 @@
             <h3>Chat</h3>
             <div data-bind='ifnot: chatEnabled'>
                 <div class='alert alert-danger'>
-                    <i class='fa-warning'></i> Chat is currently disabled.
+                    <i class='fa fa-warning'></i> Chat is currently disabled.
                 </div>
             </div>
             <form id="chat-form" class='form-horizontal' data-bind='submit: submitChatMessage' >
@@ -101,12 +101,11 @@
         In the beginning, the forest will have a total of <span data-bind='text:initialResourceLevel'></span>
         trees. You will be in the forest for several rounds, which represent &quot;years&quot;. Every year, you can
         harvest up to <span data-bind='text:maxHarvestDecision'></span> trees, as long as there are enough trees
-        remaining in the forest. You will earn <i class='fa fa-usd'></i>
-        <span data-bind='text: formatCurrency(parseFloat(dollarsPerTree))'></span> for every tree that you harvest. The total number
+        remaining in the forest. You will earn <mark data-bind='text: formatCurrency(parseFloat(dollarsPerTree()))'></mark> for every tree that you harvest. The total number
         of trees you harvest today will determine your final payment.
     </p>
     <p>
-    You can earn up to a maximum of about <i class='fa fa-usd'></i>8 &mdash; <i class='fa fa-usd'></i>18, depending on
+    You can earn up to a maximum of about <mark>$8 to $18</mark>, depending on
     how many trees you harvest during the experiment.
     </p>
     <h4>Harvesting Trees</h4>
@@ -179,8 +178,8 @@
     </table>
     <h3>Groups</h3>
     <p>
-    You have been randomly assigned to a group with <span data-bind='text: numberOfParticipants() - 1'></span> other
-    participants. All <span data-bind='text: numberOfParticipants()'></span> members of your group will be able to
+    You have been randomly assigned to a group with <span data-bind='text: participantsPerGroup() - 1'></span> other
+    participants. All <span data-bind='text: participantsPerGroup()'></span> members of your group will be able to
     access the forest and harvest trees from it. You will stay in the same group for the entire experiment.
     </p>
     <h4>Group Members are Anonymous</h4>
@@ -205,7 +204,7 @@
     understand how to harvest trees.
     </p>
     <p>
-    <b>Do you have any questions so far?</b>If you have any questions at this time, please let the experimenter know,
+    <b>Do you have any questions so far?</b> If you have any questions at this time, please let the experimenter know,
     and they will come to your computer station to answer it.
     </p>
     <ul class='pager'>
@@ -239,7 +238,7 @@ you do not select a number of trees within the time allotted, you will be marked
     There are two ways to submit a harvest decision:
 </p>
 <ol>
-    <li>Select a harvest amount and click &quot;Ok, I&39;m ready&quot;</li>
+    <li>Select a harvest amount and click &quot;Ok, I'm ready&quot;</li>
     <li>Select a harvest amount and wait for the end of the round. The amount you have chosen will be automatically
     submitted. A countdown will alert you when there are 10 seconds left. If you do not select a harvest value, a
     default value of 0 will automatically be selected. You may change your harvest decision multiple times before
