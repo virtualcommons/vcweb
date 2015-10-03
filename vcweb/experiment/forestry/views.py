@@ -8,7 +8,7 @@ from vcweb.core.http import JsonResponse, dumps
 from vcweb.core.forms import SingleIntegerDecisionForm
 from vcweb.core.models import (Experiment, ChatMessage, ParticipantGroupRelationship, RoundConfiguration,
                                PermissionGroup)
-from .models import (get_experiment_metadata, get_max_allowed_harvest_decision, get_resource_level,
+from .models import (get_experiment_metadata, get_max_harvest_decision, get_resource_level,
                      get_initial_resource_level, get_harvest_decision_dv, get_regrowth_dv, set_harvest_decision,
                      get_average_harvest, GroupData, can_view_group_results)
 
@@ -104,8 +104,8 @@ def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
 
     experiment_model_dict = experiment.to_dict(include_round_data=False, default_value_dict=experiment_model_defaults)
     experiment_model_dict['sessionId'] = current_round.session_id
-    experiment_model_dict['maxHarvestDecision'] = get_max_allowed_harvest_decision(participant_group_relationship,
-                                                                                   current_round_data, ec)
+    experiment_model_dict['maxHarvestDecision'] = get_max_harvest_decision(participant_group_relationship.group,
+                                                                           current_round_data, ec)
     experiment_model_dict['templateName'] = current_round.template_name
     experiment_model_dict['isPracticeRound'] = current_round.is_practice_round
     experiment_model_dict['showTour'] = current_round.is_practice_round and not previous_round.is_practice_round

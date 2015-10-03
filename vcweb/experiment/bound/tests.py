@@ -22,8 +22,7 @@ class BaseTest(BaseVcwebTest):
 
     def load_experiment(self, **kwargs):
         ''' returns the AB treatment configured in the boundary effects data migration '''
-        self.experiment = Experiment.objects.filter(
-            experiment_metadata=get_experiment_metadata()).first().clone()
+        return Experiment.objects.filter(experiment_metadata=get_experiment_metadata()).first().clone()
 
     def create_harvest_decisions(self, value=10):
         for pgr in self.experiment.participant_group_relationships:

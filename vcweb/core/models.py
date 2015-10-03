@@ -1658,7 +1658,7 @@ class RoundConfiguration(ParameterValueMixin, models.Model):
 
     experiment_configuration = models.ForeignKey(ExperimentConfiguration, related_name='round_configuration_set')
     sequence_number = models.PositiveIntegerField(
-        help_text=_('Determines the ordering of the rounds in an experiment in ascending order, e.g., 1,2,3,4,5'))
+        help_text=_('Determines the ordering of the rounds in an experiment in ascending order, e.g., 1,2,3,4,5. Must be 1-based'))
     display_number = models.PositiveIntegerField(
         default=0,
         help_text=_('Display round number, defaults to sequence_number if 0.'))
@@ -2239,7 +2239,7 @@ class Group(models.Model, DataValueMixin):
 
     def log(self, log_message, log_type=ActivityLog.LogType.System):
         if log_message:
-            logger.debug(log_message)
+            logger.error(log_message)
             self.activity_log_set.create(round_configuration=self.current_round, log_message=log_message,
                                          log_type=log_type)
 

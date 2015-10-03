@@ -1,9 +1,17 @@
 import logging
 import random
 
-from vcweb.core.models import (GroupRoundDataValue, ParticipantExperimentRelationship, ParticipantGroupRelationship)
+from vcweb.core.models import (Experiment, GroupRoundDataValue, ParticipantExperimentRelationship,
+                               ParticipantGroupRelationship, Parameter, ParticipantRoundDataValue,
+                               ExperimentConfiguration, )
 from vcweb.core.tests import BaseVcwebTest
-from .models import *
+
+from .models import (get_experiment_metadata, EXPERIMENT_METADATA_NAME, round_started_handler, round_ended_handler,
+                     get_harvest_decision_parameter, should_reset_resource_level, get_initial_resource_level,
+                     get_max_harvest_decision, set_harvest_decision, get_regrowth_parameter,
+                     get_group_harvest_parameter, get_resource_level_parameter, set_resource_level, get_resource_level,
+                     calculate_regrowth,
+                     )
 
 
 logger = logging.getLogger(__name__)
@@ -61,36 +69,79 @@ class ForestryRoundSignalTest(BaseVcwebTest):
             e, lambda experiment: round_ended_handler(None, experiment))
 
 
-class TransferParametersTest(BaseVcwebTest):
+class ResourceLevelTest(BaseVcwebTest):
 
-    def test_transfer_parameters(self):
-        def calculate_expected_resource_level(resource_level, harvested):
-            after_harvest = max(resource_level - harvested, 0)
-            return min(100, int(after_harvest + (after_harvest * .10)))
+    """
+    Uses standard forestry protocol parameterizations: regrowth of 0.10, group size 5, 100 initial resources, max
+    harvest decision from 0-5
+    """
+    expected_max_harvest = 5
+    regrowth_rate = 0.10
+    max_resource_level = 100
 
+    def calculate_expected_resource_level(self, resource_level, total_harvest):
+        after_harvest = max(resource_level - total_harvest, 0)
+        regrowth = calculate_regrowth(after_harvest, self.regrowth_rate, self.max_resource_level)
+        new_resource_level = int(after_harvest + regrowth)
+        return min(100, new_resource_level)
+
+    def test_resource_level(self):
+        """
+        Verify proper functionality for:
+        1. transfer of resource level group data values from round to round
+        2. max harvest decisions
+        3. resource level and regrowth calculations
+        """
         e = self.advance_to_data_round()
         expected_resource_level = 100
+        sample_group = e.groups[0]
+        group_size = sample_group.size
+        self.assertEqual(get_max_harvest_decision(sample_group, e.current_round_data, e.experiment_configuration),
+                         self.expected_max_harvest)
         while e.has_next_round:
             current_round_configuration = e.current_round
             if should_reset_resource_level(current_round_configuration, e):
-                expected_resource_level = get_initial_resource_level(
-                    current_round_configuration)
+                expected_resource_level = get_initial_resource_level(current_round_configuration)
 
             if current_round_configuration.is_playable_round:
-                max_harvest_decision = get_max_harvest_decision(
-                    expected_resource_level)
-                for pgr in e.participant_group_relationships:
-                    self.assertEqual(
-                        get_resource_level(pgr.group), expected_resource_level)
-                    set_harvest_decision(pgr, max_harvest_decision)
-                expected_resource_level = calculate_expected_resource_level(
-                    expected_resource_level, max_harvest_decision * 5)
-
-            e.end_round()
+                round_data = e.current_round_data
+                experiment_configuration = e.experiment_configuration
+                for group in e.groups:
+                    max_harvest_decision = get_max_harvest_decision(group, round_data, experiment_configuration)
+                    logger.debug("max harvest decision : %s, expected resource level: %s for round %s",
+                                 max_harvest_decision, expected_resource_level, round_data)
+                    for pgr in group.participant_group_relationship_set.all():
+                        self.assertEqual(get_resource_level(group), expected_resource_level)
+                        set_harvest_decision(pgr, max_harvest_decision)
+                expected_resource_level = self.calculate_expected_resource_level(expected_resource_level,
+                                                                                 max_harvest_decision * group_size)
+                e.end_round()
             for group in e.groups:
-                self.assertEqual(get_resource_level(
-                    group), expected_resource_level, "Group resource levels were not equal")
+                self.assertEqual(get_resource_level(group), expected_resource_level)
             e.advance_to_next_round()
+
+
+class DDCTreatmentTest(ResourceLevelTest):
+    """
+    Tests max harvest decision tables and updated regrowth dynamics for Daniel DeCaro's group experiments Fall 2015
+    """
+    expected_max_harvest = 10
+    regrowth_rate = 0.20
+    def load_experiment(self, **kwargs):
+        ''' returns the AB treatment configured in the boundary effects data migration '''
+        ec = ExperimentConfiguration.objects.get(treatment_id='daniel.decaro/t1')
+        return Experiment.objects.create(
+            experiment_metadata=get_experiment_metadata(),
+            experimenter=self.demo_experimenter,
+            experiment_configuration=ec,
+        )
+
+    def test_max_harvest_decision(self):
+        e = self.advance_to_data_round()
+        round_data = e.current_round_data
+        ec = e.experiment_configuration
+        for g in e.groups:
+            self.assertEqual(10, get_max_harvest_decision(g, round_data, ec))
 
 
 class ForestryParametersTest(BaseVcwebTest):

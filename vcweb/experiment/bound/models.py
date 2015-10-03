@@ -441,8 +441,7 @@ def update_resource_level(experiment, group, round_data, regrowth_rate, max_reso
     # get_total_group_harvest(group, ...), see if we can enable this
     # dynamically
     total_harvest = get_total_group_harvest(group, round_data)
-    logger.debug(
-        "Harvest: total group harvest for playable round: %s", total_harvest)
+    logger.debug("Harvest: total group harvest for playable round: %s", total_harvest)
     if current_resource_level > 0:
         if total_harvest > current_resource_level:
             adjusted_harvest = adjust_harvest_decisions(
@@ -453,8 +452,7 @@ def update_resource_level(experiment, group, round_data, regrowth_rate, max_reso
                   (total_harvest, current_resource_level))
         group_harvest_dv.update_int(total_harvest)
         current_resource_level = current_resource_level - total_harvest
-        resource_regrowth = calculate_regrowth(
-            current_resource_level, regrowth_rate, max_resource_level)
+        resource_regrowth = calculate_regrowth(current_resource_level, regrowth_rate, max_resource_level)
         group.log("Regrowth: adding %s to current resource level %s" %
                   (resource_regrowth, current_resource_level))
         regrowth_dv.update_int(resource_regrowth)
@@ -584,8 +582,7 @@ def round_ended_handler(sender, experiment=None, **kwargs):
                                                                     parameter=harvest_decision_parameter,
                                                                     is_active=True,
                                                                     int_value=0)
-                    logger.debug(
-                        "autozero harvest decision for participant %s", pgr)
+                    logger.debug("autozero harvest decision for participant %s", pgr)
                 elif prdvs.count() > 1:
                     # another degenerate data condition, deactivate all prior
                     logger.debug(

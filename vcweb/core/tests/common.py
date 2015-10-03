@@ -33,8 +33,6 @@ class BaseVcwebTest(TestCase):
             experiment = self.create_new_experiment(experiment_metadata, **kwargs)
         if experimenter_password is None:
             experimenter_password = BaseVcwebTest.DEFAULT_EXPERIMENTER_PASSWORD
-
-        self.experiment = experiment
         # currently associating all available Parameters with this
         # ExperimentMetadata
         if not experiment.experiment_metadata.parameters.exists():
@@ -156,7 +154,7 @@ class BaseVcwebTest(TestCase):
     def setUp(self, **kwargs):
         self.client = Client()
         self.factory = RequestFactory()
-        self.load_experiment(**kwargs)
+        self.experiment = self.load_experiment(**kwargs)
         self.add_participants(**kwargs)
         self.logger = logger
         logging.disable(settings.DISABLED_TEST_LOGLEVEL)

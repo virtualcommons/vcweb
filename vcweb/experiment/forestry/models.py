@@ -88,7 +88,21 @@ def get_initial_resource_level(round_configuration, default=MAX_RESOURCE_LEVEL):
                                                    default=default).int_value
 
 
-def get_max_harvest_decision(resource_level):
+def get_average_harvest(group, round_data):
+    return get_total_group_harvest(group, round_data) / float(group.size)
+
+
+def get_max_resource_level(round_configuration):
+    return get_initial_resource_level(round_configuration, default=MAX_RESOURCE_LEVEL)
+
+
+# def is_shared_resource_enabled(round_configuration):
+#     return round_configuration.get_parameter_value(parameter=get_shared_resource_enabled_parameter(),
+#                                                    default=False).boolean_value
+
+
+def _default_max_harvest_decision(resource_level):
+    # FIXME: figure out a flexible way to manage different max harvest functions
     if resource_level >= 25:
         return 5
     elif resource_level >= 20:
@@ -103,21 +117,34 @@ def get_max_harvest_decision(resource_level):
         return 0
 
 
-def get_average_harvest(group, round_data):
-    return get_total_group_harvest(group, round_data) / float(group.size)
+def _daniel_decaro_max_harvest_function(resource_level):
+    if resource_level >= 40:
+        return 10
+    elif resource_level >= 32:
+        return 8
+    elif resource_level >= 24:
+        return 6
+    elif resource_level >= 16:
+        return 4
+    elif resource_level >= 8:
+        return 2
+    else:
+        return 0
 
 
-def get_max_resource_level(round_configuration):
-    return get_initial_resource_level(round_configuration, default=MAX_RESOURCE_LEVEL)
+
+def _max_harvest_decision_function(treatment_id, resource_level):
+    if 'daniel.decaro' in treatment_id:
+        return _daniel_decaro_max_harvest_function(resource_level)
+    return _default_max_harvest_decision(resource_level)
 
 
-# def is_shared_resource_enabled(round_configuration):
-#     return round_configuration.get_parameter_value(parameter=get_shared_resource_enabled_parameter(),
-#                                                    default=False).boolean_value
-
-
-def get_max_allowed_harvest_decision(participant_group_relationship, round_data=None, experiment_configuration=None):
-    return get_max_harvest_decision(experiment_configuration)
+def get_max_harvest_decision(group, round_data=None, experiment_configuration=None):
+    resource_level = get_resource_level(group, round_data)
+    if experiment_configuration is None:
+        return _default_max_harvest_decision(resource_level)
+    treatment_id = experiment_configuration.treatment_id
+    return _max_harvest_decision_function(treatment_id, resource_level)
 
 
 def _zero_if_none(value):
@@ -282,8 +309,7 @@ def get_initial_resource_level_parameter():
 @transaction.atomic
 def round_started_handler(sender, experiment=None, **kwargs):
     if experiment is None:
-        logger.error(
-            "Received round started signal with no experiment: %s", sender)
+        logger.error("Received round started signal with no experiment: %s", sender)
         raise ValueError("Received round started signal with no experiment")
 
     round_configuration = experiment.current_round
@@ -314,28 +340,23 @@ def round_started_handler(sender, experiment=None, **kwargs):
 @transaction.atomic
 def update_resource_level(experiment, group, round_data, regrowth_rate, max_resource_level=None):
     if max_resource_level is None:
-        max_resource_level = get_max_resource_level(
-            round_data.round_configuration)
+        max_resource_level = get_max_resource_level(round_data.round_configuration)
     current_resource_level_dv = get_resource_level_dv(group, round_data)
     current_resource_level = current_resource_level_dv.int_value
     group_harvest_dv = get_group_harvest_dv(group, round_data)
     regrowth_dv = get_regrowth_dv(group, round_data)
     total_harvest = get_total_group_harvest(group, round_data)
-    logger.debug(
-        "Harvest: total group harvest for playable round: %s", total_harvest)
-    if current_resource_level > 0 and total_harvest > 0:
-        group.log("Harvest: removing %s from current resource level %s" %
-                  (total_harvest, current_resource_level))
+    logger.debug("Harvest: total group harvest for playable round: %s", total_harvest)
+    if current_resource_level > 0:
+        group.log("Harvest: removing %s from current resource level %s" % (total_harvest, current_resource_level))
         group_harvest_dv.update_int(total_harvest)
         current_resource_level = current_resource_level - total_harvest
-        resource_regrowth = calculate_regrowth(
-            current_resource_level, regrowth_rate, max_resource_level)
+        resource_regrowth = calculate_regrowth(current_resource_level, regrowth_rate, max_resource_level)
         group.log("Regrowth: adding %s to current resource level %s" %
                   (resource_regrowth, current_resource_level))
         regrowth_dv.update_int(resource_regrowth)
         # clamp resource
-        current_resource_level_dv.update_int(
-            min(current_resource_level + resource_regrowth, max_resource_level))
+        current_resource_level_dv.update_int(min(current_resource_level + resource_regrowth, max_resource_level))
     # XXX: transfer resource levels across chat and quiz rounds if they exist
     if experiment.has_next_round:
         # set group round data resource_level for each group + regrowth
@@ -388,6 +409,6 @@ def round_ended_handler(sender, experiment=None, **kwargs):
 def calculate_regrowth(resource_level, regrowth_rate, max_resource_level):
     if resource_level == max_resource_level:
         return 0
-    logger.debug("calculating regrowth: (%s * %s) * (1 - (%s / %s))",
-                 regrowth_rate, resource_level, resource_level, max_resource_level)
-    return regrowth_rate * resource_level
+    regrowth = regrowth_rate * resource_level
+    logger.debug("calculated regrowth: %s * %s = %s", regrowth_rate, resource_level, regrowth)
+    return regrowth
