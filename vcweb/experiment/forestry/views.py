@@ -101,6 +101,7 @@ def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
     current_round_data = experiment.current_round_data
     previous_round = experiment.previous_round
     previous_round_data = experiment.get_round_data(round_configuration=previous_round, previous_round=True)
+    own_group = participant_group_relationship.group
 
     experiment_model_dict = experiment.to_dict(include_round_data=False, default_value_dict=experiment_model_defaults)
     experiment_model_dict['sessionId'] = current_round.session_id
@@ -124,7 +125,6 @@ def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
 
     if current_round.is_playable_round or current_round.is_debriefing_round:
         experiment_model_dict['chatEnabled'] = current_round.chat_enabled
-        own_group = participant_group_relationship.group
         own_resource_level = get_resource_level(own_group)
         experiment_model_dict['resourceLevel'] = own_resource_level
         experiment_model_dict['dollarsPerTree'] = ec.exchange_rate
@@ -156,9 +156,7 @@ def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
                     round_configuration__round_type=RoundConfiguration.RoundType.REGULAR)
 
             experiment_model_dict['totalEarnings'] = gd.get_own_earnings(rounds, ec.exchange_rate)
-
-            if can_view_group_results(current_round):
-                experiment_model_dict['groupEarnings'] = gd.get_group_earnings(rounds, ec.exchange_rate)
+            experiment_model_dict['groupEarnings'] = gd.get_group_earnings(rounds, ec.exchange_rate)
 
     # Participant group data parameters are only needed if this round is a data round
     # or the previous round was a data round

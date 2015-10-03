@@ -283,11 +283,11 @@ like to harvest. If you have any questions, please let the experimenter know.
     </p>
     <ul class='pager'>
         <li class='next'>
-           <a href="javascript: void(0)" data-bind='click: activateTemplate.bind($data, "PAID_EXPERIMENT_INSTRUCTIONS")'>Ok, continue</a>
+           <a href="javascript: void(0)" data-bind='click: activateTemplate.bind($data, "INSTRUCTIONS")'>Ok, continue</a>
         </li>
     </ul>
 </script>
-<script type='text/html' id='PAID_EXPERIMENT_INSTRUCTIONS'>
+<script type='text/html' id='INSTRUCTIONS'>
     <h2>Paid Experiment Instructions</h2>
     <h3>Group and Individual Status</h3>
     <p>
@@ -656,7 +656,7 @@ You are free to communicate as much or little as you want, and you can discuss a
                 }
                 return 0;
             });
-            model.inactiveResourceImageUrl = ko.observable("{{STATIC_URL}}images/forestry/tree-inactive.png");
+            model.inactiveResourceImageUrl = ko.observable("{% static 'images/forestry/tree-inactive.png' %}");
             model.resourceImageBackgroundUrl = ko.observable("url('{{STATIC_URL}}images/forestry/tree-resource-old-growth.png')");
             model.regrowthResourceImageBackgroundUrl = ko.observable("url('{{STATIC_URL}}images/forestry/tree-resource-new-growth.png')");
 
@@ -788,7 +788,7 @@ You are free to communicate as much or little as you want, and you can discuss a
                 model.clearCurrentInterval();
                 $('#content').removeClass('col-md-12').addClass('col-md-8');
                 $('#sidebar').show();
-                model.activateTemplate("PAID_EXPERIMENT_INSTRUCTIONS");
+                model.activateTemplate("INSTRUCTIONS");
             };
             model.initializeChat = function() {
                 var chatEnabled = model.chatEnabled();
