@@ -31,7 +31,7 @@ def clone_experiment(request):
     cloned_experiment = experiment.clone(experimenter=experimenter)
     return JsonResponse({
         'success': True,
-        'experiment': cloned_experiment.to_dict(attrs=('monitor_url', 'status_line', 'controller_url'))
+        'experiment': cloned_experiment.to_dict(attrs=('monitor_url', 'status_line',))
     })
 
 
@@ -48,7 +48,7 @@ def create_experiment(request):
                                   experiment_configuration=experiment_configuration)
     return JsonResponse({
         'success': True,
-        'experiment': e.to_dict(attrs=('monitor_url', 'status_line', 'controller_url'))
+        'experiment': e.to_dict(attrs=('monitor_url', 'status_line',))
     })
 
 

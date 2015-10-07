@@ -2239,7 +2239,7 @@ class Group(models.Model, DataValueMixin):
 
     def log(self, log_message, log_type=ActivityLog.LogType.System):
         if log_message:
-            logger.error(log_message)
+            logger.debug(log_message)
             self.activity_log_set.create(round_configuration=self.current_round, log_message=log_message,
                                          log_type=log_type)
 

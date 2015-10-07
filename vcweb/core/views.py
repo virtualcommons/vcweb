@@ -94,7 +94,7 @@ class ExperimenterDashboardViewModel(DashboardViewModel):
         for e in Experiment.objects.for_experimenter(self.experimenter).order_by('-pk'):
             e.experiment_configuration = _configuration_cache[e.experiment_configuration.pk]
             experiment_status_dict[e.status].append(
-                e.to_dict(attrs=('monitor_url', 'status_line', 'controller_url')))
+                e.to_dict(attrs=('monitor_url', 'status_line',)))
         self.pending_experiments = experiment_status_dict['INACTIVE']
         self.running_experiments = experiment_status_dict['ACTIVE'] + experiment_status_dict['ROUND_IN_PROGRESS']
         self.archived_experiments = experiment_status_dict['COMPLETED']

@@ -24,8 +24,8 @@
             <div data-bind="ifnot: hasParticipants">
                 <div class='alert alert-error alert-block'>
                     <h4>No participants</h4>
-                    <i class='fa fa-warning'></i><a href='{{experiment.controller_url}}/register-email-list'>Register bulk email addresses</a> or
-                    <a href='{{experiment.controller_url}}/register-test-participants'>add test participants</a>?
+                    <i class='fa fa-warning'></i><a href='{{experiment.experimenter_url}}/register-email-list'>Register bulk email addresses</a> or
+                    <a href='{{experiment.experimenter_url}}/register-test-participants'>add test participants</a>?
                 </div>
             </div>
             <div data-bind="if: hasParticipants">
