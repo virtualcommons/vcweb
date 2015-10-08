@@ -7,8 +7,8 @@ from django.test import TestCase
 from django.test.client import RequestFactory, Client
 from django.utils.http import urlencode
 
-from ..models import (Experiment, Experimenter, ExperimentConfiguration, RoundConfiguration, Parameter, Group, User,
-                      PermissionGroup, Participant, ParticipantSignup, Institution, ExperimentSession, Invitation)
+from ..models import (Experiment, Experimenter, ExperimentConfiguration, RoundConfiguration, Parameter, ExperimentGroup,
+                      User, PermissionGroup, Participant, ParticipantSignup, Institution, ExperimentSession, Invitation)
 
 import logging
 
@@ -221,7 +221,7 @@ class BaseVcwebTest(TestCase):
     def create_group(self, max_size=10, experiment=None):
         if not experiment:
             experiment = self.experiment
-        return Group.objects.create(number=1, max_size=max_size, experiment=experiment)
+        return ExperimentGroup.objects.create(number=1, max_size=max_size, experiment=experiment)
 
     class Meta:
         abstract = True

@@ -151,6 +151,8 @@ def prod():
 def setup():
     local('cp vcweb/settings/local.py.example vcweb/settings/local.py')
     execute(setup_postgres)
+    create_postgres_user(env.db_user)
+    create_postgres_db(env.db_user, env.db_name)
 
 
 @roles('localhost')
@@ -158,17 +160,31 @@ def setup():
 def setup_postgres():
     env.db_name = vcweb_settings.DATABASES['default']['NAME']
     env.db_user = vcweb_settings.DATABASES['default']['USER']
-    local("createuser {} -e --createdb -U postgres".format(env.db_name))
-    local("createdb {} -U {}".format(env.db_name, env.db_name))
+
+
+def create_postgres_db(username='vcweb', dbname='vcweb'):
+    local("createdb {} -U {}".format(dbname, username))
+
+
+def create_postgres_user(username='vcweb'):
+    local("createuser {} -e --createdb -U postgres".format(username))
+
+@task(alias='rfd')
+def restore_from_dump(dumpfile='vcweb.sql', username='vcweb', dbname='vcweb'):
+    execute(setup_postgres)
+    local("dropdb {} -U {}".format(env.db_name, env.db_user))
+    create_postgres_db(env.db_user, env.db_name)
+    local("psql {} {} < {}".format(env.db_name, env.db_user, dumpfile))
+    dj('migrate')
 
 
 @task(aliases=['idb', 'initdb'])
-def initialize_database_schema():
+def migrate():
     """
     Creates the Django DB schema by running makemigrations and then a migrate.
     """
-    local('python manage.py makemigrations')
-    local('python manage.py migrate')
+    dj('makemigrations')
+    dj('migrate')
 
 
 def _restart_command(systemd=True):

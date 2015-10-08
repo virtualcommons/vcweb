@@ -24,7 +24,7 @@
         </div>
     </div>
     <div id='sidebar' class='col-md-4 filler sidebar'>
-        <div data-bind='ifnot: isInstructionsRound' class='hide'>
+        <div style='display:none;' data-bind='visible: ! isInstructionsRound()'>
             <h3>Chat</h3>
             <div data-bind='ifnot: chatEnabled'>
                 <div class='alert alert-danger'>

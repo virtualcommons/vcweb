@@ -15,8 +15,7 @@ import xml.etree.ElementTree as ET
 
 from django.conf import settings
 from django.contrib.auth.forms import PasswordResetForm
-from django.contrib.auth.models import User
-from django.contrib.auth.models import Group as AuthGroup
+from django.contrib.auth.models import User, Group
 from django.core import mail, serializers
 from django.core.cache import cache
 from django.core.mail import EmailMultiAlternatives
@@ -55,7 +54,7 @@ class PermissionGroup(Enum):
         key = 'permissions.{0}'.format(self.name)
         g = cache.get(key)
         if not g:
-            g = AuthGroup.objects.get(name=self.value)
+            g = Group.objects.get(name=self.value)
             cache.set(key, g)
         return g
 
@@ -201,6 +200,7 @@ class ParameterValueMixin(object):
                     pv.update(default)
                 return pv
 
+    @transaction.atomic
     def set_parameter_value(self, parameter=None, value=None, name=None, **kwargs):
         """
         returns the ParameterizedValue associated with the given parameter and this object's parameter value set. If
@@ -280,6 +280,7 @@ class DataValueMixin(object):
             existing_dv.round_data = next_round_data
             existing_dv.save()
 
+    @transaction.atomic
     def set_data_value(self, parameter=None, parameter_name=None, value=None, round_data=None, **kwargs):
         if parameter is None and parameter_name is None:
             raise ValueError("no parameter found")
@@ -2151,14 +2152,14 @@ class RoundParameterValue(ParameterizedValue):
         ordering = ['round_configuration', 'parameter', 'date_created']
 
 
-class Group(models.Model, DataValueMixin):
+class ExperimentGroup(models.Model, DataValueMixin):
     number = models.PositiveIntegerField()
     ''' internal numbering unique to the given experiment '''
     max_size = models.PositiveIntegerField(default=5)
     """
     how many members can this group hold at a maximum?
     """
-    experiment = models.ForeignKey(Experiment)
+    experiment = models.ForeignKey(Experiment, related_name='group_set')
     """
     The experiment that contains this Group.
     """
@@ -2296,7 +2297,7 @@ class Group(models.Model, DataValueMixin):
         return ParticipantRoundDataValue.objects.filter(**criteria)
 
     def create_next_group(self):
-        return Group.objects.create(number=self.number + 1, max_size=self.max_size, experiment=self.experiment,
+        return ExperimentGroup.objects.create(number=self.number + 1, max_size=self.max_size, experiment=self.experiment,
                                     session_id=self.session_id)
 
     def add_participant(self, participant=None):
@@ -2369,7 +2370,7 @@ class GroupCluster(models.Model, DataValueMixin):
         return self.group_relationship_set.select_related('group').values_list('group', flat=True)
 
     def get_groups(self):
-        return Group.objects.filter(pk__in=self.group_ids)
+        return ExperimentGroup.objects.filter(pk__in=self.group_ids)
 
     def add(self, group):
         return GroupRelationship.objects.create(cluster=self, group=group)
@@ -2384,7 +2385,7 @@ class GroupCluster(models.Model, DataValueMixin):
 class GroupRelationship(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     cluster = models.ForeignKey(GroupCluster, related_name='group_relationship_set')
-    group = models.ForeignKey(Group, related_name='relationship_set')
+    group = models.ForeignKey(ExperimentGroup, related_name='relationship_set')
 
     def __unicode__(self):
         return u"{0} -> {1}".format(self.group, self.cluster)
@@ -2440,7 +2441,7 @@ class GroupClusterDataValue(ParameterizedValue):
 
 
 class GroupRoundDataValue(ParameterizedValue):
-    group = models.ForeignKey(Group, related_name='data_value_set')
+    group = models.ForeignKey(ExperimentGroup, related_name='data_value_set')
     round_data = models.ForeignKey(RoundData, related_name='group_data_value_set')
 
     def to_dict(self, **kwargs):
@@ -2523,7 +2524,7 @@ class Participant(CommonsUser):
     UNDERGRADUATE_CLASS_CHOICES = ('Freshman', 'Sophomore', 'Junior', 'Senior')
     can_receive_invitations = models.BooleanField(default=False, help_text=_(
         "Check this box if you'd like to opt-in and receive email invitations for upcoming experiments"))
-    groups = models.ManyToManyField(Group, through='ParticipantGroupRelationship', related_name='participant_set')
+    groups = models.ManyToManyField(ExperimentGroup, through='ParticipantGroupRelationship', related_name='participant_set')
     experiments = models.ManyToManyField(Experiment,
                                          through='ParticipantExperimentRelationship',
                                          related_name='participant_set')
@@ -2676,7 +2677,7 @@ class ParticipantGroupRelationship(models.Model, DataValueMixin):
     # want to use something other than numbers..?
     participant_number = models.PositiveIntegerField()
     participant = models.ForeignKey(Participant, related_name='participant_group_relationship_set')
-    group = models.ForeignKey(Group, related_name='participant_group_relationship_set')
+    group = models.ForeignKey(ExperimentGroup, related_name='participant_group_relationship_set')
     round_joined = models.ForeignKey(RoundConfiguration)
     date_created = models.DateTimeField(auto_now_add=True)
     active = models.BooleanField(default=True)
@@ -2958,7 +2959,7 @@ class Like(ParticipantRoundDataValue):
 
 
 class GroupActivityLog(ActivityLog):
-    group = models.ForeignKey(Group, related_name='activity_log_set')
+    group = models.ForeignKey(ExperimentGroup, related_name='activity_log_set')
     round_configuration = models.ForeignKey(RoundConfiguration)
 
     def __unicode__(self):
