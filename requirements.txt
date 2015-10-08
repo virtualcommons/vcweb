@@ -17,7 +17,7 @@ djangorestframework==3.2.4
 ecdsa==0.13
 enum34==1.0.4
 httplib2==0.9.2
-oauth2==1.9.0
+oauth2
 paramiko==1.15.3
 psycopg2==2.6.1
 pycrypto==2.6.1
