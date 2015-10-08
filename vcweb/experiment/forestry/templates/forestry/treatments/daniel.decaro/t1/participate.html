@@ -24,7 +24,7 @@
         </div>
     </div>
     <div id='sidebar' class='col-md-4 filler sidebar'>
-        <div data-bind='ifnot: isInstructionsRound'>
+        <div data-bind='ifnot: isInstructionsRound' class='hide'>
             <h3>Chat</h3>
             <div data-bind='ifnot: chatEnabled'>
                 <div class='alert alert-danger'>
@@ -264,7 +264,7 @@ like to harvest. If you have any questions, please let the experimenter know.
         If this had been been a paid session, you would have earned <strong class='text-success' data-bind='text: formatCurrency(parseFloat(totalEarnings()))'></strong>.
     </p>
     <p>
-        Here are the results of other participants of your group.
+        The other participants in your group would have earned:
         </p>
         <table class='table table-bordered table-condensed'>
             <thead>
@@ -296,10 +296,13 @@ like to harvest. If you have any questions, please let the experimenter know.
     </p>
     <h3>Harvest Choice</h3>
     <p>
-        You will have a maximum of <i class='fa fa-clock-o'></i><span data-bind='text: roundDuration'></span> seconds to make a
+        You will have a maximum of <strong><span data-bind='text: roundDuration'></span> seconds</strong> to make a
         harvest decision each round.  A countdown will alert you when there are
-        <span data-bind='text: warningCountdownTime'></span> seconds remaining to make a harvest choice. When the countdown
-        reaches zero, any value you have selected will be submitted.  <strong>The default harvest is zero.</strong>
+        <strong><span data-bind='text: warningCountdownTime'></span> seconds remaining</strong> to make a harvest
+        choice. When the countdown reaches zero, any value you have selected will be submitted.
+    </p>
+    <p>
+        <strong>The default harvest is zero.</strong>
     </p>
     <ul class='pager'>
         <li class='previous'>

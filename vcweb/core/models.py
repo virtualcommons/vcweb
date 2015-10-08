@@ -1468,8 +1468,7 @@ class Experiment(models.Model):
         # XXX: must create round data AFTER group allocation so that any participant round data values
         # (participant ready parameters for instance) are associated with the correct participant group
         # relationships.
-        self.get_or_create_round_data(
-            round_configuration=current_round_configuration)
+        self.get_or_create_round_data(round_configuration=current_round_configuration)
         self.current_round_start_time = datetime.now()
         self.log('Starting round')
         self.save()

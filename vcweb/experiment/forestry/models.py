@@ -5,7 +5,7 @@ from django.db import models, transaction
 from django.dispatch import receiver
 
 from vcweb.core import signals, simplecache
-from vcweb.core.models import (ExperimentMetadata, Parameter, ParticipantRoundDataValue,)
+from vcweb.core.models import (ExperimentMetadata, Parameter, ParticipantRoundDataValue, RoundConfiguration,)
 
 
 logger = logging.getLogger(__name__)
@@ -177,16 +177,18 @@ class GroupData(object):
         prdvs = ParticipantRoundDataValue.objects.for_group(
             group=self.group,
             parameter=get_harvest_decision_parameter(),
-            round_data__in=[previous_round_data, current_round_data])
+            round_data=previous_round_data)
 
         # Converting django ORM object to dictionary to retrieve data by parameter
         for prdv in prdvs:
             self.player_dict[prdv.participant_group_relationship][prdv.parameter] = prdv
-        self.group_data = [] 
+        self.group_data = []
+# include practice rounds totals in harvest if this current round is a practice round
+        include_practice_rounds = current_round_data.round_configuration.is_practice_round
         for pgr in self.group.participant_group_relationship_set.all():
             # subtract current harvest from the total harvest so other participants won't get extra information
             current_harvest = get_harvest_decision(pgr, current_round_data)
-            total_harvest = self.total_harvest(pgr) - current_harvest
+            total_harvest = max(0, self.total_harvest(pgr, include_practice_rounds) - current_harvest)
             logger.debug("total harvest: %s after subtracting current harvest %s", current_harvest)
             self.group_data.append({
                 'id': pgr.pk,
@@ -201,11 +203,14 @@ class GroupData(object):
         except:
             return 0
 
-    def total_harvest(self, pgr):
+    def total_harvest(self, pgr, include_practice_rounds=False):
         q = ParticipantRoundDataValue.objects.for_participant(
             participant_group_relationship=pgr,
-            parameter=get_harvest_decision_parameter()).exclude(
-                round_data__round_configuration__round_type='PRACTICE').aggregate(total=models.Sum('int_value'))
+            parameter=get_harvest_decision_parameter()
+        )
+        if not include_practice_rounds:
+            q = q.exclude(round_data__round_configuration__round_type=RoundConfiguration.RoundType.PRACTICE)
+        q = q.aggregate(total=models.Sum('int_value'))
         return _zero_if_none(q['total'])
 
     def get_group_data(self):
