@@ -152,17 +152,18 @@ def _zero_if_none(value):
 
 
 def get_total_experiment_harvest(pgr, debriefing_session_round_data):
-    q = ParticipantRoundDataValue.objects.for_participant(participant_group_relationship=pgr,
-                                                          parameter=get_harvest_decision_parameter(),
-                                                          round_data__in=debriefing_session_round_data) \
-        .aggregate(total_harvest=models.Sum('int_value'))
+    q = ParticipantRoundDataValue.objects.for_participant(
+        participant_group_relationship=pgr,
+        parameter=get_harvest_decision_parameter(),
+        round_data__in=debriefing_session_round_data
+    ).aggregate(total_harvest=models.Sum('int_value'))
     return _zero_if_none(q['total_harvest'])
 
 
 def get_total_group_harvest(group, round_data):
     q = ParticipantRoundDataValue.objects.for_group(
-        group=group, parameter=get_harvest_decision_parameter(), round_data=round_data).aggregate(
-            total_harvest=models.Sum('int_value'))
+        group=group, parameter=get_harvest_decision_parameter(), round_data=round_data
+    ).aggregate(total_harvest=models.Sum('int_value'))
     return _zero_if_none(q['total_harvest'])
 
 
@@ -181,15 +182,18 @@ class GroupData(object):
         # Converting django ORM object to dictionary to retrieve data by parameter
         for prdv in prdvs:
             self.player_dict[prdv.participant_group_relationship][prdv.parameter] = prdv
-        self.group_data = [
-            {
+        self.group_data = [] 
+        for pgr in self.group.participant_group_relationship_set.all():
+            # subtract current harvest from the total harvest so other participants won't get extra information
+            current_harvest = get_harvest_decision(pgr, current_round_data)
+            total_harvest = self.total_harvest(pgr) - current_harvest
+            logger.debug("total harvest: %s after subtracting current harvest %s", current_harvest)
+            self.group_data.append({
                 'id': pgr.pk,
                 'number': pgr.participant_number,
                 'lastHarvestDecision': self.get_last_harvest_decision(pgr),
-                'totalHarvest': self.total_harvest(pgr),
-            }
-            for pgr in self.group.participant_group_relationship_set.all()
-        ]
+                'totalHarvest': total_harvest,
+            })
 
     def get_last_harvest_decision(self, pgr):
         try:

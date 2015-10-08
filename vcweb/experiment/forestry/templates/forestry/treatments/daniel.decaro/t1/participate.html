@@ -334,31 +334,15 @@ like to harvest. If you have any questions, please let the experimenter know.
     <div class='col-md-7'>
         <h3>Group Status</h3>
         <table class='table table-bordered table-condensed group-status'>
-            <colgroup>
-                <col>
-                <!-- ko foreach: groupData -->
-                <col data-bind='css: { "current-player": id() === $root.participantGroupId() }'>
-                <!-- /ko -->
-            </colgroup>
             <thead>
-                <tr><th>Player</th>
-                    <!-- ko foreach: groupData -->
-                    <th data-bind='css: { "current-player": id() === $root.participantGroupId() }, text: number'></th>
-                    <!-- /ko -->
+                <tr><th>Player</th><th>Last harvest</th><th>Total harvest</th>
                 </tr>
             </thead>
-            <tbody>
-            <tr>
-                <td>Last harvest</td>
-                <!-- ko foreach: groupData -->
-                <td data-bind='text: lastHarvestDecision, css: { "current-player": id() === $root.participantGroupId() }'></td>
-                <!-- /ko -->
-            </tr>
-            <tr>
-                <td>Total harvest</td>
-                <!-- ko foreach: groupData -->
-                <td data-bind='text: totalHarvest, css: { "current-player": id() === $root.participantGroupId() }'></td>
-                <!-- /ko -->
+            <tbody data-bind='foreach: groupData'>
+            <tr data-bind='css: { "current-player bg-info": id() === $root.participantGroupId() }'>
+                <td data-bind='text: number'></td>
+                <td data-bind='text: lastHarvestDecision'></td>
+                <td data-bind='text: totalHarvest'></td>
             </tr>
             </tbody>
         </table>
