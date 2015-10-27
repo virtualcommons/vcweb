@@ -56,7 +56,6 @@ def create_forestry_configuration(apps, schema_editor):
         r.parameter_value_set.create(parameter=regrowth_rate_parameter,
                                      float_value=0.2)
 
-
     add_round(cfg, round_type='WELCOME', sequence_number=1)
     add_round(cfg, round_type='GENERAL_INSTRUCTIONS', sequence_number=2)
     practice_round = add_round(cfg, round_type='PRACTICE', sequence_number=3, repeat=3, initialize_data_values=True,
@@ -77,36 +76,38 @@ def create_forestry_configuration(apps, schema_editor):
     # Survey 1 and Phase 2, C
     add_round(cfg, round_type='INSTRUCTIONS', sequence_number=8, survey_url='https://qualtrics.com/placeholder',
               template_id='PHASE_TWO_INSTRUCTIONS')
-    phase_two_part_one = add_round(cfg, round_type='REGULAR', sequence_number=9, repeat=6, chat_enabled=True,
+# first, a dedicated 5 minute communication round
+    add_round(cfg, round_type='CHAT', sequence_number=9, template_id='COMMUNICATION', chat_enabled=True, duration=300)
+    phase_two_part_one = add_round(cfg, round_type='REGULAR', sequence_number=10, repeat=6, chat_enabled=True,
                                    initialize_data_values=True, duration=45)
     reset_resource_level(phase_two_part_one)
 
-    add_round(cfg, round_type='INSTRUCTIONS', sequence_number=10, template_id='PHASE_TWO_BLOCK_ONE_RESULTS')
-    phase_two_part_two = add_round(cfg, round_type='REGULAR', sequence_number=11, repeat=6, chat_enabled=True,
+    add_round(cfg, round_type='INSTRUCTIONS', sequence_number=11, template_id='PHASE_TWO_BLOCK_ONE_RESULTS')
+    add_round(cfg, round_type='CHAT', sequence_number=12, template_id='COMMUNICATION', chat_enabled=True, duration=300)
+    phase_two_part_two = add_round(cfg, round_type='REGULAR', sequence_number=13, repeat=6, chat_enabled=True,
                                    initialize_data_values=True, duration=45)
     reset_resource_level(phase_two_part_two)
 
 # Survey 2 and Phase 3, NC/C
-    add_round(cfg, round_type='INSTRUCTIONS', sequence_number=12, survey_url='https://qualtrics.com/placeholder',
+    add_round(cfg, round_type='INSTRUCTIONS', sequence_number=14, survey_url='https://qualtrics.com/placeholder',
               template_id='PHASE_THREE_INSTRUCTIONS')
-    phase_three_part_one = add_round(cfg, round_type='REGULAR', sequence_number=13, repeat=6,
+    phase_three_part_one = add_round(cfg, round_type='REGULAR', sequence_number=15, repeat=6,
                                      initialize_data_values=True, duration=45)
     reset_resource_level(phase_three_part_one)
 
-    add_round(cfg, round_type='INSTRUCTIONS', sequence_number=14, template_id='PHASE_THREE_BLOCK_ONE_RESULTS')
+    add_round(cfg, round_type='INSTRUCTIONS', sequence_number=16, template_id='PHASE_THREE_BLOCK_ONE_RESULTS')
     phase_three_part_two = add_round(cfg, round_type='REGULAR', sequence_number=15, repeat=6,
                                      initialize_data_values=True, duration=45)
     reset_resource_level(phase_three_part_two)
 
 # Survey three and final debriefing
-    add_round(cfg, round_type='DEBRIEFING', sequence_number=16, survey_url='https://qualtrics.com/placeholder',
+    add_round(cfg, round_type='DEBRIEFING', sequence_number=17, survey_url='https://qualtrics.com/placeholder',
               template_id='DEBRIEFING_WITH_SURVEY')
 
 
 def rollback_forestry_configuration(apps, schema_editor):
     ExperimentConfiguration = apps.get_model('core', 'ExperimentConfiguration')
     ExperimentConfiguration.objects.get(treatment_id='daniel.decaro/t1').delete()
-
 
 
 class Migration(migrations.Migration):
