@@ -56,11 +56,13 @@
 {# ko templates #}
 
 <script type='text/html' id='WAITING_ROOM'>
-<h3>Waiting for other participants</h3>
+<h2>Waiting for other participants</h2>
 <div>
-    Please wait quietly. The experiment will continue shortly once all the participants are ready.
     <p>
-        <span class='badge' data-bind='css: { "badge-important": readyParticipants() < (participantCount() / 2), "badge-success": readyParticipants() > (participantCount() / 2)}, text: readyParticipants'></span> of <span class='badge badge-success' data-bind='text: participantCount'></span> participants are ready.
+    Please wait quietly. The experiment will continue shortly once all the participants are ready.
+    </p>
+    <p>
+        <span class='badge' data-bind='css: { "badge-important": readyParticipants() < (participantCount() / 2), "badge-success": readyParticipants() > (participantCount() / 2)}, text: readyParticipants'></span> of <span class='badge badge-success' data-bind='text: participantCount'></span> participants are ready
     </p>
 </div>
 <div class='progress progress-striped active'>
@@ -300,9 +302,9 @@ towards your total payment.</strong> The number of trees each person harvests an
 displayed at the end of each round. You will stay in the same group for the rest of the experiment.
 </p>
 <p>
-You can look at the &quot;Maximum Possible Harvest&quot; and &quot;Forest Regrowth Rate&quot; Tables on your desk to see
-how many trees can be harvested (depending on the size of the forest) and how quickly the forest will regrow based on
-the number of trees left in the forest.
+You can look at the &quot;Maximum Possible Harvest&quot; and &quot;Forest Regrowth Rate&quot; Tables at your station to
+see how many trees can be harvested (depending on the size of the forest) and how quickly the forest will regrow based
+on the number of trees left in the forest.
 </p>
 <p>
 <strong>Do you have any questions?</strong>
@@ -406,11 +408,17 @@ Rate table), and the maximum possible harvest will be the same rate as before (s
 <p>
 Raise your hand if you have a question, and the experimenter will come over to your station and answer it.
 </p>
+<ul class='pager'>
+    <li class='next'>
+    <a href='javascript: void(0)' data-bind='click: participantReady.bind($data, participantGroupId() + " finished phase one block two instructions") '>Ok, I understand</a>
+    </li>
+</ul>
+
 </script>
 <script type='text/html' id='PHASE_TWO_INSTRUCTIONS'>
 <h3>A New Forest</h3>
 <p>
-Please read the following instructions carefully!
+<strong>Please read the following instructions carefully!</strong>
 </p>
 <p>
 <strong>We are about to begin another six years of the forest task in a new forest.</strong> Like before, the
@@ -444,7 +452,27 @@ You are free to communicate as much or little as you want, and you can discuss a
 <p>
 Raise your hand if you have a question, and the experimenter will come over to your station and answer it.
 </p>
+<ul class='pager'>
+    <li class='next'>
+    <a href='javascript: void(0)' data-bind='click: participantReady.bind($data, participantGroupId() + " finished phase two instructions") '>Ok, I understand</a>
+    </li>
+</ul>
 </script>
+
+<script type='text/html' id='COMMUNICATION'>
+<form id="chat-form" class='form-horizontal' data-bind='submit: submitChatMessage' >
+    <div class='input-group'>
+        <span class='input-group-addon'><i id='chat-icon' class='text-info fa fa-comment'></i></span>
+        <input id='chatMessage' class="form-control" type="text" placeholder="Chat with your group">
+    </div>
+</form>
+<div class='chat-messages' data-bind='foreach: chatMessages'>
+    <i class='fa fa-user muted'></i> <strong data-bind='text: participant_number'></strong>
+    <small><i class='fa fa-angle-double-right'></i></small> <span data-bind='text: value'></span>
+    <br>
+</div>
+</script>
+
 <script type='text/html' id='PHASE_TWO_BLOCK_ONE_RESULTS'>
 <h3>A New Forest</h3>
 <p>
@@ -463,15 +491,51 @@ Rate table), and the maximum possible harvest will be the same rate as before (s
 <p>
 Raise your hand if you have a question, and the experimenter will come over to your station and answer it.
 </p>
-
+<ul class='pager'>
+    <li class='next'>
+    <a href='javascript: void(0)' data-bind='click: participantReady.bind($data, participantGroupId() + " finished phase two block one instructions") '>Ok, I understand</a>
+    </li>
+</ul>
 </script>
 <script type='text/html' id='PHASE_THREE_INSTRUCTIONS'>
+<h3>A New Forest</h3>
+<p>
+<strong>Please read the following instructions carefully!</strong>
+</p>
+<p>
+<strong>We are about to begin another six years of the forest task in a new forest.</strong> Like before, the
+<strong>forest will have <span data-bind='text: initialResourceLevel'></span> trees</strong>, and every member in your
+group will be able to harvest trees from it. Each tree you harvest will count towards your total payment. The forest
+will continue to regrow at the rate of 2 trees for every 10 trees left standing in the forest (see the Forest Regrowth
+Rate table), and the maximum possible harvest will be the same rate as before (see the Maximum Possible Harvest table).
+</p>
+<ul class='pager'>
+    <li class='next'>
+    <a href='javascript: void(0)' data-bind='click: participantReady.bind($data, participantGroupId() + " finished phase three instructions") '>Ok, I understand</a>
+    </li>
+</ul>
+</script>
+<script type='text/html' id='PHASE_THREE_BLOCK_ONE_RESULTS'>
+<h3>A New Forest</h3>
+<p>
+<strong>Please read the following instructions carefully!</strong>
+</p>
+<p>
+<strong>We are about to begin another six years of the forest task in a new forest.</strong> Like before, the
+<strong>forest will have <span data-bind='text: initialResourceLevel'></span> trees</strong>, and every member in your
+group will be able to harvest trees from it. Each tree you harvest will count towards your total payment. The forest
+will continue to regrow at the rate of 2 trees for every 10 trees left standing in the forest (see the Forest Regrowth
+Rate table), and the maximum possible harvest will be the same rate as before (see the Maximum Possible Harvest table).
+</p>
+<ul class='pager'>
+    <li class='next'>
+    <a href='javascript: void(0)' data-bind='click: participantReady.bind($data, participantGroupId() + " finished phase three block one instructions") '>Ok, I understand</a>
+    </li>
+</ul>
 </script>
 <script type='text/html' id='DEBRIEFING_WITH_SURVEY'>
 <h2>Survey</h2>
-<p>
-We would like to ask you some questions before we continue to the next round.
-</p>
+<p>We would like to ask you some questions before we continue to the next round.</p>
 <div class='qualtrics-survey'>
     <iframe width="100%" height="800" data-bind='attr: { src: surveyUrl }'>
         Your browser doesn&39;t appear to support iframes, please <a target='_blank' data-bind='attr: { href: surveyUrl }'>follow this link to take the survey.</a>
@@ -482,27 +546,24 @@ We would like to ask you some questions before we continue to the next round.
 <script type='text/html' id='FINAL_DEBRIEFING'>
     <h2>Experiment Results</h2>
     <p>
-        Thank you for participating. Here are your results and the results of your group.
+        Thank you for participating. 
     </p>
     <h2>Payment</h2>
     <p>
-        You have earned <strong class='text-success' data-bind='text: formatCurrency(parseFloat(totalEarnings()))'></strong> in this Experiment Session.
+        You have earned <strong class='text-success' data-bind='text: formatCurrency(parseFloat(totalEarnings()))'></strong>.
     </p>
     <p>
-        Here are the results of other participants of your group.
-        </p>
-        <table class='table table-bordered table-condensed'>
-            <thead>
-                <tr><th>Participant</th><th>Total Earnings</th</tr>
-            </thead>
-            <tbody data-bind='foreach: groupEarnings'>
-                <tr>
-                    <td><span class='text-success' data-bind='text: number'></span></td>
-                    <td><span class='text-success' data-bind='text: formatCurrency(parseFloat(totalEarnings()))'></span></td>
-                </tr>
-            </tbody>
-        </table>
+    Members of your group earned the following:
     </p>
+    <table class='table table-bordered table-condensed'>
+        <thead><tr><th>Participant</th><th>Total Earnings</th</tr></thead>
+        <tbody data-bind='foreach: groupEarnings'>
+            <tr>
+                <td><span class='text-success' data-bind='text: number'></span></td>
+                <td><span class='text-success' data-bind='text: formatCurrency(parseFloat(totalEarnings()))'></span></td>
+            </tr>
+        </tbody>
+    </table>
 </script>
 <script type='text/html' id='tree-template'>
 <div data-bind="visible: $data.isResourceEmpty">

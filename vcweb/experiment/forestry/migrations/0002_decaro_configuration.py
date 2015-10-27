@@ -102,7 +102,7 @@ def create_forestry_configuration(apps, schema_editor):
 
 # Survey three and final debriefing
     add_round(cfg, round_type='DEBRIEFING', sequence_number=17, survey_url='https://qualtrics.com/placeholder',
-              template_id='DEBRIEFING_WITH_SURVEY')
+              template_id='FINAL_DEBRIEFING')
 
 
 def rollback_forestry_configuration(apps, schema_editor):
