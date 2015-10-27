@@ -460,17 +460,7 @@ Raise your hand if you have a question, and the experimenter will come over to y
 </script>
 
 <script type='text/html' id='COMMUNICATION'>
-<form id="chat-form" class='form-horizontal' data-bind='submit: submitChatMessage' >
-    <div class='input-group'>
-        <span class='input-group-addon'><i id='chat-icon' class='text-info fa fa-comment'></i></span>
-        <input id='chatMessage' class="form-control" type="text" placeholder="Chat with your group">
-    </div>
-</form>
-<div class='chat-messages' data-bind='foreach: chatMessages'>
-    <i class='fa fa-user muted'></i> <strong data-bind='text: participant_number'></strong>
-    <small><i class='fa fa-angle-double-right'></i></small> <span data-bind='text: value'></span>
-    <br>
-</div>
+{# FIXME: add fullscreen chat UI instead of sidebar #}
 </script>
 
 <script type='text/html' id='PHASE_TWO_BLOCK_ONE_RESULTS'>
@@ -912,7 +902,8 @@ Rate table), and the maximum possible harvest will be the same rate as before (s
                     });
                     break;
                 case 'info':
-                    console.log("INFO: " + message);
+                    console.log("INFO: ");
+                    console.log(message);
                     break;
                 default:
                     console.debug("unhandled message:" + message);

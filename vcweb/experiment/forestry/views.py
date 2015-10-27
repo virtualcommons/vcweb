@@ -112,6 +112,7 @@ def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
     experiment_model_dict['showTour'] = current_round.is_practice_round and not previous_round.is_practice_round
     experiment_model_dict['participantGroupId'] = participant_group_relationship.pk
     experiment_model_dict['participantsPerGroup'] = ec.max_group_size
+    experiment_model_dict['chatEnabled'] = current_round.chat_enabled
 
     # instructions round parameters
     experiment_model_dict['isInstructionsRound'] = current_round.is_instructions_round
@@ -124,7 +125,6 @@ def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
         logger.debug("setting survey to %s", experiment_model_dict['surveyUrl'])
 
     if current_round.is_playable_round or current_round.is_debriefing_round:
-        experiment_model_dict['chatEnabled'] = current_round.chat_enabled
         own_resource_level = get_resource_level(own_group)
         experiment_model_dict['resourceLevel'] = own_resource_level
         experiment_model_dict['dollarsPerTree'] = ec.exchange_rate
