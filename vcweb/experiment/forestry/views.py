@@ -92,6 +92,7 @@ experiment_model_defaults = {
     'dollarsPerTree': 0.10,
     'groupData': [],
     'regrowth': 0,
+    'isPlayableRound': False,
 }
 
 
@@ -126,6 +127,7 @@ def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
 
     if current_round.is_playable_round or current_round.is_debriefing_round:
         own_resource_level = get_resource_level(own_group)
+        experiment_model_dict['isPlayableRound'] = True
         experiment_model_dict['resourceLevel'] = own_resource_level
         experiment_model_dict['dollarsPerTree'] = ec.exchange_rate
 

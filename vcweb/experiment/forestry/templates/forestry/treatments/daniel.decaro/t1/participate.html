@@ -619,15 +619,6 @@ Rate table), and the maximum possible harvest will be the same rate as before (s
             model.secondsLeft = ko.observable(0);
             model.currentInterval = ko.observable();
             model.selectedHarvestDecision = ko.observable(false);
-            model.isPlayableRound = ko.computed(function() {
-                    switch (model.templateName()) {
-                    case 'PRACTICE':
-                    case 'REGULAR':
-                        return true;
-                    default:
-                        return false;
-                    }
-            });
             model.templateId = ko.computed(function() {
                 switch ( model.templateName() ) {
                     case 'PRACTICE':
@@ -730,7 +721,6 @@ Rate table), and the maximum possible harvest will be the same rate as before (s
                 }
                 return 0;
             });
-            model.inactiveResourceImageUrl = ko.observable("{% static 'images/forestry/tree-inactive.png' %}");
             model.resourceImageBackgroundUrl = ko.observable("url('{{STATIC_URL}}images/forestry/tree-resource-old-growth.png')");
             model.regrowthResourceImageBackgroundUrl = ko.observable("url('{{STATIC_URL}}images/forestry/tree-resource-new-growth.png')");
 
