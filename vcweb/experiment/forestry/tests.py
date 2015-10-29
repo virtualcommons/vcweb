@@ -116,8 +116,8 @@ class ResourceLevelTest(BaseVcwebTest):
                 expected_resource_level = self.calculate_expected_resource_level(expected_resource_level,
                                                                                  max_harvest_decision * group_size)
                 e.end_round()
-            for group in e.groups:
-                self.assertEqual(get_resource_level(group), expected_resource_level)
+                for group in e.groups:
+                    self.assertEqual(get_resource_level(group), expected_resource_level)
             e.advance_to_next_round()
 
 

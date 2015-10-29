@@ -97,12 +97,12 @@ def create_forestry_configuration(apps, schema_editor):
 
     add_round(cfg, round_type='INSTRUCTIONS', sequence_number=16, template_id='PHASE_THREE_BLOCK_ONE_RESULTS',
               duration=0)
-    phase_three_part_two = add_round(cfg, round_type='REGULAR', sequence_number=15, repeat=6,
+    phase_three_part_two = add_round(cfg, round_type='REGULAR', sequence_number=17, repeat=6,
                                      initialize_data_values=True, duration=45)
     reset_resource_level(phase_three_part_two)
 
 # Survey three and final debriefing
-    add_round(cfg, round_type='DEBRIEFING', sequence_number=17, survey_url='https://qualtrics.com/placeholder',
+    add_round(cfg, round_type='DEBRIEFING', sequence_number=18, survey_url='https://qualtrics.com/placeholder',
               template_id='FINAL_DEBRIEFING', duration=0)
 
 
