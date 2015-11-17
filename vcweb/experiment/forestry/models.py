@@ -407,7 +407,7 @@ def round_ended_handler(sender, experiment=None, **kwargs):
             elif prdvs.count() > 1:
                 # multiple active harvest decisions, only allow the latest one
                 # to be active
-                latest_prdv = prdvs.latest()
+                latest_prdv = prdvs.latest('date_created')
                 prdvs.exclude(pk=latest_prdv.pk).update(is_active=False)
 
         for group in experiment.groups:

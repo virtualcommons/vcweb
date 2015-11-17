@@ -587,7 +587,7 @@ def round_ended_handler(sender, experiment=None, **kwargs):
                     # another degenerate data condition, deactivate all prior
                     logger.debug(
                         "multiple harvest decisions found for %s, deactivating all but the latest", pgr)
-                    prdv = prdvs.latest('id')
+                    prdv = prdvs.latest('date_created')
                     prdvs.exclude(pk=prdv.pk).update(is_active=False)
 
             # FIXME: generify and merge update_shared_resource_level and

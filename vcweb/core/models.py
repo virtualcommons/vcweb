@@ -171,7 +171,7 @@ class DefaultValue(object):
 class ParameterValueMixin(object):
 
     """
-    Model classes using this mixin should expose a 'parameter_value_set' attribute containing a QuerySet of
+    Model classes using this mixin must expose a 'parameter_value_set' attribute containing a QuerySet of
     ParameterizedValues to have get_parameter_value
     """
 
@@ -212,11 +212,13 @@ class ParameterValueMixin(object):
         if value is not None:
             pv.update(value)
         elif len(kwargs) == 1:
-            # assume appropriate _value accessor in the kwargs if value kwarg
-            # isn't set
+            # NOTE: assumes appropriate _value accessor in the kwargs if value kwarg
+            # isn't set, e.g., int_value=1 | boolean_value=True | float_value=0.5
             k, v = kwargs.popitem()
             if '_value' not in k:
-                logger.error("invalid attribute accessor trying to set %s.%s=%s", pv, k, v)
+                logger.error(
+                    "Invalid attribute accessor found, trying to set %s.%s=%s. Use 'int_value', 'float_value', 'boolean_value', or 'string_value'",
+                    pv, k, v)
                 raise ValueError("Invalid attribute accessor {0}".format(k))
             setattr(pv, k, v)
             pv.save()
