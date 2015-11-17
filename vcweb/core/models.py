@@ -1143,12 +1143,13 @@ class Experiment(models.Model):
             # lowercase all usernames/email addresses internally and strip all whitespace
             email_address = email_address.lower().strip()
             full_name = full_name.strip()
-            userqs = User.objects.select_for_update().filter(
-                models.Q(email=email_address) | models.Q(username=email_address))
-            if userqs.exists():
-                u = userqs[0]
-            else:
-                u = User.objects.create_user(username=email_address, email=email_address, password=password)
+            with transaction.atomic():
+                userqs = User.objects.select_for_update().filter(
+                    models.Q(email=email_address) | models.Q(username=email_address))
+                if userqs.exists():
+                    u = userqs[0]
+                else:
+                    u = User.objects.create_user(username=email_address, email=email_address, password=password)
             updated = set_full_name(u, full_name)
             if updated:
                 u.save()
@@ -1437,15 +1438,14 @@ class Experiment(models.Model):
                 if increment_repeated_round_sequence_number:
                     rrsn += 1
             ps['repeating_round_sequence_number'] = rrsn
-        self.round_data_set.select_for_update()
-        round_data, created = self.round_data_set.get_or_create(**ps)
+        with transaction.atomic():
+            self.round_data_set.select_for_update()
+            round_data, created = self.round_data_set.get_or_create(**ps)
         if self.experiment_configuration.is_experimenter_driven:
             # create participant ready data values for every round in
             # experimenter driven experiments
-            logger.debug(
-                "creating participant ready participant values for experimenter driven experiment")
+            logger.debug("creating participant ready participant values for experimenter driven experiment")
             # FIXME: use bulk_create for this?
-            # see
             # https://docs.djangoproject.com/en/dev/ref/models/querysets/#bulk-create
             for pgr in self.participant_group_relationships:
                 pgr.data_value_set.get_or_create(
