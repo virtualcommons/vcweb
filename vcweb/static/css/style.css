@@ -10,14 +10,15 @@ a.external {
 }
 h1,h2,h3,h4,h5 {
     color: #42555e;
+    font-weight: bold;
 }
 .devserver {
     margin-top: 20px;
 }
-h2 { font-size: 1.5em; }
-h3 { font-size: 1.2em; }
-h4 { font-size: 1.0em; }
-h5 { font-size: 0.9em; }
+h2 { font-size: 1.6em; }
+h3 { font-size: 1.4em; }
+h4 { font-size: 1.2em; }
+h5 { font-size: 1em; }
 .dashboard-header {
     font-size: 2em;
 }
@@ -35,12 +36,10 @@ label.error {
     margin: 0.4em;
     padding: 0.4em;
 }
-
 .form-group.required > label:first-of-type:after {
     content: "*";
     color: rgb(194, 52, 52);
 }
-
 input#id_contact_number {
     display: none;
 }
@@ -330,13 +329,11 @@ legend.scheduler-border {
 .error-row {
     color: red;
 }
-
 .new-cloned-experiment-config {
     background-color: lightyellow;
     border-color: rgb(231, 231, 148);
 }
-
-/* Calendar Event colors */
+/* Subject Pool Calendar Event colors */
 .event-color-1 {
   background-color: #1f77b4 !important;
 }

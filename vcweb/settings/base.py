@@ -222,7 +222,7 @@ if not is_accessible(LOG_DIRECTORY):
     try:
         os.makedirs(LOG_DIRECTORY)
     except OSError:
-        print "Unable to create absolute log directory at %s, setting to relative path logs instead" % LOG_DIRECTORY
+        print "Unable to create absolute log directory at {}, setting to relative path logs instead".format(LOG_DIRECTORY)
         LOG_DIRECTORY = 'logs'
         if not is_accessible(LOG_DIRECTORY):
             try:
@@ -281,6 +281,11 @@ LOGGING = {
             'handlers': ['console'],
             'propagate': False,
         },
+        'vcweb': {
+            'handlers': ['vcweb.file', 'console', 'sentry'],
+            'level': 'DEBUG',
+            'propagate': False,
+        }
     }
 }
 

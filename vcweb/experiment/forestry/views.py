@@ -10,7 +10,7 @@ from vcweb.core.models import (Experiment, ChatMessage, ParticipantGroupRelation
                                PermissionGroup)
 from .models import (get_experiment_metadata, get_max_harvest_decision, get_resource_level,
                      get_initial_resource_level, get_harvest_decision_dv, get_regrowth_dv, set_harvest_decision,
-                     get_average_harvest, GroupData, can_view_group_results)
+                     get_average_harvest, GroupData,)
 
 
 logger = logging.getLogger(__name__)
@@ -78,7 +78,10 @@ experiment_model_defaults = {
     'maximumResourcesToDisplay': 20,
     'warningCountdownTime': 10,
     'harvestDecision': 0,
+    'maxHarvestDecision': 10,
+    'secondsLeft': 60,
     'roundDuration': 60,
+    'practiceRoundDuration': 60,
     'chatMessages': [],
     'myGroup': {
         'resourceLevel': 0,
@@ -120,6 +123,7 @@ def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
     if current_round.is_instructions_round:
         # experiment_model_dict['regrowthRate'] = regrowth_rate
         experiment_model_dict['initialResourceLevel'] = get_initial_resource_level(current_round)
+        experiment_model_dict['practiceRoundDuration'] = experiment.next_round.duration
 
     if current_round.is_survey_enabled:
         experiment_model_dict['surveyUrl'] = current_round.build_survey_url(pid=participant_group_relationship.pk)

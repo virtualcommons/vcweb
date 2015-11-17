@@ -189,7 +189,7 @@ class GroupData(object):
             # subtract current harvest from the total harvest so other participants won't get extra information
             current_harvest = get_harvest_decision(pgr, current_round_data)
             total_harvest = max(0, self.total_harvest(pgr, include_practice_rounds) - current_harvest)
-            logger.debug("total harvest: %s after subtracting current harvest %s", current_harvest)
+            logger.debug("total harvest: %s after subtracting current harvest %s", total_harvest, current_harvest)
             self.group_data.append({
                 'id': pgr.pk,
                 'number': pgr.participant_number,
