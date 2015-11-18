@@ -81,7 +81,7 @@ experiment_model_defaults = {
     'maxHarvestDecision': 10,
     'secondsLeft': 60,
     'roundDuration': 60,
-    'practiceRoundDuration': 60,
+    'nextRoundDuration': 60,
     'chatMessages': [],
     'myGroup': {
         'resourceLevel': 0,
@@ -124,7 +124,7 @@ def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
     if current_round.is_instructions_round:
         # experiment_model_dict['regrowthRate'] = regrowth_rate
         experiment_model_dict['initialResourceLevel'] = get_initial_resource_level(current_round)
-        experiment_model_dict['practiceRoundDuration'] = experiment.next_round.duration
+        experiment_model_dict['nextRoundDuration'] = experiment.next_round.duration
 
     if current_round.is_survey_enabled:
         experiment_model_dict['surveyUrl'] = current_round.build_survey_url(pid=participant_group_relationship.pk)
