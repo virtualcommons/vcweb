@@ -6,7 +6,7 @@
 {% endblock %}
 {% block page %}
 <div class='row' id='page'>
-    <div id='content' class='col-md-8'>
+    <div id='content' data-bind='css: contentGridSize'>
         <div data-bind='template: { name: templateId(), afterRender: afterRenderTemplate}'></div>
         <div id="progress-modal" class="modal fade" role="dialog">
             <div class="modal-dialog">
@@ -235,61 +235,49 @@
 <script type='text/html' id='REGULAR'>
 <div class='row'>
     <div class='col-md-5'>
-        <div class='row'>
         <h3>My Status</h3>
-            <div class='alert alert-warning forestry-status-dashboard col-md-2'>
-                <h4 id="dashboard-last-harvest">Last Harvest <i class='fa fa-info-circle' data-toggle='popover' data-content="The number of trees you harvested last round."></i> </h4>
-                <p>
-                <strong class='text-success'><span data-bind='text:lastHarvestDecision'></span></strong>
-                </p>
-            </div>
-            <div class='alert alert-warning forestry-status-dashboard col-md-2'>
-                <h4 id='dashboard-time'><i class='fa fa-clock-o' data-toggle='popover' data-content="Seconds left before this round ends."></i> Time</h4>
-                <p>
-                <strong data-bind='css: { "text-error": secondsLeft() < warningCountdownTime(), "text-info": secondsLeft() > warningCountdownTime()}'>
-                    <span data-bind='text: secondsLeft'></span>
-                </strong>
-                </p>
-            </div>
-        </div>
     </div>
     <div class='col-md-7'>
         <h3>Group Status</h3>
+    </div>
+</div>
+<div class='row'>
+    <div class='col-md-2'>
+        <div class='alert alert-warning forestry-status-dashboard'>
+            <h4 id="dashboard-last-harvest"><i class='fa fa-info-circle' data-toggle='popover' data-content="The number of trees you harvested last round."></i> Last Harvest</h4>
+            <p><span class='text-success' data-bind='text:lastHarvestDecision'></span></strong></p>
+        </div>
+    </div>
+    <div class='col-md-2'>
+        <div class='alert alert-warning forestry-status-dashboard'>
+            <h4 id='dashboard-time'><i class='fa fa-clock-o' data-toggle='popover' data-content="Seconds left before this round ends."></i> Time</h4>
+            <p>
+            <strong data-bind='css: { "text-error": secondsLeft() < warningCountdownTime(), "text-info": secondsLeft() > warningCountdownTime()}'>
+                <span data-bind='text: secondsLeft'></span>
+            </strong>
+            </p>
+        </div>
+    </div>
+    <div class='col-md-1'>
+    </div>
+    <div class='col-md-7'>
         <table class='table table-bordered table-condensed group-status'>
-            <colgroup>
-                <col>
-                <!-- ko foreach: groupData -->
-                <col data-bind='css: { "current-player": id() === $root.participantGroupId() }'>
-                <!-- /ko -->
-            </colgroup>
             <thead>
-                <tr><th>Player</th>
-                    <!-- ko foreach: groupData -->
-                    <th data-bind='css: { "current-player": id() === $root.participantGroupId() }, text: number'></th>
-                    <!-- /ko -->
+                <tr><th>Player</th><th>Last harvest</th><th>Total harvest</th>
                 </tr>
             </thead>
-            <tbody>
-            <tr>
-                <td>Last harvest</td>
-                <!-- ko foreach: groupData -->
-                <td data-bind='text: lastHarvestDecision, css: { "current-player": id() === $root.participantGroupId() }'></td>
-                <!-- /ko -->
-            </tr>
-            <tr>
-                <td>Total harvest</td>
-                <!-- ko foreach: groupData -->
-                <td data-bind='text: totalHarvest, css: { "current-player": id() === $root.participantGroupId() }'></td>
-                <!-- /ko -->
+            <tbody data-bind='foreach: groupData'>
+            <tr data-bind='css: { "current-player bg-info": id() === $root.participantGroupId() }'>
+                <td data-bind='text: number'></td>
+                <td data-bind='text: lastHarvestDecision'></td>
+                <td data-bind='text: totalHarvest'></td>
             </tr>
             </tbody>
         </table>
     </div>
 </div>
 {% comment %} resource visualization section {% endcomment %}
-<div class='row'>
-    <div class='col-md-12' data-bind='template: { name: "resource-visualization-template" }'></div>
-</div>
+<div data-bind='template: { name: "resource-visualization-template" }'></div>
 {% comment %} resource harvest decision section {% endcomment %}
 <div data-bind='ifnot: isResourceEmpty'>
     <div class='row'>
@@ -304,14 +292,14 @@
 </div>
 </script>
 <script type='text/html' id='resource-visualization-template'>
-<div class='row' data-bind='if: isPracticeRound'>
+<div data-bind='if: isPracticeRound'>
     <div class='alert alert-danger alert-block'>
         <h4>PRACTICE ROUND</h4>
         This is a practice round.  The decisions you make in this round will <b>NOT</b> contribute to your earnings.
     </div>
 </div>
 <div class='row'>
-    <div>
+    <div class='col-md-12'>
         <h3 class='compact'>My Group</h3>
         <div data-bind='template: { name: "tree-template", data: myGroup }'></div>
     </div>
@@ -367,7 +355,7 @@
             <img alt='depleted trees' src="{% static 'images/forestry/depleted-trees.jpg' %}" class="img-polaroid" width="425" height="282">
         </center>
     </div>
-    <div class='alert alert-danger'><i class='fa fa-warning'></i> There are no more trees to harvest. Please wait quietly until the next round begins.</div>
+    <div class='alert alert-danger'><i class='fa fa-warning'></i> There are not enough trees to harvest. Please wait quietly until the next round begins.</div>
 </div>
 <div data-bind='ifnot: isResourceEmpty'>
     {% comment %} resource level visualization pre-regrowth {% endcomment %}
@@ -677,13 +665,14 @@
                 if (chatEnabled) {
                     console.debug("chat was enabled, showing sidebar explicitly");
                     $('#sidebar').show();
-                    $('#content').removeClass('col-md-12').addClass('col-md-8');
                 }
                 else {
                     $('#sidebar').hide();
-                    $('#content').removeClass('col-md-8').addClass('col-md-12');
                 }
             }
+            model.contentGridSize = ko.pureComputed(function() {
+                return model.chatEnabled() ? "col-md-8" : "col-md-12";
+            });
             model.afterRenderTemplate = function(elements) {
                 $('[data-content]').popover({placement: 'top', trigger: 'hover'});
             }

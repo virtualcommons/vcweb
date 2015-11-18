@@ -117,6 +117,7 @@ def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
     experiment_model_dict['participantGroupId'] = participant_group_relationship.pk
     experiment_model_dict['participantsPerGroup'] = ec.max_group_size
     experiment_model_dict['chatEnabled'] = current_round.chat_enabled
+    experiment_model_dict['dollarsPerTree'] = ec.exchange_rate
 
     # instructions round parameters
     experiment_model_dict['isInstructionsRound'] = current_round.is_instructions_round
@@ -133,7 +134,6 @@ def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
         own_resource_level = get_resource_level(own_group)
         experiment_model_dict['isPlayableRound'] = True
         experiment_model_dict['resourceLevel'] = own_resource_level
-        experiment_model_dict['dollarsPerTree'] = ec.exchange_rate
 
         # Create GroupData object to access group members data
         gd = GroupData(participant_group_relationship, previous_round_data, current_round_data)

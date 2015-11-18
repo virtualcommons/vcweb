@@ -775,8 +775,6 @@ Rate table), and the maximum possible harvest will be the same rate as before (s
             }
             model.submitDecision = function() {
                 console.debug("submitting decision");
-                // FIXME: re-enable tour once we figure out what the bad interaction is, see https://github.com/virtualcommons/vcweb/issues/69
-                // model.endTour();
                 $.post('{% url "forestry:submit_decision" experiment.pk %}', {participant_group_id: model.participantGroupId(),integer_decision: model.harvestDecision(), submitted: true },
                 function(response) {
                     // hide selection, disable chat, show waiting room
