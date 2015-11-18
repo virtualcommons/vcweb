@@ -228,8 +228,7 @@
     you can get used to the controls and become familiar with the information being displayed. During practice, the
     trees you harvest <em>do not count towards your earnings, and they will not affect the other group members</em>.
     During the actual experiment, you will have <span data-bind='text:practiceRoundDuration'></span> seconds each round to
-    indicate how many trees you wish to harvest, and the trees you harvest in actual rounds <b>will</b> count towards
-    your earnings. </p>
+    indicate how many trees you wish to harvest, and the trees you harvest will count towards your earnings. </p>
 <h4>Selecting Trees for Harvest</h4>
 <p>
 The forest will be displayed in the middle of the screen each year, with a summary of how many trees are
@@ -269,11 +268,9 @@ then decide how many trees you would like to harvest. If you have any questions,
 <script type='text/html' id='PRACTICE_ROUND_RESULTS'>
     <h3>Practice Round Results</h3>
     <p>
-        If this had been been a paid session, you would have earned <strong class='text-success' data-bind='text: formatCurrency(parseFloat(totalEarnings()))'></strong>.
+        If this had been been a paid session, you would have earned <strong class='text-success' data-bind='text: formattedTotalEarnings'></strong>.
+        The other participants' earnings will be shown in the following table.
     </p>
-    <p>
-        The other participants in your group would have earned:
-        </p>
         <table class='table table-bordered table-condensed'>
             <thead>
                 <tr><th>Participant</th><th>Total Earnings</th</tr>
@@ -281,7 +278,7 @@ then decide how many trees you would like to harvest. If you have any questions,
             <tbody data-bind='foreach: groupEarnings'>
                 <tr>
                     <td><span class='text-success' data-bind='text: number'></span></td>
-                    <td><span class='text-success' data-bind='text: formatCurrency(parseFloat(totalEarnings()))'></span></td>
+                    <td>&mdash;</td>
                 </tr>
             </tbody>
         </table>
@@ -356,7 +353,7 @@ Please raise your hand if you have a question, and the experimenter will come to
     <div class='col-md-7'>
         <table class='table table-bordered table-condensed group-status'>
             <thead>
-                <tr><th>Player</th><th>Last harvest</th><th>Total harvest</th>
+                <tr><th>Player</th><th>Last harvest</th><th>Total harvest</th><th>Total earnings</th>
                 </tr>
             </thead>
             <tbody data-bind='foreach: groupData'>
@@ -364,6 +361,7 @@ Please raise your hand if you have a question, and the experimenter will come to
                 <td data-bind='text: number'></td>
                 <td data-bind='text: lastHarvestDecision'></td>
                 <td data-bind='text: totalHarvest'></td>
+                <td data-bind='text: formattedTotalEarnings'></td>
             </tr>
             </tbody>
         </table>
@@ -435,6 +433,13 @@ group will be able to harvest trees from it. Each tree you harvest will count to
 will continue to regrow at the rate of 2 trees for every 10 trees left standing in the forest (see the Forest Regrowth
 Rate table), and the maximum possible harvest will be the same rate as before (see the Maximum Possible Harvest table).
 </p>
+<ul class='pager'>
+    <li class='next'>
+        <a href="javascript: void(0)" data-bind='click: activateTemplate.bind($data, "PHASE_TWO_INSTRUCTIONS_GROUP_CHAT")'>Ok, continue</a>
+    </li>
+</ul>
+</script>
+<script type='text/html' id='PHASE_TWO_INSTRUCTIONS_GROUP_CHAT'>
 <h3>Group Chat</h3>
 <p>
 <strong>From this point forward, you will be able to communicate with the members of your group.</strong> If you want to
@@ -452,7 +457,7 @@ You are free to communicate as much or little as you want, and you can discuss a
 </p>
 <ol>
 <li>discuss side payments that would result in exchange of money outside the experiment or
-<li>make physical threatments
+<li>make physical threats
 </ol>
 <p>
 <strong>Do you have any questions?</strong>
@@ -536,7 +541,7 @@ Rate table), and the maximum possible harvest will be the same rate as before (s
 <p>We would like to ask you some questions before we continue to the next round.</p>
 <div class='qualtrics-survey'>
     <iframe width="100%" height="800" data-bind='attr: { src: surveyUrl }'>
-        Your browser doesn&39;t appear to support iframes, please <a target='_blank' data-bind='attr: { href: surveyUrl }'>follow this link to take the survey.</a>
+        Your browser doesn't appear to support iframes, please <a target='_blank' data-bind='attr: { href: surveyUrl }'>follow this link to take the survey.</a>
     </iframe>
 </div>
 <p>If you have any questions, or have trouble accessing the survey, please let the experimenter know.</p>
@@ -548,7 +553,7 @@ Rate table), and the maximum possible harvest will be the same rate as before (s
     </p>
     <h2>Payment</h2>
     <p>
-        You have earned <strong class='text-success' data-bind='text: formatCurrency(parseFloat(totalEarnings()))'></strong>.
+        You have earned <strong class='text-success' data-bind='text: formattedTotalEarnings'></strong>.
     </p>
     <p>
     Members of your group earned the following:
@@ -558,7 +563,7 @@ Rate table), and the maximum possible harvest will be the same rate as before (s
         <tbody data-bind='foreach: groupEarnings'>
             <tr>
                 <td><span class='text-success' data-bind='text: number'></span></td>
-                <td><span class='text-success' data-bind='text: formatCurrency(parseFloat(totalEarnings()))'></span></td>
+                <td><span class='text-success' data-bind='text: formattedTotalEarnings'></span></td>
             </tr>
         </tbody>
     </table>
@@ -876,6 +881,9 @@ Rate table), and the maximum possible harvest will be the same rate as before (s
             model.contentGridSize = ko.pureComputed(function() {
                 return model.chatEnabled() ? "col-md-8" : "col-md-12";
             });
+            model.formattedTotalEarnings = ko.pureComputed(function() {
+                return formatCurrency(parseFloat(model.totalEarnings()));
+            }
 
             model.afterRenderTemplate = function(elements) {
                 $('[data-content]').popover({placement: 'top', trigger: 'hover'});

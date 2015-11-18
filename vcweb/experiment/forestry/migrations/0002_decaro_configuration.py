@@ -59,7 +59,7 @@ def create_forestry_configuration(apps, schema_editor):
     add_round(cfg, round_type='WELCOME', sequence_number=1, duration=0)
     add_round(cfg, round_type='GENERAL_INSTRUCTIONS', sequence_number=2, duration=0)
     practice_round = add_round(cfg, round_type='PRACTICE', sequence_number=3, repeat=3, initialize_data_values=True,
-                               duration=45)
+                               duration=0)
     reset_resource_level(practice_round)
 # Phase one, NC
     add_round(cfg, round_type='DEBRIEFING', sequence_number=4, template_id='PRACTICE_ROUND_RESULTS', duration=0)
