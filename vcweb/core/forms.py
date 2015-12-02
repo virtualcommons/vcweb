@@ -1,7 +1,7 @@
 import email
 import logging
 import re
-import autocomplete_light
+from autocomplete_light import shortcuts as autocomplete_light
 import time
 
 from hashlib import sha1

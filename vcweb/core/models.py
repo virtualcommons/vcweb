@@ -22,7 +22,7 @@ from django.core.mail import EmailMultiAlternatives
 from django.core.validators import RegexValidator
 from django.db import models, transaction
 from django.db.models import Max, Sum, Count
-from django.db.models.loading import get_model
+
 from django.dispatch import receiver
 from django.template.defaultfilters import slugify
 from django.template.loader import select_template, get_template
@@ -33,6 +33,7 @@ from model_utils.managers import PassThroughManager
 from . import signals, simplecache
 from .decorators import log_signal_errors, retry
 from .http import dumps
+from .apps import VcwebCoreConfig
 
 from vcweb.redis_pubsub import RedisPubSub
 
@@ -1989,7 +1990,7 @@ class Parameter(models.Model):
         return self.get_model_class().objects.get(pk=pk)
 
     def get_model_class(self):
-        return get_model(*self.class_name.split('.'))
+        return VcwebCoreConfig.get_model(*self.class_name.split('.'))
 
     def get_converter(self):
         converter = Parameter.CONVERTERS[self.type]

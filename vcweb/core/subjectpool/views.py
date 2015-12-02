@@ -292,7 +292,7 @@ def add_participant(request, pk=None):
         return JsonResponse({'success': False, 'error': "Can't add a participant to yet not finished experiment session"})
 
     # second check, the participant must have recevied invitations
-    if len(invitations) == 0:
+    if invitations.exists():
         logger.debug("Experimeter %s tried adding participant %s to experiment session %s, who hasn't recevied invitation for the same",
                      request.user, participant, pk)
         return JsonResponse({'success': False, 'error': "Can't add a participant who hasn't received invitation"})
@@ -370,7 +370,7 @@ def submit_experiment_session_signup(request):
         ps = ParticipantSignup.objects.registered_or_waitlisted(invitation__participant=user.participant,
                                                                 experiment_metadata_pk=experiment_metadata_pk)
 
-        ps = ps.first() if len(ps) > 0 else ParticipantSignup()
+        ps = ps.first() if ps.exists() else ParticipantSignup()
 
         ps.invitation = invitation
         ps.attendance = attendance

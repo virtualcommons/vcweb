@@ -5,7 +5,7 @@ from datetime import datetime
 from django import forms
 from django.forms import widgets, CheckboxInput, ModelForm
 from django.utils.translation import ugettext_lazy as _
-import autocomplete_light
+from autocomplete_light import shortcuts as autocomplete_light
 
 from vcweb.core.autocomplete_light_registry import InstitutionAutocomplete
 from vcweb.core.forms import NumberInput

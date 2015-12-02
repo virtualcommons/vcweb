@@ -1,3 +1,4 @@
+from __future__ import print_function
 from enum import Enum
 import logging
 import os
@@ -29,6 +30,7 @@ DEBUG = True
 USE_TZ = False
 
 SITE_URL = 'http://localhost:8000'
+SITE_ID = 1
 
 # set BASE_DIR one level up since we're in a settings directory.
 BASE_DIR = os.path.dirname(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)))
@@ -150,6 +152,7 @@ DJANGO_APPS = (
     'django.contrib.admin',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
 )
 
 THIRD_PARTY_APPS = (
@@ -222,13 +225,13 @@ if not is_accessible(LOG_DIRECTORY):
     try:
         os.makedirs(LOG_DIRECTORY)
     except OSError:
-        print "Unable to create absolute log directory at {}, setting to relative path logs instead".format(LOG_DIRECTORY)
+        print("Unable to create absolute log directory at {}, setting to relative path logs instead".format(LOG_DIRECTORY))
         LOG_DIRECTORY = 'logs'
         if not is_accessible(LOG_DIRECTORY):
             try:
                 os.makedirs(LOG_DIRECTORY)
             except OSError:
-                print "Couldn't create any log directory, startup will fail"
+                print("Couldn't create any log directory, startup will fail")
 
 LOGGING = {
     'version': 1,

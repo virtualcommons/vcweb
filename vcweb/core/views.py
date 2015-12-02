@@ -950,6 +950,7 @@ def edit_experiment_configuration(request, pk):
 
 
 def get_experiment_configuration_json_data(ec):
+    # FIXME: replace with DRF
     epv = ExperimentParameterValue.objects.select_related('experiment_configuration', 'parameter').filter(
         experiment_configuration=ec)
     exp_param_values_list = [param.to_dict() for param in epv]
@@ -963,12 +964,12 @@ def get_experiment_configuration_json_data(ec):
     round_param_values_list = [round_param.to_dict() for round_param in round_param_values]
 
     # Get the round parameter values for each round
-    for round in round_config_list:
-        round["children"] = []
+    for round_configuration in round_config_list:
+        round_configuration["children"] = []
         for param in round_param_values_list:
-            if round['pk'] == param['round_configuration']:
+            if round_configuration['pk'] == param['round_configuration']:
                 # set the round params list as this round's children
-                round["children"].append(param)
+                round_configuration["children"].append(param)
 
     return {
         'expParamValuesList': exp_param_values_list,

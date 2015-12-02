@@ -14,4 +14,3 @@ class VcwebCoreConfig(AppConfig):
     def ready(self):
         logger.debug("vcweb core initialized in %s mode, initializing mimetypes", settings.ENVIRONMENT)
         mimetypes.init()
-
