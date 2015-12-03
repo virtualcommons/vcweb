@@ -13,6 +13,7 @@ import hashlib
 import urllib2
 import xml.etree.ElementTree as ET
 
+from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.models import User, Group
@@ -33,7 +34,6 @@ from model_utils.managers import PassThroughManager
 from . import signals, simplecache
 from .decorators import log_signal_errors, retry
 from .http import dumps
-from .apps import VcwebCoreConfig
 
 from vcweb.redis_pubsub import RedisPubSub
 
@@ -84,9 +84,9 @@ class ASUWebDirectoryProfile(object):
         return urllib2.urlopen(urllib2.Request(self.profile_url, headers={"Accept": "application/xml"}))
 
     def __str__(self):
-        return "{} {} ({}) (email: {}) (major: {}) (class: {})".format(self.first_name, self.last_name, self.username,
-                                                                       self.email, self.major,
-                                                                       self.class_status)
+        return "{0} {1} ({2}) (email: {3}) (major: {4}) (class: {5})".format(
+            self.first_name, self.last_name, self.username, self.email, self.major, self.class_status
+        )
 
     @property
     def profile_url(self):
@@ -271,7 +271,7 @@ class DataValueMixin(object):
         e = self.experiment
         if e.is_last_round:
             return
-        next_round_data = kwargs.get('next_round_data', None)
+        next_round_data = kwargs.get('next_round_data')
         if not next_round_data:
             # no explicit round data to copy to, retrieve the next round data
             next_round_data, created = e.get_or_create_round_data(round_configuration=e.next_round,
@@ -326,14 +326,13 @@ class ExperimentMetadata(models.Model):
     define and add a single ExperimentMetadata record for the experiment type that it represents.
     """
     title = models.CharField(max_length=255)
-    namespace = models.CharField(max_length=255, unique=True, null=True, blank=True,
-                                 validators=[RegexValidator(r'^[\w_-]*$')])
+    namespace = models.CharField(max_length=255, unique=True, validators=[RegexValidator(r'^[\w_-]*$')])
     short_name = models.SlugField(max_length=32, unique=True, null=True, blank=True)
     description = models.TextField(blank=True)
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
-    about_url = models.URLField(null=True, blank=True)
-    logo_url = models.URLField(null=True, blank=True)
+    about_url = models.URLField(blank=True)
+    logo_url = models.URLField(blank=True)
     default_configuration = models.ForeignKey('ExperimentConfiguration', null=True, blank=True)
     active = models.BooleanField(default=True)
     parameters = models.ManyToManyField('Parameter')
@@ -403,10 +402,10 @@ class Institution(models.Model):
     name = models.CharField(max_length=255, unique=True)
     acronym = models.CharField(max_length=16, blank=True)
     description = models.TextField(blank=True)
-    url = models.URLField(null=True, blank=True)
+    url = models.URLField(blank=True)
     date_created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
-    cas_server_url = models.URLField(null=True, blank=True)
+    cas_server_url = models.URLField(blank=True)
 
     def __unicode__(self):
         return self.name
@@ -486,7 +485,7 @@ class ExperimenterManager(PassThroughManager):
             user = User.objects.create_user(username=email, email=email, password=password)
         permission_group = PermissionGroup.demo_experimenter if demo_experimenter else PermissionGroup.experimenter
         user.groups.add(permission_group.get_django_group())
-        experimenter = Experimenter.objects.create(user=user, approved=True)
+        experimenter = self.create(user=user, approved=True)
         Experiment.objects.create_demo_experiments(experimenter=experimenter)
         return experimenter
 
@@ -511,6 +510,9 @@ class BookmarkedExperimentMetadata(models.Model):
     experiment_metadata = models.ForeignKey(ExperimentMetadata, related_name='bookmarked_experiment_metadata_set')
     date_created = models.DateTimeField(auto_now_add=True)
 
+    def __unicode__(self):
+        return u"Bookmark: {} by {}".format(self.experimenter, self.experiment_metadata)
+
     class Meta:
         unique_together = (('experimenter', 'experiment_metadata'),)
         ordering = ['experimenter', 'experiment_metadata']
@@ -524,6 +526,11 @@ class ExperimenterRequest(models.Model):
     user = models.OneToOneField(User, verbose_name=u'Django User', unique=True)
     date_created = models.DateTimeField(auto_now_add=True)
     approved = models.BooleanField(default=False)
+
+    def __unicode__(self):
+        return u"Experimenter request by {} on {}. Approved: {}".format(self.user,
+                                                                        self.date_created,
+                                                                        self.approved)
 
 
 class ExperimentConfigurationQuerySet(models.query.QuerySet):
@@ -701,8 +708,8 @@ class ExperimentPassThroughManager(PassThroughManager):
         if experimenter is None:
             raise ValueError("You were supposed to give me a demo experimenter to create demo experiments.")
         for ec in ExperimentConfiguration.objects.demo_configurations():
-            Experiment.objects.create(experimenter=experimenter, experiment_configuration=ec,
-                                      experiment_metadata=ec.experiment_metadata, status=Experiment.Status.INACTIVE)
+            self.create(experimenter=experimenter, experiment_configuration=ec,
+                        experiment_metadata=ec.experiment_metadata, status=Experiment.Status.INACTIVE)
 
 
 class ExperimentQuerySet(models.query.QuerySet):
@@ -722,9 +729,6 @@ class ExperimentQuerySet(models.query.QuerySet):
 
     def active(self, **kwargs):
         return self.filter(status__in=ExperimentQuerySet.ACTIVE_STATUSES, **kwargs)
-
-    def for_participant(self, participant, **kwargs):
-        return participant.experiments.filter(status__in=ExperimentQuerySet.ACTIVE_STATUSES)
 
     def for_experimenter(self, experimenter, **kwargs):
         return self.select_related('experimenter', 'experiment_metadata', 'experiment_configuration').filter(
@@ -884,11 +888,11 @@ class Experiment(models.Model):
 
     @property
     def monitor_url(self):
-        return "{}/monitor".format(self.experimenter_url)
+        return "{0}/monitor".format(self.experimenter_url)
 
     @property
     def experimenter_url(self):
-        return "/experiment/{}".format(self.pk)
+        return "/experiment/{0}".format(self.pk)
 
     def get_participant_url(self, uri):
         return '{0}/{1}'.format(self.get_absolute_url(), uri)
@@ -910,7 +914,7 @@ class Experiment(models.Model):
         return self.participant_set.all().values_list('user__email', flat=True)
 
     def get_absolute_url(self):
-        return "/{}/{}".format(self.experiment_metadata.namespace, self.pk)
+        return "/{0}/{1}".format(self.experiment_metadata.namespace, self.pk)
 
     @property
     def participant_template(self):
@@ -923,11 +927,11 @@ class Experiment(models.Model):
         """
         namespace = self.experiment_metadata.namespace
         treatment_id = self.experiment_configuration.treatment_id
-        default_template_name = '{}/participate.html'.format(namespace)
+        default_template_name = '{0}/participate.html'.format(namespace)
         template_names = [default_template_name]
         if treatment_id:
             # prioritize treatment-specific namespace/treatments/<treatment-id>/participate.html
-            template_names.insert(0, "{}/treatments/{}/participate.html".format(namespace, treatment_id))
+            template_names.insert(0, "{0}/treatments/{1}/participate.html".format(namespace, treatment_id))
         selected_template = select_template(template_names)
         name = selected_template.template.name
         logger.debug("selected template %s from templates %s", name, template_names)
@@ -1076,7 +1080,7 @@ class Experiment(models.Model):
         if subject is None:
             subject = self.experiment_configuration.registration_email_subject
             if subject is None:
-                subject = 'VCWEB experiment registration for {}'.format(self.display_name)
+                subject = 'VCWEB experiment registration for {0}'.format(self.display_name)
         return subject
 
     def notify_participants(self, message, group=None, notify_experimenter=False):
@@ -1113,7 +1117,7 @@ class Experiment(models.Model):
             if emails is None:
                 logger.warning("No users or emails supplied, aborting.")
                 return
-            users = self.create_users(emails, password)
+            users = Experiment.create_users(emails, password)
 
         creator = self.experimenter.user
         for user in users:
@@ -1132,7 +1136,8 @@ class Experiment(models.Model):
             mail.get_connection().send_messages(email_messages)
         return registered_participants
 
-    def create_users(self, emails, password):
+    @staticmethod
+    def create_users(emails, password):
         users = []
         participants_group = PermissionGroup.participant.get_django_group()
         for email_line in emails:
@@ -1167,7 +1172,7 @@ class Experiment(models.Model):
         Override the email template by creating <experiment-namespace>/email/experiment-registration.txt templates
         """
         participant = participant_experiment_relationship.participant
-        plaintext_template = select_template(['{}/email/experiment-registration.txt'.format(self.namespace),
+        plaintext_template = select_template(['{0}/email/experiment-registration.txt'.format(self.namespace),
                                               'email/experiment-registration.txt'])
         user = participant.user
         if password is None or not password.strip():
@@ -1300,19 +1305,19 @@ class Experiment(models.Model):
 
     def log(self, log_message, log_type=ActivityLog.LogType.System, *args, **kwargs):
         if log_message:
-            message = "{}: {}".format(self, log_message)
+            message = "{0}: {1}".format(self, log_message)
             logger.debug(message, *args)
             self.activity_log_set.create(round_configuration=self.current_round, log_message=message)
 
     def configuration_file_name(self, file_ext='.xml'):
         if not file_ext.startswith('.'):
             file_ext = '.' + file_ext
-        return '{}_experiment-configuration_{}{}'.format(slugify(self.display_name), self.pk, file_ext)
+        return '{0}_experiment-configuration_{1}{2}'.format(slugify(self.display_name), self.pk, file_ext)
 
     def data_file_name(self, file_ext='.csv'):
         if not file_ext.startswith('.'):
             file_ext = '.' + file_ext
-        return "{}_{}_{}{}".format(slugify(self.experiment_metadata.title), self.pk,
+        return "{0}_{1}_{2}{3}".format(slugify(self.experiment_metadata.title), self.pk,
                                    datetime.now().strftime("%m-%d-%Y-%H%M"), file_ext)
 
     def parameters(self, scope=None):
@@ -1344,14 +1349,14 @@ class Experiment(models.Model):
                         logger.error("Cannot create a new set of groups because no session id has been set on %s.",
                                      round_configuration)
                         raise ValueError(
-                            "Cannot preserve existing groups without round_configuration.session id {}".format(
+                            "Cannot preserve existing groups without round_configuration.session id {0}".format(
                                 round_configuration))
             else:
                 logger.debug("deleting existing groups")
                 # FIXME: fairly expensive operation to log all group members
                 gqs = gs.all()
                 for g in gqs:
-                    self.log("reallocating/deleting group {}".format(
+                    self.log("reallocating/deleting group {0}".format(
                         g.participant_group_relationship_set.all()))
                     gqs.delete()
         # existing groups, if any, should have been handled. now allocate participants to fresh groups
@@ -1396,11 +1401,11 @@ class Experiment(models.Model):
 
     def invoke(self, action_name, experimenter=None):
         if action_name in Experiment.ALLOWED_ACTIONS and experimenter == self.experimenter:
-            self.log("experimenter {} invoking action {}".format(experimenter, action_name))
+            self.log("experimenter {0} invoking action {1}".format(experimenter, action_name))
             action = getattr(self, action_name)
             return action()
         else:
-            self.log("Experimenter {} tried to invoke invalid action {} on {}".format(action_name, self))
+            self.log("Experimenter {0} tried to invoke invalid action {1} on {2}".format(experimenter, action_name, self))
 
     def advance_to_next_round(self):
         if self.is_round_in_progress:
@@ -1693,7 +1698,7 @@ class RoundConfiguration(ParameterValueMixin, models.Model):
     foo.html, vcweb will look for templates/forestry/foo.html'''))
     template_id = models.CharField(max_length=128, blank=True,
                                    help_text=_('A HTML template ID to use in a single page app, e.g., KO template'))
-    survey_url = models.URLField(null=True, blank=True)
+    survey_url = models.URLField(blank=True)
     """ external survey url for qualtrics integration """
     chat_enabled = models.BooleanField(default=False, help_text=_("Enable in-round communication"))
     create_group_clusters = models.BooleanField(default=False, help_text=_(
@@ -1990,7 +1995,7 @@ class Parameter(models.Model):
         return self.get_model_class().objects.get(pk=pk)
 
     def get_model_class(self):
-        return VcwebCoreConfig.get_model(*self.class_name.split('.'))
+        return apps.get_model(self.class_name)
 
     def get_converter(self):
         converter = Parameter.CONVERTERS[self.type]
@@ -2006,7 +2011,6 @@ class Parameter(models.Model):
                 # last-ditch effort, try converting to float first
                 return int(float(value))
             # FIXME: add more checks for other type conversion failures
-            pass
         return value
 
     def __unicode__(self):
@@ -2475,6 +2479,9 @@ class Address(models.Model):
     city = models.CharField(_('City'), max_length=128, blank=True)
     state = models.CharField(_('State'), max_length=128, blank=True)
     zipcode = models.CharField(_('Zip code'), max_length=8, blank=True)
+
+    def __unicode__(self):
+        return u"{} {}, {}, {} {}".format(self.street1, self.street2, self.city, self.state, self.zipcode)
 
 
 class ParticipantQuerySet(models.query.QuerySet):
@@ -3095,7 +3102,8 @@ class Invitation(models.Model):
 
 class ParticipantSignupQuerySet(models.query.QuerySet):
 
-    def _experiment_metadata_criteria(self, criteria,
+    @staticmethod
+    def _experiment_metadata_criteria(criteria,
                                       experiment_metadata=None, experiment_metadata_pk=None,
                                       experiment_session=None, experiment_session_pk=None, **kwargs):
         if experiment_metadata is not None:
@@ -3111,7 +3119,7 @@ class ParticipantSignupQuerySet(models.query.QuerySet):
 
     def with_attendance(self, attendance, **kwargs):
         attendance_key = 'attendance__in' if isinstance(attendance, (list, set, tuple)) else 'attendance'
-        criteria = self._experiment_metadata_criteria({attendance_key: attendance}, **kwargs)
+        criteria = ParticipantSignupQuerySet._experiment_metadata_criteria({attendance_key: attendance}, **kwargs)
         return self.filter(**criteria)
 
     def registered_or_participated(self, **kwargs):
@@ -3204,6 +3212,10 @@ class SpoolParticipantStatistics(models.Model):
     discharges = models.PositiveIntegerField(default=0)
     participations = models.PositiveIntegerField(default=0)
     invitations = models.PositiveIntegerField(default=0)
+
+    def __unicode__(self):
+        return u"Participant {} - Absences: {}, Discharges: {}, Participations: {}, Invitations: {}".format(
+            self.participant, self.absences, self.discharges, self.participations, self.invitations)
 
 
 @simplecache
