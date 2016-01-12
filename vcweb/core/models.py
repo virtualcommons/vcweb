@@ -29,7 +29,6 @@ from django.template.defaultfilters import slugify
 from django.template.loader import select_template, get_template
 from django.utils.translation import ugettext_lazy as _
 from model_utils import Choices
-from model_utils.managers import PassThroughManager
 
 from . import signals, simplecache
 from .decorators import log_signal_errors, retry
@@ -309,7 +308,7 @@ class ExperimentMetadataQuerySet(models.query.QuerySet):
         # self.filter(**kwargs).annotate(bookmarked=models.Q(pk__in=bem_pks))
 
 
-class ExperimentMetadataManager(PassThroughManager):
+class ExperimentMetadataManager(models.Manager):
 
     def get_by_natural_key(self, key):
         return self.get(namespace=key)
@@ -337,7 +336,7 @@ class ExperimentMetadata(models.Model):
     active = models.BooleanField(default=True)
     parameters = models.ManyToManyField('Parameter')
 
-    objects = ExperimentMetadataManager.for_queryset_class(ExperimentMetadataQuerySet)()
+    objects = ExperimentMetadataManager.from_queryset(ExperimentMetadataQuerySet)()
 
     @property
     def hosted(self):
@@ -476,7 +475,7 @@ class CommonsUser(models.Model):
         abstract = True
 
 
-class ExperimenterManager(PassThroughManager):
+class ExperimenterManager(models.Manager):
 
     def create_experimenter(self, email=None, user=None, password=None, demo_experimenter=True):
         if user is None:
@@ -577,7 +576,7 @@ class ExperimentConfiguration(ParameterValueMixin, models.Model):
         "This experiment configuration has rounds that start and end each day starting at midnight."))
     cached_final_sequence_number = 0
 
-    objects = PassThroughManager.for_queryset_class(ExperimentConfigurationQuerySet)()
+    objects = ExperimentConfigurationQuerySet.as_manager()
 
     def add_round(self,
                   duration=45, round_type=None, sequence_number=None, template_id=None, repeat=0, session_id=None,
@@ -702,11 +701,11 @@ class ExperimentConfiguration(ParameterValueMixin, models.Model):
         ordering = ['experiment_metadata', 'creator', '-date_created']
 
 
-class ExperimentPassThroughManager(PassThroughManager):
+class ExperimentManager(models.Manager):
 
     def create_demo_experiments(self, experimenter=None):
         if experimenter is None:
-            raise ValueError("You were supposed to give me a demo experimenter to create demo experiments.")
+            raise ValueError("Need a demo experimenter to create demo experiments.")
         for ec in ExperimentConfiguration.objects.demo_configurations():
             self.create(experimenter=experimenter, experiment_configuration=ec,
                         experiment_metadata=ec.experiment_metadata, status=Experiment.Status.INACTIVE)
@@ -784,7 +783,7 @@ class Experiment(models.Model):
     cached_round_sequence_number = None
     ''' caches the round configuration '''
 
-    objects = PassThroughManager.for_queryset_class(ExperimentQuerySet)()
+    objects = ExperimentQuerySet.as_manager()
 
     @property
     def is_time_expired(self):
@@ -1881,7 +1880,7 @@ class ParameterQuerySet(models.query.QuerySet):
         return self.get(scope=Parameter.Scope.GROUP_CLUSTER, **kwargs)
 
 
-class ParameterPassThroughManager(PassThroughManager):
+class ParameterManager(models.Manager):
 
     def get_by_natural_key(self, name):
         return self.get(name=name)
@@ -1946,7 +1945,7 @@ class Parameter(models.Model):
     enum_choices = models.TextField(blank=True)
     is_required = models.BooleanField(default=False)
 
-    objects = ParameterPassThroughManager.for_queryset_class(ParameterQuerySet)()
+    objects = ParameterManager.from_queryset(ParameterQuerySet)()
 
     @property
     def value_field_name(self):
@@ -2345,7 +2344,7 @@ class GroupCluster(models.Model, DataValueMixin):
     session_id = models.CharField(max_length=64, blank=True, default='')
     experiment = models.ForeignKey(Experiment, related_name='group_cluster_set')
 
-    objects = PassThroughManager.for_queryset_class(GroupClusterQuerySet)()
+    objects = GroupClusterQuerySet.as_manager()
 
     @property
     def participant_ids(self):
@@ -2548,7 +2547,7 @@ class Participant(CommonsUser):
     favorite_food = models.CharField(max_length=32, choices=FOOD_CHOICES, blank=True)
     favorite_movie_genre = models.CharField(max_length=64, choices=MOVIE_GENRE_CHOICES, blank=True)
 
-    objects = PassThroughManager.for_queryset_class(ParticipantQuerySet)()
+    objects = ParticipantQuerySet.as_manager()
 
     @property
     def should_update_profile(self):
@@ -2635,7 +2634,7 @@ class ParticipantExperimentRelationship(models.Model):
     # arbitrary JSON-encoded data
     additional_data = models.TextField(blank=True)
 
-    objects = PassThroughManager.for_queryset_class(ParticipantExperimentRelationshipQuerySet)()
+    objects = ParticipantExperimentRelationshipQuerySet.as_manager()
 
     def __init__(self, *args, **kwargs):
         super(ParticipantExperimentRelationship, self).__init__(*args, **kwargs)
@@ -2695,7 +2694,7 @@ class ParticipantGroupRelationship(models.Model, DataValueMixin):
     notifications_since = models.DateTimeField(default=datetime.now, null=True, blank=True)
     survey_completed = models.BooleanField(default=False)
 
-    objects = PassThroughManager.for_queryset_class(ParticipantGroupRelationshipQuerySet)()
+    objects = ParticipantGroupRelationshipQuerySet.as_manager()
 
     @property
     def current_round_data(self):
@@ -2816,7 +2815,7 @@ class ParticipantRoundDataValue(ParameterizedValue):
     submitted = models.BooleanField(default=False)
     target_data_value = models.ForeignKey('ParticipantRoundDataValue', related_name='target_data_value_set',
                                           null=True, blank=True)
-    objects = PassThroughManager.for_queryset_class(ParticipantRoundDataValueQuerySet)()
+    objects = ParticipantRoundDataValueQuerySet.as_manager()
 
     @property
     def owner(self):
@@ -2891,7 +2890,7 @@ class ChatMessage(ParticipantRoundDataValue):
     target_participant = models.ForeignKey(ParticipantGroupRelationship, null=True, blank=True,
                                            related_name='target_participant_chat_message_set')
     """ if set, this is a targeted message to another participant.  If null, broadcast message to the entire group """
-    objects = PassThroughManager.for_queryset_class(ChatMessageQuerySet)()
+    objects = ChatMessageQuerySet.as_manager()
 
     def __init__(self, *args, **kwargs):
         kwargs['parameter'] = get_chat_message_parameter()
@@ -2939,7 +2938,8 @@ class ChatMessage(ParticipantRoundDataValue):
 
 class Comment(ParticipantRoundDataValue):
 
-    objects = PassThroughManager.for_queryset_class(ParticipantRoundDataValueQuerySet)()
+    # FIXME: verify that we can re-use these querysets as managers, or if we need to create subtypes
+    objects = ParticipantRoundDataValueQuerySet.as_manager()
 
     def __init__(self, *args, **kwargs):
         kwargs['parameter'] = get_comment_parameter()
@@ -2958,7 +2958,8 @@ class Comment(ParticipantRoundDataValue):
 
 class Like(ParticipantRoundDataValue):
 
-    objects = PassThroughManager.for_queryset_class(ParticipantRoundDataValueQuerySet)()
+    # FIXME: verify that we can re-use these querysets as managers, or if we need to create subtypes
+    objects = ParticipantRoundDataValueQuerySet.as_manager()
 
     def __init__(self, *args, **kwargs):
         kwargs['parameter'] = get_like_parameter()
@@ -3068,7 +3069,7 @@ class Invitation(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     sender = models.ForeignKey(User)
 
-    objects = PassThroughManager.for_queryset_class(InvitationQuerySet)()
+    objects = InvitationQuerySet.as_manager()
 
     def __unicode__(self):
         return u"[{}] [{}] ({})".format(self.participant, self.experiment_session, self.sender)
@@ -3162,7 +3163,7 @@ class ParticipantSignup(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     attendance = models.PositiveIntegerField(choices=ATTENDANCE, default=ATTENDANCE.registered)
 
-    objects = PassThroughManager.for_queryset_class(ParticipantSignupQuerySet)()
+    objects = ParticipantSignupQuerySet.as_manager()
 
     def to_dict(self, signup_count=0):
         experiment_session = self.invitation.experiment_session

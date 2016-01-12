@@ -12,7 +12,6 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.forms import PasswordResetForm
 from django.core.validators import validate_email
 from django.forms import widgets, ValidationError, CheckboxInput
-from django.forms.util import ErrorDict
 from django.utils.translation import ugettext_lazy as _
 
 from .autocomplete_light_registry import InstitutionAutocomplete, ParticipantMajorAutocomplete
@@ -553,14 +552,6 @@ class AntiSpamForm(forms.Form):
         initial.update(self.generate_security_data())
         kwargs["initial"] = initial
         super(AntiSpamForm, self).__init__(*args, **kwargs)
-
-    def security_errors(self):
-        """Return just those errors associated with security"""
-        errors = ErrorDict()
-        for f in ["contact_number", "timestamp", "security_hash"]:
-            if f in self.errors:
-                errors[f] = self.errors[f]
-        return errors
 
     def clean_security_hash(self):
         """Check the security hash."""

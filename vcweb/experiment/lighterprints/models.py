@@ -6,7 +6,6 @@ from django.core.cache import cache
 from django.db import models
 from django.db.models import Sum
 from django.utils.translation import ugettext_lazy as _
-from model_utils.managers import PassThroughManager
 from mptt.models import (MPTTModel, TreeForeignKey, TreeManager)
 
 from vcweb.core import simplecache
@@ -99,7 +98,7 @@ class ActivityQuerySet(models.query.QuerySet):
         return q['total']
 
 
-class ActivityManager(TreeManager, PassThroughManager):
+class ActivityManager(TreeManager, models.Manager):
 
     def already_performed(self, activity, participant_group_relationship, round_data):
         # today = datetime.combine(date.today(), time())
@@ -169,7 +168,7 @@ class Activity(MPTTModel):
     parent = TreeForeignKey('self', null=True, blank=True, related_name='children_set')
     is_public = models.BooleanField(default=False)
 
-    objects = ActivityManager.for_queryset_class(ActivityQuerySet)()
+    objects = ActivityManager.from_queryset(ActivityQuerySet)()
     data_fields = [name, display_name, points]
     _default_attrs = ('pk', 'name', 'summary', 'display_name', 'description', 'savings', 'url', 'available_all_day',
                       'level', 'icon_url', 'icon_name', 'personal_benefits', 'points', 'time_slots')
