@@ -445,8 +445,8 @@ communicate with the people in your group, simply type your message in the &quot
 right-hand side of the screen. A text message will then be displayed to all members of your group.
 </p>
 <ul>
-<li>You will be able to chat for 5 minutes, before Round 1 (Year 1).
-<li>You will also be able to chat during the regular 45-second round, as you select how many trees to harvest.
+<li>You will be able to chat for <span data-bind='chatDurationInMinutes'></span> minutes, before Round 1 (Year 1).
+<li>You will also be able to chat during the regular <span data-bind='text:nextRoundDuration'></span>-second round, as you select how many trees to harvest.
 </ul>
 <h4>Guidelines for Communication</h4>
 <p>
@@ -454,9 +454,12 @@ You are free to communicate as much or little as you want, and you can discuss a
 <strong>may not</strong>
 </p>
 <ol>
-<li>discuss side payments that would result in exchange of money outside the experiment or
 <li>make physical threats
+<li>discuss side payments that would result in exchange of money outside the experiment
 </ol>
+<p>
+We will now move on to <span data-bind='text: chatDurationInMinutes'></span> minutes of communication.
+</p>
 <p>
 <strong>Do you have any questions?</strong>
 </p>
@@ -471,7 +474,7 @@ Raise your hand if you have a question, and the experimenter will come over to y
 </script>
 
 <script type='text/html' id='COMMUNICATION'>
-{# FIXME: add fullscreen chat UI instead of sidebar #}
+<strong>Time Left: </strong> <span data-bind='text: timeRemaining'></span>
 </script>
 
 <script type='text/html' id='PHASE_TWO_BLOCK_ONE_RESULTS'>
@@ -498,9 +501,12 @@ Raise your hand if you have a question, and the experimenter will come over to y
 communicate with the members of your group, simply type your message(s) in the &quot;Chat&quot; window.
 </p>
 <ul>
-<li>You will have 5 minutes to chat.
+<li>You will have <span data-bind='chatDurationInMinutes'></span> minutes to chat.
 <li>You will also be able to chat during the regular <span data-bind='text:nextRoundDuration'></span>-second round.
 </ul>
+<p>
+We will now move on to <span data-bind='chatDurationInMinutes'></span> minutes of communication.
+</p>
 <ul class='pager'>
     <li class='next'>
     <a href='javascript: void(0)' data-bind='click: participantReady.bind($data, participantGroupId() + " finished phase two block one instructions") '>Ok, I understand</a>
@@ -515,7 +521,6 @@ communicate with the members of your group, simply type your message(s) in the &
 <p>
 We will now move on to the next round of the Forest Task.
 </p>
-
 <h3>A New Forest</h3>
 <p>
 <strong>Please read the following instructions carefully!</strong>
@@ -647,6 +652,7 @@ Rate table), and the maximum possible harvest will be the same rate as before (s
             model.secondsLeft = ko.observable(0);
             model.currentInterval = ko.observable();
             model.selectedHarvestDecision = ko.observable(false);
+            model.chatDurationInMinutes = ko.observable(5);
             model.templateId = ko.computed(function() {
                 switch ( model.templateName() ) {
                     case 'PRACTICE':

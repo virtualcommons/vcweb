@@ -79,9 +79,10 @@ experiment_model_defaults = {
     'warningCountdownTime': 10,
     'harvestDecision': 0,
     'maxHarvestDecision': 10,
-    'secondsLeft': 60,
-    'roundDuration': 60,
-    'nextRoundDuration': 60,
+    'roundDuration': 45,
+    'nextRoundDuration': 45,
+    'secondsLeft': 45,
+    'chatDurationInMinutes': 5,
     'chatMessages': [],
     'myGroup': {
         'resourceLevel': 0,
