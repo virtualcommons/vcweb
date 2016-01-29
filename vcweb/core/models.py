@@ -1587,6 +1587,7 @@ class Experiment(models.Model):
     def to_dict(self, include_round_data=False, default_value_dict=None, attrs=None, *args, **kwargs):
         experiment_dict = dict(default_value_dict or {}, **kwargs)
         start_time = self.current_round_start_time.strftime('%c') if self.current_round_start_time else 'N/A'
+        logger.debug("Time remaining: %s", self.time_remaining)
         experiment_dict.update({
             'roundStatusLabel': self.status_label,
             'roundSequenceLabel': self.sequence_label,
@@ -1669,7 +1670,7 @@ class RoundConfiguration(ParameterValueMixin, models.Model):
         ('QUIZ', _('Quiz round')),
         ('SURVEY', _('Survey round')),
     )
-    PLAYABLE_ROUND_CONFIGURATIONS = (RoundType.PRACTICE, RoundType.REGULAR)
+    PLAYABLE_ROUND_CONFIGURATIONS = (RoundType.PRACTICE, RoundType.REGULAR, RoundType.PRIVATE_PRACTICE)
 
     experiment_configuration = models.ForeignKey(ExperimentConfiguration, related_name='round_configuration_set')
     sequence_number = models.PositiveIntegerField(

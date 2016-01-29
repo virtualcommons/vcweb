@@ -411,8 +411,7 @@ def round_ended_handler(sender, experiment=None, **kwargs):
                     round_data=round_data, participant_group_relationship=pgr,
                     parameter=harvest_decision_parameter, is_active=True, int_value=0
                 )
-                logger.debug(
-                    "created new harvest decision prdv %s for participant %s", prdv, pgr)
+                logger.debug("created new harvest decision prdv %s for participant %s", prdv, pgr)
             elif prdvs.count() > 1:
                 # multiple active harvest decisions, only allow the latest one
                 # to be active

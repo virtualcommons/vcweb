@@ -230,7 +230,7 @@
 <p>
 The forest will be displayed in the middle of the screen each year, with a summary of how many trees are
 currently in the forest. At the bottom of the screen, you will see a row of trees numbered from 0 to
-<span data-bind='text:maxHarvestDecision'></span>. 
+<span data-bind='text:maxHarvestDecision'></span>.
 These trees represent your harvest options. For example, if you want to harvest <span
 data-bind='text:maxHarvestDecision'></span> trees (your maximum harvest), select the tree labeled &quot;<span
 data-bind='text:maxHarvestDecision'></span>&quot;. If you want to harvest 0 trees (your minimum harvest), select the
@@ -334,7 +334,7 @@ Please raise your hand if you have a question, and the experimenter will come to
 <div class='row'>
     <div class='col-md-2'>
         <div class='alert alert-warning forestry-status-dashboard'>
-            <h4 id="dashboard-last-harvest"><i class='fa fa-info-circle' data-toggle='popover' data-content="The number of trees you harvested last round."></i> Last Harvest</h4>
+            <h4 id="dashboard-last-harvest">Last Harvest</h4>
             <p><span class='text-success' data-bind='text:lastHarvestDecision'></span></strong></p>
         </div>
     </div>
@@ -343,7 +343,7 @@ Please raise your hand if you have a question, and the experimenter will come to
             <h4 id='dashboard-time'><i class='fa fa-clock-o' data-toggle='popover' data-content="Seconds left before this round ends."></i> Time</h4>
             <p>
             <strong data-bind='css: { "text-error": secondsLeft() < warningCountdownTime(), "text-info": secondsLeft() > warningCountdownTime()}'>
-                <span data-bind='text: secondsLeft'></span>
+                <span data-bind='html: secondsLeft'></span>
             </strong>
             </p>
         </div>
@@ -791,6 +791,9 @@ Rate table), and the maximum possible harvest will be the same rate as before (s
                             }
                         },
                         1000));
+                }
+                else {
+                    model.secondsLeft("&infin;");
                 }
             };
             model.submitHarvestDecisionEnabled = ko.computed(function() {

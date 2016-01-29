@@ -79,6 +79,7 @@ experiment_model_defaults = {
     'warningCountdownTime': 10,
     'harvestDecision': 0,
     'maxHarvestDecision': 10,
+    'timeRemaining': 45,
     'roundDuration': 45,
     'nextRoundDuration': 45,
     'secondsLeft': 45,
@@ -108,6 +109,7 @@ def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
     previous_round_data = experiment.get_round_data(round_configuration=previous_round, previous_round=True)
     own_group = participant_group_relationship.group
 
+# FIXME: replace with DRF serializers
     experiment_model_dict = experiment.to_dict(include_round_data=False, default_value_dict=experiment_model_defaults)
     experiment_model_dict['sessionId'] = current_round.session_id
     experiment_model_dict['maxHarvestDecision'] = get_max_harvest_decision(participant_group_relationship.group,
