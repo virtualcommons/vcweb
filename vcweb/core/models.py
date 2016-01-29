@@ -65,7 +65,10 @@ class PermissionGroup(Enum):
 class ASUWebDirectoryProfile(object):
 
     """
-    A class that encapsulates the complexity of getting the user profile from the WEB Directory
+    Encapsulate complexity of ASU Web directory user profile retrieval
+    FIXME: refactor. replace urllib with requests, cache xml response into a dict instead of doing an XML lookup on
+    every invocation
+    https://github.com/virtualcommons/vcweb/issues/106
     """
 
     def __init__(self, username):
@@ -1686,6 +1689,8 @@ class RoundConfiguration(ParameterValueMixin, models.Model):
         ('SURVEY', _('Survey round')),
     )
     PLAYABLE_ROUND_CONFIGURATIONS = (RoundType.PRACTICE, RoundType.REGULAR, RoundType.PRIVATE_PRACTICE)
+    PRACTICE_ROUND_CONFIGURATIONS = (RoundType.PRACTICE, RoundType.PRIVATE_PRACTICE)
+    INSTRUCTIONS_ROUND_CONFIGURATIONS = (RoundType.INSTRUCTIONS, RoundType.GENERAL_INSTRUCTIONS)
 
     experiment_configuration = models.ForeignKey(ExperimentConfiguration, related_name='round_configuration_set')
     sequence_number = models.PositiveIntegerField(
@@ -1771,8 +1776,7 @@ class RoundConfiguration(ParameterValueMixin, models.Model):
 
     @property
     def is_instructions_round(self):
-        return self.round_type in (
-            RoundConfiguration.RoundType.INSTRUCTIONS, RoundConfiguration.RoundType.GENERAL_INSTRUCTIONS)
+        return self.round_type in RoundConfiguration.INSTRUCTIONS_ROUND_CONFIGURATIONS
 
     @property
     def is_quiz_round(self):
@@ -1784,7 +1788,7 @@ class RoundConfiguration(ParameterValueMixin, models.Model):
 
     @property
     def is_practice_round(self):
-        return self.round_type == RoundConfiguration.RoundType.PRACTICE
+        return self.round_type in RoundConfiguration.PRACTICE_ROUND_CONFIGURATIONS
 
     @property
     def is_regular_round(self):
@@ -2510,7 +2514,7 @@ class Address(models.Model):
     zipcode = models.CharField(_('Zip code'), max_length=8, blank=True)
 
     def __unicode__(self):
-        return u"{} {}, {}, {} {}".format(self.street1, self.street2, self.city, self.state, self.zipcode)
+        return u"{0} {1}, {2}, {3} {4}".format(self.street1, self.street2, self.city, self.state, self.zipcode)
 
 
 class ParticipantQuerySet(models.query.QuerySet):
@@ -3064,7 +3068,7 @@ class ExperimentSession(models.Model):
         return data
 
     def __unicode__(self):
-        return u"{} {} {}".format(self.experiment_metadata, self.scheduled_date, self.scheduled_end_date)
+        return u"{0} {1} {2}".format(self.experiment_metadata, self.scheduled_date, self.scheduled_end_date)
 
     class Meta:
         ordering = ['scheduled_date']
@@ -3102,7 +3106,7 @@ class Invitation(models.Model):
     objects = InvitationQuerySet.as_manager()
 
     def __unicode__(self):
-        return u"[{}] [{}] ({})".format(self.participant, self.experiment_session, self.sender)
+        return u"[{0}] [{1}] ({2})".format(self.participant, self.experiment_session, self.sender)
 
     def to_dict(self, signup_count):
         experiment_session = self.experiment_session

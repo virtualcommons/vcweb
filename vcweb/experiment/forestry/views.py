@@ -159,7 +159,8 @@ def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
         if current_round.is_debriefing_round:
             if previous_round.is_practice_round:
                 rounds = experiment.round_data_set.filter(
-                    round_configuration__round_type=RoundConfiguration.RoundType.PRACTICE)
+                    round_configuration__round_type__in=(RoundConfiguration.RoundType.PRACTICE,
+                                                         RoundConfiguration.RoundType.PRIVATE_PRACTICE))
             else:
                 rounds = experiment.round_data_set.filter(
                     round_configuration__round_type=RoundConfiguration.RoundType.REGULAR)
