@@ -1478,7 +1478,7 @@ class Experiment(models.Model):
         logger.debug("%s STARTING ROUND (sender: %s)", self, sender)
         self.status = Experiment.Status.ROUND_IN_PROGRESS
         current_round_configuration = self.current_round
-        if current_round_configuration.randomize_groups or not self.group_set.exists():
+        if self.should_allocate_groups(current_round_configuration):
             self.allocate_groups(current_round_configuration)
         # XXX: must create round data AFTER group allocation so that any participant round data values
         # (participant ready parameters for instance) are associated with the correct participant group
@@ -1492,6 +1492,22 @@ class Experiment(models.Model):
             sender = intern(self.experiment_metadata.namespace.encode('utf8'))
         return signals.round_started.send_robust(sender, experiment=self, time=datetime.now(),
                                                  round_configuration=current_round_configuration)
+
+    def should_allocate_groups(self, round_configuration=None):
+        if round_configuration is None:
+            round_configuration = self.current_round
+        if not self.group_set.exists():
+            # if no group exists, always create one
+            # FIXME: revisit this assumption
+            return True
+        if round_configuration.randomize_groups:
+            # this round has been specced to randomize groups, check if it is a repeating round first.
+            if round_configuration.is_repeating_round:
+                # if this is a repeating round, only randomize groups on the first iteration
+                return self.current_repeated_round_sequence_number == 0
+            else:
+                return True
+        return False
 
     def stop_round(self, sender=None, **kwargs):
         return self.end_round()
@@ -1587,7 +1603,6 @@ class Experiment(models.Model):
     def to_dict(self, include_round_data=False, default_value_dict=None, attrs=None, *args, **kwargs):
         experiment_dict = dict(default_value_dict or {}, **kwargs)
         start_time = self.current_round_start_time.strftime('%c') if self.current_round_start_time else 'N/A'
-        logger.debug("Time remaining: %s", self.time_remaining)
         experiment_dict.update({
             'roundStatusLabel': self.status_label,
             'roundSequenceLabel': self.sequence_label,
