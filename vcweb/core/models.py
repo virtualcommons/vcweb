@@ -216,9 +216,9 @@ class ParameterValueMixin(object):
             # isn't set, e.g., int_value=1 | boolean_value=True | float_value=0.5
             k, v = kwargs.popitem()
             if '_value' not in k:
-                logger.error(
-                    "Invalid attribute accessor found, trying to set %s.%s=%s. Use 'int_value', 'float_value', 'boolean_value', or 'string_value'",
-                    pv, k, v)
+                logger.error("""Invalid attribute accessor found, trying to set %s.%s=%s.
+                             Use 'int_value', 'float_value', 'boolean_value', or 'string_value'""",
+                             pv, k, v)
                 raise ValueError("Invalid attribute accessor {0}".format(k))
             setattr(pv, k, v)
             pv.save()
@@ -950,6 +950,10 @@ class Experiment(models.Model):
         return self.cached_round
 
     @property
+    def current_round_configuration(self):
+        return self.current_round
+
+    @property
     def current_round_data(self):
         return self.get_round_data(round_configuration=self.current_round)
 
@@ -1317,16 +1321,24 @@ class Experiment(models.Model):
         if not file_ext.startswith('.'):
             file_ext = '.' + file_ext
         return "{0}_{1}_{2}{3}".format(slugify(self.experiment_metadata.title), self.pk,
-                                   datetime.now().strftime("%m-%d-%Y-%H%M"), file_ext)
+                                       datetime.now().strftime("%m-%d-%Y-%H%M"), file_ext)
 
     def parameters(self, scope=None):
         parameter_set = self.experiment_metadata.parameters
         return parameter_set.filter(scope=scope) if scope else parameter_set
 
     @transaction.atomic
-    def allocate_groups(self, randomize=True, preserve_existing_groups=False, session_id=u''):
+    def allocate_groups(self, round_configuration=None, randomize=True):
+        if round_configuration is None:
+            round_configuration = self.current_round
+        preserve_existing_groups = round_configuration.preserve_existing_groups
+        session_id = round_configuration.session_id or u''
         # clear out all existing groups
-        max_group_size = self.experiment_configuration.max_group_size
+        # cap max group size at 1
+        max_group_size = 1
+        if not round_configuration.is_private_practice_round:
+            max_group_size = self.experiment_configuration.max_group_size
+
         participants = list(self.participant_set.all())
         logger.debug("%s allocating groups for %s with session_id %s (randomize? %s)",
                      self, participants, session_id, randomize)
@@ -1342,14 +1354,11 @@ class Experiment(models.Model):
                 # initialize session_id to round configuration session_id if
                 # unset, abort if none can be found
                 if not session_id:
-                    round_configuration = self.current_round
-                    session_id = round_configuration.session_id
-                    if not session_id:
-                        logger.error("Cannot create a new set of groups because no session id has been set on %s.",
-                                     round_configuration)
-                        raise ValueError(
-                            "Cannot preserve existing groups without round_configuration.session id {0}".format(
-                                round_configuration))
+                    logger.error("Cannot create a new set of groups because no session id has been set on %s.",
+                                 round_configuration)
+                    raise ValueError(
+                        "Cannot preserve existing groups without round_configuration.session id {0}".format(
+                            round_configuration))
             else:
                 logger.debug("deleting existing groups")
                 # FIXME: fairly expensive operation to log all group members
@@ -1361,15 +1370,15 @@ class Experiment(models.Model):
         # existing groups, if any, should have been handled. now allocate participants to fresh groups
         current_group = self.group_set.create(number=1, max_size=max_group_size, session_id=session_id)
         for p in participants:
-            # create a new group
+            # group.add_participant will create a new group as needed if the current one becomes full.
+            # pgr.group always refers to the next group to be filled
             pgr = current_group.add_participant(p)
             current_group = pgr.group
-        # Groups have all been populated. Check to see if group clusters should be created now to share data and
-        # resources across multiple groups.
-        self.create_group_clusters()
+        # Groups have all been populated. Check if group clusters should be created to share data across multiple
+        # groups.
+        self.create_group_clusters(round_configuration)
 
-    def create_group_clusters(self):
-        round_configuration = self.current_round
+    def create_group_clusters(self, round_configuration):
         session_id = round_configuration.session_id
         if round_configuration.create_group_clusters:
             logger.debug("deleting existing group clusters and creating anew with session id %s", session_id)
@@ -1404,7 +1413,7 @@ class Experiment(models.Model):
             action = getattr(self, action_name)
             return action()
         else:
-            self.log("Experimenter {0} tried to invoke invalid action {1} on {2}".format(experimenter, action_name, self))
+            self.log("{0} invoked invalid action {1} on {2}".format(experimenter, action_name, self))
 
     def advance_to_next_round(self):
         if self.is_round_in_progress:
@@ -1470,9 +1479,7 @@ class Experiment(models.Model):
         self.status = Experiment.Status.ROUND_IN_PROGRESS
         current_round_configuration = self.current_round
         if current_round_configuration.randomize_groups or not self.group_set.exists():
-            self.allocate_groups(
-                preserve_existing_groups=current_round_configuration.preserve_existing_groups,
-                session_id=current_round_configuration.session_id)
+            self.allocate_groups(current_round_configuration)
         # XXX: must create round data AFTER group allocation so that any participant round data values
         # (participant ready parameters for instance) are associated with the correct participant group
         # relationships.
@@ -1657,7 +1664,8 @@ class RoundConfiguration(ParameterValueMixin, models.Model):
         ('CHAT', _('Communication round')),
         ('DEBRIEFING', _('Debriefing round summary')),
         ('INSTRUCTIONS', _('Instructions')),
-        ('PRACTICE', _('Practice round')),
+        ('PRIVATE_PRACTICE', _('Private practice round')),
+        ('PRACTICE', _('Group practice round')),
         ('QUIZ', _('Quiz round')),
         ('SURVEY', _('Survey round')),
     )
@@ -1665,7 +1673,7 @@ class RoundConfiguration(ParameterValueMixin, models.Model):
 
     experiment_configuration = models.ForeignKey(ExperimentConfiguration, related_name='round_configuration_set')
     sequence_number = models.PositiveIntegerField(
-        help_text=_('Determines the ordering of the rounds in an experiment in ascending order, e.g., 1,2,3,4,5. Must be 1-based'))
+        help_text=_('1-based ascending sequence number used to determine experiment round order, e.g., 1,2,3,4,5.'))
     display_number = models.PositiveIntegerField(
         default=0,
         help_text=_('Display round number, defaults to sequence_number if 0.'))
@@ -1753,6 +1761,10 @@ class RoundConfiguration(ParameterValueMixin, models.Model):
     @property
     def is_quiz_round(self):
         return self.round_type == RoundConfiguration.RoundType.QUIZ
+
+    @property
+    def is_private_practice_round(self):
+        return self.round_type == RoundConfiguration.RoundType.PRIVATE_PRACTICE
 
     @property
     def is_practice_round(self):
@@ -2303,8 +2315,10 @@ class ExperimentGroup(models.Model, DataValueMixin):
         return ParticipantRoundDataValue.objects.filter(**criteria)
 
     def create_next_group(self):
-        return ExperimentGroup.objects.create(number=self.number + 1, max_size=self.max_size, experiment=self.experiment,
-                                    session_id=self.session_id)
+        return ExperimentGroup.objects.create(number=self.number + 1,
+                                              max_size=self.max_size,
+                                              experiment=self.experiment,
+                                              session_id=self.session_id)
 
     def add_participant(self, participant=None):
         """

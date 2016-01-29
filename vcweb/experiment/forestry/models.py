@@ -19,27 +19,37 @@ def get_resource_level_dv(group, round_data=None, default=MAX_RESOURCE_LEVEL):
 
 
 def get_resource_level(group, round_data=None, **kwargs):
-    """ returns the group resource level data value scalar """
+    """ return the group resource level data value scalar """
     return get_resource_level_dv(group, round_data=round_data, **kwargs).int_value
 
 
 def get_group_harvest_dv(group, round_data=None):
-    """ returns the collective group harvest data value """
+    """
+    return the collective group harvest (total number of resources harvested by all members in the group) as a
+    DataValue
+    """
     return group.get_data_value(parameter=get_group_harvest_parameter(), round_data=round_data)
 
 
 def get_group_harvest(group, round_data=None):
-    """ returns the collective group harvest data value """
+    """
+    return the collective group harvest (total number of resources harvested by all members in the group) as an
+    integer
+    """
     return group.get_data_value(parameter=get_group_harvest_parameter(), round_data=round_data).int_value
 
 
 def get_regrowth_dv(group, round_data=None):
+    """
+    return the number of resources regenerated for the given group in the given round as a DataValue
+    """
     return group.get_data_value(parameter=get_regrowth_parameter(), round_data=round_data, default=0)
 
 
-# returns the number of resources regenerated for the given group in the
-# given round
 def get_regrowth(group, round_data=None):
+    """
+    return the number of resources regenerated for the given group in the given round as an integer
+    """
     return group.get_data_value(parameter=get_regrowth_parameter(), round_data=round_data, default=0).int_value
 
 
@@ -74,8 +84,7 @@ def can_view_group_results(round_configuration, default=True):
     return round_configuration.get_parameter_value(name='view_group_results', default=default, inheritable=True)
 
 
-# FIXME: Boundry Effects Experiment also uses this and has a duplicate
-# version in bound/models.py
+# FIXME: duplicate version in Boundary Effects bound/models.py, see if we can refactor
 def should_reset_resource_level(round_configuration, experiment):
     if round_configuration.is_repeating_round and experiment.current_repeated_round_sequence_number > 0:
         return False
@@ -132,8 +141,9 @@ def _daniel_decaro_max_harvest_function(resource_level):
         return 0
 
 
-
 def _max_harvest_decision_function(treatment_id, resource_level):
+    # FIXME: horrible hackiness, figure out how to embed different max harvest functions for different treatments
+    # https://github.com/virtualcommons/vcweb/issues/105
     if 'daniel.decaro' in treatment_id:
         return _daniel_decaro_max_harvest_function(resource_level)
     return _default_max_harvest_decision(resource_level)
@@ -327,8 +337,7 @@ def round_started_handler(sender, experiment=None, **kwargs):
 
     # initialize group, group cluster, and participant data values
     experiment.initialize_data_values(
-        group_parameters=(get_regrowth_parameter(
-        ), get_group_harvest_parameter(), get_resource_level_parameter()),
+        group_parameters=(get_regrowth_parameter(), get_group_harvest_parameter(), get_resource_level_parameter()),
         defaults={
             get_regrowth_parameter(): 0
         }

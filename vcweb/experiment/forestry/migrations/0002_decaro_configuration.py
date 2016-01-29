@@ -7,7 +7,8 @@ from django.db import models, migrations
 def add_round(cfg,
               round_type=None, sequence_number=None, template_id=None, repeat=0, duration=45, session_id='',
               preserve_existing_groups=True, randomize_groups=False, chat_enabled=False, survey_url=None,
-              initialize_data_values=False):
+              initialize_data_values=False,
+              **kwargs):
     if sequence_number is None:
         sequence_number = cfg.round_configuration_set.count() + 1
     if template_id is None:
@@ -24,6 +25,7 @@ def add_round(cfg,
         chat_enabled=chat_enabled,
         survey_url=survey_url,
         initialize_data_values=initialize_data_values,
+        **kwargs
     )
 
 
@@ -58,8 +60,8 @@ def create_forestry_configuration(apps, schema_editor):
 
     add_round(cfg, round_type='WELCOME', sequence_number=1, duration=0)
     add_round(cfg, round_type='GENERAL_INSTRUCTIONS', sequence_number=2, duration=0)
-    practice_round = add_round(cfg, round_type='PRACTICE', sequence_number=3, repeat=3, initialize_data_values=True,
-                               duration=0)
+    practice_round = add_round(cfg, round_type='PRIVATE_PRACTICE', template_id='PRACTICE', sequence_number=3, repeat=3,
+                               initialize_data_values=True, randomize_groups=True, duration=0)
     reset_resource_level(practice_round)
 # Phase one, NC
     add_round(cfg, round_type='DEBRIEFING', sequence_number=4, template_id='PRACTICE_ROUND_RESULTS', duration=0)
