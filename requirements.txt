@@ -1,13 +1,13 @@
-Django==1.8.8
+Django==1.9.1
 Fabric==1.10.2
 Markdown==2.6.5
 PyYAML==3.11
 coverage==4.0.3
-django-autocomplete-light==2.2.10
+django-autocomplete-light==2.3.3
 django-bootstrap3==6.2.2
-django-contact-form==1.1
+django-contact-form==1.2
 django-extensions==1.6.1
-django-kronos==0.8
+django-kronos==0.9
 django-localflavor==1.2
 django-model-utils==2.4
 django-mptt==0.8.0
@@ -22,7 +22,7 @@ psycopg2==2.6.1
 pycrypto==2.6.1
 python-coveralls==2.6.0
 python-openid==2.2.5
-raven==5.9.2
+raven==5.10.2
 requests==2.9.1
 sockjs-tornado==1.0.2
 tornado==4.3
