@@ -6,7 +6,7 @@ from django.db import migrations
 
 def add_round(cfg,
               round_type=None, sequence_number=None, template_id=None, repeat=0, duration=45, session_id='',
-              preserve_existing_groups=True, randomize_groups=False, chat_enabled=False, survey_url=None,
+              preserve_existing_groups=True, randomize_groups=False, chat_enabled=False, survey_url='',
               initialize_data_values=False,
               **kwargs):
     if sequence_number is None:
