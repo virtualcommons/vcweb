@@ -70,7 +70,7 @@ urlpatterns = [
     url(r'^api/experimenter/save-notes', save_experimenter_notes, name='save_experimenter_notes'),
     url(r'^api/experimenter/round-data', get_round_data, name='get_round_data'),
     url(r'^api/dashboard', get_dashboard_view_model, name='dashboard_view_model'),
-    url(r'bug-report', RedirectView.as_view(url='https://bitbucket.org/virtualcommons/vcweb/issues/new'),
+    url(r'bug-report', RedirectView.as_view(url='https://github.com/virtualcommons/vcweb/issues/new'),
         name='report_issues'),
     # url(r'bug-report', BugReportFormView.as_view(), name='report_issues'),
     # match arbitrary experiment URL prefix fragments for logging / login /
