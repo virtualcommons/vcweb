@@ -18,6 +18,10 @@ from django.views.generic import FormView, TemplateView, ListView
 from django.views.generic.detail import SingleObjectMixin
 from django.views.decorators.http import require_GET, require_POST
 
+from rest_framework import viewsets
+from .serializers import ExperimentSerializer
+from .permissions import CanEditExperiment
+
 from contact_form.views import ContactFormView
 
 from .api import SUCCESS_DICT, FAILURE_DICT, create_message_event
@@ -362,14 +366,12 @@ class SingleExperimentMixin(SingleObjectMixin):
 
     def get_object(self, queryset=None):
         pk = self.kwargs.get('pk', None)
-        experiment = get_object_or_404(
-            Experiment.objects.select_related('experiment_metadata', 'experiment_configuration', 'experimenter'), pk=pk)
+        experiment = get_object_or_404(Experiment.objects.select_related('experiment_metadata', 'experiment_configuration', 'experimenter'), pk=pk)
         user = self.request.user
         if self.can_access_experiment(user, experiment):
             return experiment
         else:
-            logger.warning(
-                "unauthorized access by user %s to experiment %s", user, experiment)
+            logger.warning("unauthorized access by user %s to experiment %s", user, experiment)
             raise PermissionDenied("You do not have access to %s" % experiment)
 
 
@@ -390,8 +392,7 @@ class ExperimenterSingleExperimentView(ExperimenterSingleExperimentMixin, Templa
     def get(self, request, **kwargs):
         self.experiment = self.object = self.get_object()
         self.process()
-        context = self.get_context_data(object=self.object)
-        return self.render_to_response(context)
+        return self.render_to_response(self.get_context_data())
 
 
 @group_required(PermissionGroup.experimenter, PermissionGroup.demo_experimenter)
@@ -433,7 +434,7 @@ class BaseExperimentRegistrationView(ExperimenterSingleExperimentMixin, FormView
         # sets initial values for several form fields in the register participants form
         # based on the experiment
         _initial = super(BaseExperimentRegistrationView, self).get_initial()
-        experiment = self.object
+        experiment = self.get_object()
         _initial.update(
             registration_email_from_address=experiment.experimenter.email,
             experiment_password=experiment.authentication_code,
@@ -444,16 +445,15 @@ class BaseExperimentRegistrationView(ExperimenterSingleExperimentMixin, FormView
         return _initial
 
     def form_valid(self, form):
-        experiment = self.object
-        experiment.authentication_code = form.cleaned_data.get(
-            'experiment_password')
+        experiment = self.get_object()
+        experiment.authentication_code = form.cleaned_data.get('experiment_password')
         for field in ('start_date', 'registration_email_subject', 'registration_email_text'):
             setattr(experiment, field, form.cleaned_data.get(field))
         experiment.save()
         return super(BaseExperimentRegistrationView, self).form_valid(form)
 
     def get_success_url(self):
-        return reverse('core:monitor_experiment', kwargs={'pk': self.object.pk})
+        return reverse('core:monitor_experiment', kwargs={'pk': self.get_object().pk})
 
 
 class RegisterEmailListView(BaseExperimentRegistrationView):
@@ -467,7 +467,7 @@ class RegisterEmailListView(BaseExperimentRegistrationView):
         institution = form.cleaned_data.get('institution')
         sender = form.cleaned_data.get('sender')
         from_email = form.cleaned_data.get('registration_email_from_address')
-        experiment = self.object
+        experiment = self.get_object()
         logger.debug("registering participants %s at institution %s for experiment %s", emails, institution,
                      experiment)
         experiment.register_participants(emails=emails, institution=institution,
@@ -475,6 +475,14 @@ class RegisterEmailListView(BaseExperimentRegistrationView):
                                          sender=sender, from_email=from_email,
                                          send_email=send_email)
         return valid
+
+
+class ExperimentRegistrationViewset(viewsets.ModelViewSet):
+    serializer_class = ExperimentSerializer
+    permission_classes = [CanEditExperiment]
+    
+    def get_queryset(self):
+        return Experiment.objects.viewable(self.request.user)
 
 
 class RegisterTestParticipantsView(BaseExperimentRegistrationView):
@@ -489,7 +497,7 @@ class RegisterTestParticipantsView(BaseExperimentRegistrationView):
             username_suffix = form.cleaned_data.get('username_suffix')
             email_suffix = form.cleaned_data.get('email_suffix')
             institution = form.cleaned_data.get('institution')
-            experiment = self.object
+            experiment = self.get_object()
             experiment.setup_demo_participants(count=number_of_participants,
                                                institution=institution,
                                                email_suffix=email_suffix,

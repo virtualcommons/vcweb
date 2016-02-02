@@ -746,7 +746,9 @@ class Experiment(models.Model):
         ('INACTIVE', _('Not active')),
         ('ACTIVE', _('Active, no round in progress')),
         ('ROUND_IN_PROGRESS', _('Round in progress')),
-        ('COMPLETED', _('Completed')))
+        ('COMPLETED', _('Completed')),
+        ('PUBLISHED', _('Published')),
+    )
     authentication_code = models.CharField(max_length=32, default="vcweb.auth.code")
     """
     currently unused, but kept here in the event that we want to allow participants to authenticate with this
@@ -1032,6 +1034,10 @@ class Experiment(models.Model):
     @property
     def is_completed(self):
         return self.status == Experiment.Status.COMPLETED
+
+    @property
+    def published(self):
+        return self.status == Experiment.Status.PUBLISHED
 
     @property
     def is_public(self):
