@@ -18,7 +18,8 @@ from django.views.generic import FormView, TemplateView, ListView
 from django.views.generic.detail import SingleObjectMixin
 from django.views.decorators.http import require_GET, require_POST
 
-from rest_framework import viewsets
+from rest_framework.decorators import detail_route, list_route
+from rest_framework import viewsets, status, renderers
 from .serializers import ExperimentSerializer
 from .permissions import CanEditExperiment
 
@@ -334,20 +335,6 @@ def update_account_profile(request):
     return JsonResponse({'success': False, 'message': 'Something went wrong. Please try again.'})
 
 
-class ParticipantMixin(object):
-
-    @method_decorator(group_required(PermissionGroup.participant))
-    def dispatch(self, *args, **kwargs):
-        return super(ParticipantMixin, self).dispatch(*args, **kwargs)
-
-
-class ExperimenterMixin(object):
-
-    @method_decorator(group_required(PermissionGroup.experimenter))
-    def dispatch(self, *args, **kwargs):
-        return super(ExperimenterMixin, self).dispatch(*args, **kwargs)
-
-
 class SingleExperimentMixin(SingleObjectMixin):
     model = Experiment
     context_object_name = 'experiment'
@@ -365,7 +352,7 @@ class SingleExperimentMixin(SingleObjectMixin):
         return True
 
     def get_object(self, queryset=None):
-        pk = self.kwargs.get('pk', None)
+        pk = self.kwargs.get('pk')
         experiment = get_object_or_404(Experiment.objects.select_related('experiment_metadata', 'experiment_configuration', 'experimenter'), pk=pk)
         user = self.request.user
         if self.can_access_experiment(user, experiment):
@@ -375,24 +362,16 @@ class SingleExperimentMixin(SingleObjectMixin):
             raise PermissionDenied("You do not have access to %s" % experiment)
 
 
-class ParticipantSingleExperimentMixin(SingleExperimentMixin, ParticipantMixin):
+class ExperimenterSingleExperimentMixin(SingleExperimentMixin):
 
-    def can_access_experiment(self, user, experiment):
-        return experiment.participant_set.filter(participant__user=user).count() == 1
-
-
-class ExperimenterSingleExperimentMixin(SingleExperimentMixin, ExperimenterMixin):
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        self.process()
+        context = self.get_context_data(object=self.object)
+        return self.render_to_response(context)
 
     def can_access_experiment(self, user, experiment):
         return is_experimenter(user, experiment.experimenter)
-
-
-class ExperimenterSingleExperimentView(ExperimenterSingleExperimentMixin, TemplateView):
-
-    def get(self, request, **kwargs):
-        self.experiment = self.object = self.get_object()
-        self.process()
-        return self.render_to_response(self.get_context_data())
 
 
 @group_required(PermissionGroup.experimenter, PermissionGroup.demo_experimenter)
@@ -428,13 +407,15 @@ def monitor(request, pk=None):
     })
 
 
+@method_decorator(group_required(PermissionGroup.experimenter), name='dispatch')
 class BaseExperimentRegistrationView(ExperimenterSingleExperimentMixin, FormView):
 
     def get_initial(self):
         # sets initial values for several form fields in the register participants form
         # based on the experiment
         _initial = super(BaseExperimentRegistrationView, self).get_initial()
-        experiment = self.get_object()
+        experiment = self.object
+        logger.debug("SETTING OBJECT %s", self.object)
         _initial.update(
             registration_email_from_address=experiment.experimenter.email,
             experiment_password=experiment.authentication_code,
@@ -477,10 +458,23 @@ class RegisterEmailListView(BaseExperimentRegistrationView):
         return valid
 
 
-class ExperimentRegistrationViewset(viewsets.ModelViewSet):
+class ManageExperimentViewSet(viewsets.ModelViewSet):
     serializer_class = ExperimentSerializer
     permission_classes = [CanEditExperiment]
-    
+    renderer_classes = (renderers.TemplateHTMLRenderer, renderers.JSONRenderer)
+
+
+    @detail_route(methods=['post'])
+    def submit_register_test_participants(self, request, pk=None):
+        experiment = self.get_object()
+        serializer = ExperimentRegistrationSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'success': True})
+        else:
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+
     def get_queryset(self):
         return Experiment.objects.viewable(self.request.user)
 

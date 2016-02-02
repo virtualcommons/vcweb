@@ -1039,6 +1039,9 @@ class Experiment(models.Model):
     def published(self):
         return self.status == Experiment.Status.PUBLISHED
 
+    def is_editable_by(self, user):
+        return self.experimenter.user == user
+
     @property
     def is_public(self):
         return self.experiment_configuration.is_public

@@ -4,8 +4,11 @@ from django.conf.urls import url
 from django.contrib.auth.decorators import login_required
 from django.views.generic import RedirectView, TemplateView
 
+from rest_framework import routers
+
 from .api import (get_round_data, save_experimenter_notes, create_experiment, clone_experiment, is_email_available,
                   handle_chat_message, check_ready_participants, participant_ready, )
+from . import views
 from .views import (dashboard, LoginView, LogoutView, monitor, RegisterEmailListView, RegisterTestParticipantsView,
                     completed_survey, toggle_bookmark_experiment_metadata, check_survey_completed, ParticipateView,
                     download_data, download_participants, export_configuration, get_dashboard_view_model,
@@ -79,3 +82,6 @@ urlpatterns = [
     # url(r'api/login', participant_api_login, name='participant_api_login'),
     # url(r'api/logout', api_logout, name='api_logout'),
 ]
+
+router = routers.DefaultRouter(trailing_slash=False)
+router.register(r'experiments', views.ManageExperimentViewSet, base_name='experiment')
