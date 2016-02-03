@@ -99,7 +99,7 @@ def get_round_data(request):
     ]
     participant_data_values = [
         pdv.to_dict(include_email=True, cacheable=True)
-        for pdv in round_data.get_participant_data_values().exclude(parameter=get_chat_message_parameter())
+        for pdv in round_data.get_participant_data_values(is_active=True).exclude(parameter=get_chat_message_parameter())
     ]
     return JsonResponse({
         'groupDataValues': group_data_values,

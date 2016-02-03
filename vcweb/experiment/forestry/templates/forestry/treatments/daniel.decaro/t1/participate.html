@@ -409,7 +409,7 @@ Raise your hand if you have a question, and the experimenter will come over to y
 
 </script>
 <script type='text/html' id='PHASE_TWO_INSTRUCTIONS'>
-<div data-bind='ifnot: surveyCompleted'>
+<div data-bind='ifnot: isSurveyCompleted'>
     <h2>Survey</h2>
     <p>We would like to ask you some questions before we continue to the next round.</p>
     <div class='qualtrics-survey'>
@@ -419,7 +419,7 @@ Raise your hand if you have a question, and the experimenter will come over to y
     </div>
     <p>If you have any questions, or have trouble accessing the survey, please let the experimenter know.</p>
 </div>
-<div data-bind='if: surveyCompleted'>
+<div data-bind='if: isSurveyCompleted'>
 <h3>A New Forest</h3>
 <p>
 <strong>Please read the following instructions carefully!</strong>
@@ -534,7 +534,7 @@ We will now move on to <span data-bind='text: chatDurationInMinutes'></span> min
 </ul>
 </script>
 <script type='text/html' id='PHASE_THREE_INSTRUCTIONS'>
-<div data-bind='ifnot: surveyCompleted'>
+<div data-bind='ifnot: isSurveyCompleted'>
     <h2>Survey</h2>
     <p>We would like to ask you some questions before we continue to the next round.</p>
     <div class='qualtrics-survey'>
@@ -544,7 +544,7 @@ We will now move on to <span data-bind='text: chatDurationInMinutes'></span> min
     </div>
     <p>If you have any questions, or have trouble accessing the survey, please let the experimenter know.</p>
 </div>
-<div data-bind='if: surveyCompleted'>
+<div data-bind='if: isSurveyCompleted'>
     <h3>No Group Chat</h3>
     <p>
     <strong>From this point forward, you will NOT be able to communicate with your group members.</strong>
@@ -589,7 +589,7 @@ Rate table), and the maximum possible harvest will be the same rate as before (s
 </ul>
 </script>
 <script type='text/html' id='FINAL_DEBRIEFING'>
-<div data-bind='ifnot: surveyCompleted'>
+<div data-bind='ifnot: isSurveyCompleted'>
     <h2>Survey</h2>
     <p>The experiment is now over. Please fill out this final survey while we prepare your payments. Thank you for
     participating.</p>
@@ -600,7 +600,7 @@ Rate table), and the maximum possible harvest will be the same rate as before (s
     </div>
     <p>If you have any questions, or have trouble accessing the survey, please let the experimenter know.</p>
 </div>
-<div data-bind='if: surveyCompleted'>
+<div data-bind='if: isSurveyCompleted'>
     <h2>Experiment Concluded</h2>
     <p>
         Thank you for participating!
@@ -915,14 +915,14 @@ Rate table), and the maximum possible harvest will be the same rate as before (s
             }
             model.checkSurveyCompleted = function(response) {
                 var surveyCompleted = response.survey_completed;
-                model.surveyCompleted(surveyCompleted);
+                model.isSurveyCompleted(surveyCompleted);
                 if (surveyCompleted) {
                     model.clearCurrentInterval();
                     model.showPostSurveyInstructions();
                 }
             }
             model.showPostSurveyInstructions = function() {
-                if (! model.surveyCompleted()) {
+                if (! model.isSurveyCompleted()) {
                     return;
                 }
                 model.clearCurrentInterval();

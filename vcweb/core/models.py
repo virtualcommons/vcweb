@@ -2458,10 +2458,10 @@ class RoundData(models.Model):
     elapsed_time = models.PositiveIntegerField(default=0)
     experimenter_notes = models.TextField(blank=True)
 
-    def get_participant_data_values(self, select_related_list=None):
+    def get_participant_data_values(self, select_related_list=None, **kwargs):
         if select_related_list is None:
             select_related_list = ['participant_group_relationship__participant__user', 'parameter']
-        return self.participant_data_value_set.select_related(*select_related_list)
+        return self.participant_data_value_set.select_related(*select_related_list).filter(**kwargs)
 
     @property
     def round_number(self):
