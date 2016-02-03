@@ -77,7 +77,7 @@ def create_forestry_configuration(apps, schema_editor):
 # reset resource level again
     reset_resource_level(phase_one_part_two)
     # Survey 1 and Phase 2, C
-    add_round(cfg, round_type='INSTRUCTIONS', sequence_number=8, survey_url='http://louisville.az1.qualtrics.com/SE/?SID=SV_0BSEhpRIzeZi501',
+    add_round(cfg, round_type='INSTRUCTIONS', sequence_number=8, survey_url='https://louisville.az1.qualtrics.com/SE/?SID=SV_0BSEhpRIzeZi501',
               template_id='PHASE_TWO_INSTRUCTIONS', duration=0)
     # dedicated 5 minute communication round
     add_round(cfg, round_type='CHAT', sequence_number=9, template_id='COMMUNICATION', chat_enabled=True, duration=300)
@@ -92,7 +92,7 @@ def create_forestry_configuration(apps, schema_editor):
     reset_resource_level(phase_two_part_two)
 
     # Survey 2 and Phase 3, NC/C
-    add_round(cfg, round_type='INSTRUCTIONS', sequence_number=14, survey_url='http://louisville.az1.qualtrics.com/SE/?SID=SV_eWi6whndxg1wQjr',
+    add_round(cfg, round_type='INSTRUCTIONS', sequence_number=14, survey_url='https://louisville.az1.qualtrics.com/SE/?SID=SV_eWi6whndxg1wQjr',
               template_id='PHASE_THREE_INSTRUCTIONS', duration=0)
     phase_three_part_one = add_round(cfg, round_type='REGULAR', sequence_number=15, repeat=6,
                                      initialize_data_values=True, duration=45)
@@ -105,7 +105,7 @@ def create_forestry_configuration(apps, schema_editor):
     reset_resource_level(phase_three_part_two)
 
     # Survey three and final debriefing
-    add_round(cfg, round_type='DEBRIEFING', sequence_number=18, survey_url='http://louisville.az1.qualtrics.com/SE/?SID=SV_5dQLvcx7XMiQnpH',
+    add_round(cfg, round_type='DEBRIEFING', sequence_number=18, survey_url='https://louisville.az1.qualtrics.com/SE/?SID=SV_5dQLvcx7XMiQnpH',
               template_id='FINAL_DEBRIEFING', duration=0)
 
 
