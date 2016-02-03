@@ -880,7 +880,7 @@ class Experiment(models.Model):
 
     @property
     def participant_group_relationships(self):
-        return ParticipantGroupRelationship.objects.select_related('group').filter(group__in=self.groups)
+        return ParticipantGroupRelationship.objects.select_related('group').filter(group__experiment=self)
 
     @property
     def display_name(self):
@@ -2735,7 +2735,9 @@ class ParticipantGroupRelationship(models.Model, DataValueMixin):
     active = models.BooleanField(default=True)
     first_visit = models.BooleanField(default=True)
     notifications_since = models.DateTimeField(default=datetime.now, null=True, blank=True)
-    survey_completed = models.BooleanField(default=False)
+    survey_completed = models.BooleanField(
+        default=False,
+        help_text=_("Flag signifying that a survey was completed, automatically reset to False at the end of every round."))
 
     objects = ParticipantGroupRelationshipQuerySet.as_manager()
 
@@ -2762,6 +2764,7 @@ class ParticipantGroupRelationship(models.Model, DataValueMixin):
     def group_number(self):
         return self.group.number
 
+    @transaction.atomic
     def set_first_visit(self):
         fv = self.first_visit
         if fv:
@@ -2769,11 +2772,11 @@ class ParticipantGroupRelationship(models.Model, DataValueMixin):
             self.save()
         return fv
 
+    @transaction.atomic
     def set_participant_ready(self, round_data=None):
         if round_data is None:
             round_data = self.current_round_data
-        dv = self.get_data_value(
-            parameter=get_participant_ready_parameter(), round_data=round_data)
+        dv = self.get_data_value(parameter=get_participant_ready_parameter(), round_data=round_data)
         dv.submitted = True
         dv.boolean_value = True
         dv.save()

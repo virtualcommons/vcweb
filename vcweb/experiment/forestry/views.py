@@ -98,6 +98,8 @@ experiment_model_defaults = {
     'groupData': [],
     'regrowth': 0,
     'isPlayableRound': False,
+    'isSurveyEnabled': False,
+    'isSurveyCompleted': False,
 }
 
 
@@ -109,7 +111,7 @@ def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
     previous_round_data = experiment.get_round_data(round_configuration=previous_round, previous_round=True)
     own_group = participant_group_relationship.group
 
-# FIXME: replace with DRF serializers
+# FIXME: replace this spaghetti with DRF serializers
     experiment_model_dict = experiment.to_dict(include_round_data=False, default_value_dict=experiment_model_defaults)
     experiment_model_dict['sessionId'] = current_round.session_id
     experiment_model_dict['maxHarvestDecision'] = get_max_harvest_decision(participant_group_relationship.group,
@@ -119,17 +121,18 @@ def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
     experiment_model_dict['showTour'] = current_round.is_practice_round and not previous_round.is_practice_round
     experiment_model_dict['participantGroupId'] = participant_group_relationship.pk
     experiment_model_dict['participantsPerGroup'] = ec.max_group_size
-    experiment_model_dict['chatEnabled'] = current_round.chat_enabled
     experiment_model_dict['dollarsPerTree'] = ec.exchange_rate
+    experiment_model_dict['initialResourceLevel'] = get_initial_resource_level(current_round)
 
     # instructions round parameters
     experiment_model_dict['isInstructionsRound'] = current_round.is_instructions_round
     if current_round.is_instructions_round:
         # experiment_model_dict['regrowthRate'] = regrowth_rate
-        experiment_model_dict['initialResourceLevel'] = get_initial_resource_level(current_round)
         experiment_model_dict['nextRoundDuration'] = experiment.next_round.duration
 
     if current_round.is_survey_enabled:
+        experiment_model_dict['isSurveyEnabled'] = True
+        experiment_model_dict['isSurveyCompleted'] = participant_group_relationship.survey_completed
         experiment_model_dict['surveyUrl'] = current_round.build_survey_url(pid=participant_group_relationship.pk)
         logger.debug("setting survey to %s", experiment_model_dict['surveyUrl'])
 
@@ -141,6 +144,7 @@ def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
         # Create GroupData object to access group members data
         gd = GroupData(participant_group_relationship, previous_round_data, current_round_data)
 
+        # add own data directly to the experiment model
         experiment_model_dict.update(gd.get_own_data())
         # Data of all the players in the same group of current logged in
         # participant
@@ -156,17 +160,15 @@ def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
         }
         # If current round is debriefing round get the earnings of the participant depending upon the
         # type of round user completed
-        if current_round.is_debriefing_round:
-            if previous_round.is_practice_round:
-                rounds = experiment.round_data_set.filter(
-                    round_configuration__round_type__in=(RoundConfiguration.RoundType.PRACTICE,
-                                                         RoundConfiguration.RoundType.PRIVATE_PRACTICE))
-            else:
-                rounds = experiment.round_data_set.filter(
-                    round_configuration__round_type=RoundConfiguration.RoundType.REGULAR)
-
-            experiment_model_dict['totalEarnings'] = gd.get_own_earnings(rounds, ec.exchange_rate)
-            experiment_model_dict['groupEarnings'] = gd.get_group_earnings(rounds, ec.exchange_rate)
+        if previous_round.is_practice_round:
+            rounds = experiment.round_data_set.filter(
+                round_configuration__round_type__in=(RoundConfiguration.RoundType.PRACTICE,
+                                                     RoundConfiguration.RoundType.PRIVATE_PRACTICE))
+        else:
+            rounds = experiment.round_data_set.filter(
+                round_configuration__round_type=RoundConfiguration.RoundType.REGULAR)
+        experiment_model_dict['totalEarnings'] = gd.get_own_earnings(rounds, ec.exchange_rate)
+        experiment_model_dict['groupEarnings'] = gd.get_group_earnings(rounds, ec.exchange_rate)
 
     # Participant group data parameters are only needed if this round is a data round
     # or the previous round was a data round
@@ -180,6 +182,9 @@ def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
             experiment_model_dict['harvestDecision'] = harvest_decision.int_value
             logger.debug("Already submitted, setting harvest decision to %s",
                          harvest_decision.int_value)
+
+    if current_round.chat_enabled:
+        experiment_model_dict['chatEnabled'] = True
         experiment_model_dict['chatMessages'] = [cm.to_dict() for cm in ChatMessage.objects.for_group(own_group)]
 
     return experiment_model_dict

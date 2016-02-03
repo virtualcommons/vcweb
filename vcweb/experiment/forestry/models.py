@@ -183,6 +183,7 @@ class GroupData(object):
         self.pgr = self_pgr
         self.group = self_pgr.group
         self.player_dict = defaultdict(lambda: defaultdict(lambda: None))
+        self.exchange_rate = current_round_data.round_configuration.experiment_configuration.exchange_rate
 
         prdvs = ParticipantRoundDataValue.objects.for_group(
             group=self.group,
@@ -205,6 +206,7 @@ class GroupData(object):
                 'number': pgr.participant_number,
                 'lastHarvestDecision': self.get_last_harvest_decision(pgr),
                 'totalHarvest': total_harvest,
+                'totalEarnings': total_harvest * self.exchange_rate
             })
 
     def get_last_harvest_decision(self, pgr):
@@ -225,6 +227,13 @@ class GroupData(object):
 
     def get_group_data(self):
         return self.group_data
+
+    def get_total_harvest(self, pgr):
+        for player_data in self.group_data:
+            if player_data['id'] == pgr.pk:
+                return player_data['totalHarvest']
+        logger.warning("No total harvest found for pgr %s", pgr)
+        return 0
 
     def get_own_data(self):
         for player_data in self.group_data:

@@ -269,7 +269,8 @@ then decide how many trees you would like to harvest. If you have any questions,
 <script type='text/html' id='PRACTICE_ROUND_RESULTS'>
     <h3>Practice Round Results</h3>
     <p>
-        If this had been been a paid session, you would have earned <strong class='text-success' data-bind='text: $root.formattedTotalEarnings'></strong>.
+        You harvested a total of <span data-bind='text: totalHarvest'></span> trees. If this had been been a paid
+        session, you would have earned <strong class='text-success' data-bind='text: $root.formattedTotalEarnings'></strong>.
     </p>
     <p>
         We will now move on to the <strong>paid rounds.</strong>
@@ -349,7 +350,7 @@ Please raise your hand if you have a question, and the experimenter will come to
                 <td data-bind='text: number'></td>
                 <td data-bind='text: lastHarvestDecision'></td>
                 <td data-bind='text: totalHarvest'></td>
-                <td data-bind='text: $root.formattedTotalEarnings'></td>
+                <td data-bind='text: formatCurrency(parseFloat(totalEarnings()))'></td>
             </tr>
             </tbody>
         </table>
@@ -408,6 +409,17 @@ Raise your hand if you have a question, and the experimenter will come over to y
 
 </script>
 <script type='text/html' id='PHASE_TWO_INSTRUCTIONS'>
+<div data-bind='ifnot: surveyCompleted'>
+    <h2>Survey</h2>
+    <p>We would like to ask you some questions before we continue to the next round.</p>
+    <div class='qualtrics-survey'>
+        <iframe width="100%" height="800" data-bind='attr: { src: surveyUrl }'>
+            Your browser doesn't appear to support iframes, please <a target='_blank' data-bind='attr: { href: surveyUrl }'>follow this link to take the survey.</a>
+        </iframe>
+    </div>
+    <p>If you have any questions, or have trouble accessing the survey, please let the experimenter know.</p>
+</div>
+<div data-bind='if: surveyCompleted'>
 <h3>A New Forest</h3>
 <p>
 <strong>Please read the following instructions carefully!</strong>
@@ -424,6 +436,7 @@ Rate table), and the maximum possible harvest will be the same rate as before (s
         <a href="javascript: void(0)" data-bind='click: activateTemplate.bind($data, "PHASE_TWO_INSTRUCTIONS_GROUP_CHAT")'>Ok, continue</a>
     </li>
 </ul>
+</div>
 </script>
 <script type='text/html' id='PHASE_TWO_INSTRUCTIONS_GROUP_CHAT'>
 <h3>Group Chat</h3>
@@ -434,7 +447,9 @@ right-hand side of the screen. A text message will then be displayed to all memb
 </p>
 <ul>
 <li>You will be able to chat for <span data-bind='chatDurationInMinutes'></span> minutes, before Round 1 (Year 1).
-<li>You will also be able to chat during the regular <span data-bind='text:nextRoundDuration'></span>-second round, as you select how many trees to harvest.
+{# FIXME: hard-coded 45 second round, nextRoundDuration will be 300 seconds and don't want to make a
+nextNextRoundDuration.. #}
+<li>You will also be able to chat during the regular 45-second round, as you select how many trees to harvest.
 </ul>
 <h4>Guidelines for Communication</h4>
 <p>
@@ -462,13 +477,23 @@ Raise your hand if you have a question, and the experimenter will come over to y
 </script>
 
 <script type='text/html' id='COMMUNICATION'>
-<p>
-<strong>Time Left: </strong> <span data-bind='text: timeRemaining'></span>
-</p>
-<p>
-You have <span data-bind='text: chatDurationInMinutes'></span> minutes to communicate with your group members, if you
-wish.
-</p>
+<div class='row'>
+    <div class='col-md-2'>
+        <div class='alert alert-warning forestry-status-dashboard'>
+            <h4 id='dashboard-time'><i class='fa fa-clock-o' data-toggle='popover' data-content="Seconds left before this round ends."></i> Time</h4>
+            <p>
+            <strong data-bind='css: { "text-error": secondsLeft() < warningCountdownTime(), "text-info": secondsLeft() > warningCountdownTime()}'>
+                <span data-bind='html: secondsLeft'></span>
+            </strong>
+            </p>
+        </div>
+    </div>
+</div>
+<div class='row'>
+    <div class='col-md-10'>
+    You have <span data-bind='text: chatDurationInMinutes'></span> minutes to communicate with your group members.
+    </div>
+</div>
 </script>
 
 <script type='text/html' id='PHASE_TWO_BLOCK_ONE_RESULTS'>
@@ -495,11 +520,12 @@ Raise your hand if you have a question, and the experimenter will come over to y
 communicate with the members of your group, simply type your message(s) in the &quot;Chat&quot; window.
 </p>
 <ul>
-<li>You will have <span data-bind='chatDurationInMinutes'></span> minutes to chat.
-<li>You will also be able to chat during the regular <span data-bind='text:nextRoundDuration'></span>-second round.
+<li>You will have <span data-bind='text: chatDurationInMinutes'></span> minutes to chat.
+{# FIXME: hardcoded 45 seconds, we need the next next round, since next round is 300 second chat round. Either that or have a ExperimentConfiguration default round duration #}
+<li>You will also be able to chat during the regular 45-second round.
 </ul>
 <p>
-We will now move on to <span data-bind='chatDurationInMinutes'></span> minutes of communication.
+We will now move on to <span data-bind='text: chatDurationInMinutes'></span> minutes of communication.
 </p>
 <ul class='pager'>
     <li class='next'>
@@ -508,29 +534,41 @@ We will now move on to <span data-bind='chatDurationInMinutes'></span> minutes o
 </ul>
 </script>
 <script type='text/html' id='PHASE_THREE_INSTRUCTIONS'>
-<h3>No Group Chat</h3>
-<p>
-<strong>From this point forward, you will NOT be able to communicate with your group members.</strong>
-</p>
-<p>
-We will now move on to the next round of the Forest Task.
-</p>
-<h3>A New Forest</h3>
-<p>
-<strong>Please read the following instructions carefully!</strong>
-</p>
-<p>
-<strong>We are about to begin another six years of the forest task in a new forest.</strong> Like before, the
-<strong>forest will have <span data-bind='text: initialResourceLevel'></span> trees</strong>, and every member in your
-group will be able to harvest trees from it. Each tree you harvest will count towards your total payment. The forest
-will continue to regrow at the rate of 2 trees for every 10 trees left standing in the forest (see the Forest Regrowth
-Rate table), and the maximum possible harvest will be the same rate as before (see the Maximum Possible Harvest table).
-</p>
-<ul class='pager'>
-    <li class='next'>
-    <a href='javascript: void(0)' data-bind='click: participantReady.bind($data, participantGroupId() + " finished phase three instructions") '>Ok, I understand</a>
-    </li>
-</ul>
+<div data-bind='ifnot: surveyCompleted'>
+    <h2>Survey</h2>
+    <p>We would like to ask you some questions before we continue to the next round.</p>
+    <div class='qualtrics-survey'>
+        <iframe width="100%" height="800" data-bind='attr: { src: surveyUrl }'>
+            Your browser doesn't appear to support iframes, please <a target='_blank' data-bind='attr: { href: surveyUrl }'>follow this link to take the survey.</a>
+        </iframe>
+    </div>
+    <p>If you have any questions, or have trouble accessing the survey, please let the experimenter know.</p>
+</div>
+<div data-bind='if: surveyCompleted'>
+    <h3>No Group Chat</h3>
+    <p>
+    <strong>From this point forward, you will NOT be able to communicate with your group members.</strong>
+    </p>
+    <p>
+    We will now move on to the next round of the Forest Task.
+    </p>
+    <h3>A New Forest</h3>
+    <p>
+    <strong>Please read the following instructions carefully!</strong>
+    </p>
+    <p>
+    <strong>We are about to begin another six years of the forest task in a new forest.</strong> Like before, the
+    <strong>forest will have <span data-bind='text: initialResourceLevel'></span> trees</strong>, and every member in your
+    group will be able to harvest trees from it. Each tree you harvest will count towards your total payment. The forest
+    will continue to regrow at the rate of 2 trees for every 10 trees left standing in the forest (see the Forest Regrowth
+    Rate table), and the maximum possible harvest will be the same rate as before (see the Maximum Possible Harvest table).
+    </p>
+    <ul class='pager'>
+        <li class='next'>
+        <a href='javascript: void(0)' data-bind='click: participantReady.bind($data, participantGroupId() + " finished phase three instructions") '>Ok, I understand</a>
+        </li>
+    </ul>
+</div>
 </script>
 <script type='text/html' id='PHASE_THREE_BLOCK_ONE_RESULTS'>
 <h3>A New Forest</h3>
@@ -550,20 +588,22 @@ Rate table), and the maximum possible harvest will be the same rate as before (s
     </li>
 </ul>
 </script>
-<script type='text/html' id='DEBRIEFING_WITH_SURVEY'>
-<h2>Survey</h2>
-<p>We would like to ask you some questions before we continue to the next round.</p>
-<div class='qualtrics-survey'>
-    <iframe width="100%" height="800" data-bind='attr: { src: surveyUrl }'>
-        Your browser doesn't appear to support iframes, please <a target='_blank' data-bind='attr: { href: surveyUrl }'>follow this link to take the survey.</a>
-    </iframe>
-</div>
-<p>If you have any questions, or have trouble accessing the survey, please let the experimenter know.</p>
-</script>
 <script type='text/html' id='FINAL_DEBRIEFING'>
-    <h2>Experiment Results</h2>
+<div data-bind='ifnot: surveyCompleted'>
+    <h2>Survey</h2>
+    <p>The experiment is now over. Please fill out this final survey while we prepare your payments. Thank you for
+    participating.</p>
+    <div class='qualtrics-survey'>
+        <iframe width="100%" height="800" data-bind='attr: { src: surveyUrl }'>
+            Your browser doesn't appear to support iframes, please <a target='_blank' data-bind='attr: { href: surveyUrl }'>follow this link to take the survey.</a>
+        </iframe>
+    </div>
+    <p>If you have any questions, or have trouble accessing the survey, please let the experimenter know.</p>
+</div>
+<div data-bind='if: surveyCompleted'>
+    <h2>Experiment Concluded</h2>
     <p>
-        Thank you for participating. 
+        Thank you for participating!
     </p>
     <h2>Payment</h2>
     <p>
@@ -577,10 +617,11 @@ Rate table), and the maximum possible harvest will be the same rate as before (s
         <tbody data-bind='foreach: groupEarnings'>
             <tr>
                 <td><span class='text-success' data-bind='text: number'></span></td>
-                <td><span class='text-success' data-bind='text: $root.formattedTotalEarnings'></span></td>
+                <td><span class='text-success' data-bind='text: formatCurrency(parseFloat(totalEarnings())'></span></td>
             </tr>
         </tbody>
     </table>
+</div>
 </script>
 <script type='text/html' id='tree-template'>
 <div data-bind="visible: $data.isResourceEmpty">
@@ -768,12 +809,12 @@ Rate table), and the maximum possible harvest will be the same rate as before (s
             };
             model.startRound = function() {
                 model.initializeChat();
-                if (! model.isPlayableRound()) {
-                    return;
-                }
                 // model.setupTour();
                 console.debug("starting playable round, checking time remaining: " + model.timeRemaining());
-                if (model.timeRemaining() > 0) {
+                if (model.timeRemaining() === -1) {
+                    model.secondsLeft("&infin;");
+                }
+                else if (model.timeRemaining() > 0) {
                     console.debug("setting seconds left to: " + model.timeRemaining());
 
                     model.secondsLeft(model.timeRemaining());
@@ -781,13 +822,19 @@ Rate table), and the maximum possible harvest will be the same rate as before (s
                         setInterval(function() {
                             model.tick();
                             if (! model.isTimerRunning()) {
-                                model.submitDecision();
+                                if (model.isPlayableRound()) {
+                                    model.submitDecision();
+                                }
+                                else {
+                                    model.clearCurrentInterval();
+                                    model.secondsLeft("&empty;");
+                                }
                             }
                         },
                         1000));
                 }
                 else {
-                    model.secondsLeft("&infin;");
+                    model.secondsLeft("&empty;");
                 }
             };
             model.submitHarvestDecisionEnabled = ko.computed(function() {

@@ -119,11 +119,17 @@
         </div>
     </div>
     <div class="col-md-6">
-        <div style='padding-right: 8px;' class='alert alert-warning'>
-            <h4>EXPERIMENT LOG</h4>
-            <div id='experiment-messages' data-bind='foreach: messages'>
-                <div>
-                    <span data-bind='text: $data'></span>
+        <div class='panel-group' style='height: 310px; overflow: auto;' class='alert alert-warning'>
+            <div class='panel panel-default'>
+                <div class='panel-heading'>
+                    <h4 class='panel-title'>Experiment Log</h4>
+                </div>
+            </div>
+            <div class='scrollable-messages'>
+                <div class='alert alert-warning panel-body' data-bind='foreach: messages'>
+                    <div>
+                        <span data-bind='text: $data'></span>
+                    </div>
                 </div>
             </div>
         </div>
