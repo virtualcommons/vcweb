@@ -917,19 +917,11 @@ Rate table), and the maximum possible harvest will be the same rate as before (s
                 var surveyCompleted = response.survey_completed;
                 model.isSurveyCompleted(surveyCompleted);
                 if (surveyCompleted) {
+                    console.debug("SURVEY COMPLETED, REFRESHING PAGE");
                     model.clearCurrentInterval();
-                    model.showPostSurveyInstructions();
+                    window.location.reload();
                 }
             }
-            model.showPostSurveyInstructions = function() {
-                if (! model.isSurveyCompleted()) {
-                    return;
-                }
-                model.clearCurrentInterval();
-                $('#content').removeClass('col-md-12').addClass('col-md-8');
-                $('#sidebar').show();
-                model.activateTemplate("INSTRUCTIONS");
-            };
             model.initializeChat = function() {
                 var chatEnabled = model.chatEnabled();
                 // FIXME: get rid of form disabling?
@@ -949,8 +941,26 @@ Rate table), and the maximum possible harvest will be the same rate as before (s
             model.formattedTotalEarnings = ko.pureComputed(function() {
                 return formatCurrency(parseFloat(model.totalEarnings()));
             });
-
             model.afterRenderTemplate = function(elements) {
+                // FIXME: replace with websocket push notify
+                // if survey is enabled this round and hasn't been completed yet, poll for participant completion
+                if (model.isSurveyEnabled() && ! model.isSurveyCompleted()) {
+                    switch (model.templateId()) {
+                        case "PHASE_TWO_INSTRUCTIONS":
+                        case "PHASE_THREE_INSTRUCTIONS":
+                            model.setCurrentInterval(
+                                    setInterval(function() {
+                                        $.get('/participate/{{experiment.pk}}/check-survey-completed', model.checkSurveyCompleted);
+                                    }, 6000)
+                                );
+                            // explicit fallthrough
+                        case "FINAL_DEBRIEFING":
+                            model.chatEnabled(false);
+                            break;
+                        default:
+                            break;
+                    }
+                }
                 $('[data-content]').popover({placement: 'top', trigger: 'hover'});
             }
             return model;

@@ -337,7 +337,7 @@ class ExperimentMetadata(models.Model):
     logo_url = models.URLField(blank=True)
     default_configuration = models.ForeignKey('ExperimentConfiguration', null=True, blank=True)
     active = models.BooleanField(default=True)
-    parameters = models.ManyToManyField('Parameter')
+    parameters = models.ManyToManyField('Parameter', blank=True)
 
     objects = ExperimentMetadataManager.from_queryset(ExperimentMetadataQuerySet)()
 
