@@ -389,8 +389,7 @@ def update_resource_level(experiment, group, round_data, regrowth_rate, max_reso
         # set group round data resource_level for each group + regrowth
         group.log("Transferring resource level %s to next round" %
                   current_resource_level_dv.int_value)
-        group.copy_to_next_round(
-            current_resource_level_dv, group_harvest_dv, regrowth_dv)
+        group.copy_to_next_round(current_resource_level_dv, group_harvest_dv, regrowth_dv)
 
 
 @receiver(signals.round_ended, sender=EXPERIMENT_METADATA_NAME)

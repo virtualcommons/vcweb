@@ -100,6 +100,7 @@ experiment_model_defaults = {
     'isPlayableRound': False,
     'isSurveyEnabled': False,
     'isSurveyCompleted': False,
+    'initialResourceLevel': 100,
 }
 
 
@@ -122,12 +123,12 @@ def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
     experiment_model_dict['participantGroupId'] = participant_group_relationship.pk
     experiment_model_dict['participantsPerGroup'] = ec.max_group_size
     experiment_model_dict['dollarsPerTree'] = ec.exchange_rate
-    experiment_model_dict['initialResourceLevel'] = get_initial_resource_level(current_round)
 
     # instructions round parameters
     experiment_model_dict['isInstructionsRound'] = current_round.is_instructions_round
     if current_round.is_instructions_round:
         # experiment_model_dict['regrowthRate'] = regrowth_rate
+        experiment_model_dict['initialResourceLevel'] = get_initial_resource_level(current_round)
         experiment_model_dict['nextRoundDuration'] = experiment.next_round.duration
 
     if current_round.is_survey_enabled:

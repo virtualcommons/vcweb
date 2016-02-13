@@ -59,7 +59,8 @@ def create_forestry_configuration(apps, schema_editor):
                                      float_value=0.2)
 
     add_round(cfg, round_type='WELCOME', sequence_number=1, duration=0)
-    add_round(cfg, round_type='GENERAL_INSTRUCTIONS', sequence_number=2, duration=0)
+    general_instructions = add_round(cfg, round_type='GENERAL_INSTRUCTIONS', sequence_number=2, duration=0)
+    general_instructions.parameter_value_set.create(parameter=initial_resource_level_parameter, int_value=100)
     practice_round = add_round(cfg, round_type='PRIVATE_PRACTICE', template_id='PRACTICE', sequence_number=3, repeat=3,
                                initialize_data_values=True, randomize_groups=True, preserve_existing_groups=False,
                                duration=0)
@@ -71,35 +72,41 @@ def create_forestry_configuration(apps, schema_editor):
 # reset resource level
     reset_resource_level(phase_one_part_one)
 
-    add_round(cfg, round_type='INSTRUCTIONS', sequence_number=6, template_id='PHASE_ONE_BLOCK_ONE_RESULTS', duration=0)
+    phase_one_part_two_instructions = add_round(cfg, round_type='INSTRUCTIONS', sequence_number=6, template_id='PHASE_ONE_BLOCK_ONE_RESULTS', duration=0)
+    phase_one_part_two_instructions.parameter_value_set.create(parameter=initial_resource_level_parameter, int_value=100)
     phase_one_part_two = add_round(cfg, round_type='REGULAR', sequence_number=7, repeat=6, initialize_data_values=True,
                                    duration=45)
 # reset resource level again
-    reset_resource_level(phase_one_part_two)
     # Survey 1 and Phase 2, C
-    add_round(cfg, round_type='INSTRUCTIONS', sequence_number=8, survey_url='https://louisville.az1.qualtrics.com/SE/?SID=SV_0BSEhpRIzeZi501',
-              template_id='PHASE_TWO_INSTRUCTIONS', duration=0)
+    phase_two_instructions = add_round(cfg, round_type='INSTRUCTIONS', sequence_number=8,
+                                       survey_url='https://louisville.az1.qualtrics.com/SE/?SID=SV_0BSEhpRIzeZi501',
+                                       template_id='PHASE_TWO_INSTRUCTIONS', duration=0)
+    phase_two_instructions.parameter_value_set.create(parameter=initial_resource_level_parameter, int_value=100)
     # dedicated 5 minute communication round
     add_round(cfg, round_type='CHAT', sequence_number=9, template_id='COMMUNICATION', chat_enabled=True, duration=300)
     phase_two_part_one = add_round(cfg, round_type='REGULAR', sequence_number=10, repeat=6, chat_enabled=True,
                                    initialize_data_values=True, duration=45)
     reset_resource_level(phase_two_part_one)
 
-    add_round(cfg, round_type='INSTRUCTIONS', sequence_number=11, template_id='PHASE_TWO_BLOCK_ONE_RESULTS', duration=0)
+    phase_two_block_two_instructions = add_round(cfg, round_type='INSTRUCTIONS', sequence_number=11, template_id='PHASE_TWO_BLOCK_ONE_RESULTS', duration=0)
+    phase_two_block_two_instructions.parameter_value_set.create(parameter=initial_resource_level_parameter, int_value=100)
     add_round(cfg, round_type='CHAT', sequence_number=12, template_id='COMMUNICATION', chat_enabled=True, duration=300)
     phase_two_part_two = add_round(cfg, round_type='REGULAR', sequence_number=13, repeat=6, chat_enabled=True,
                                    initialize_data_values=True, duration=45)
     reset_resource_level(phase_two_part_two)
 
     # Survey 2 and Phase 3, NC/C
-    add_round(cfg, round_type='INSTRUCTIONS', sequence_number=14, survey_url='https://louisville.az1.qualtrics.com/SE/?SID=SV_eWi6whndxg1wQjr',
-              template_id='PHASE_THREE_INSTRUCTIONS', duration=0)
+    phase_three_instructions = add_round(cfg, round_type='INSTRUCTIONS', sequence_number=14,
+                                         survey_url='https://louisville.az1.qualtrics.com/SE/?SID=SV_eWi6whndxg1wQjr',
+                                         template_id='PHASE_THREE_INSTRUCTIONS', duration=0)
+    phase_three_instructions.parameter_value_set.create(parameter=initial_resource_level_parameter, int_value=100)
     phase_three_part_one = add_round(cfg, round_type='REGULAR', sequence_number=15, repeat=6,
                                      initialize_data_values=True, duration=45)
     reset_resource_level(phase_three_part_one)
 
-    add_round(cfg, round_type='INSTRUCTIONS', sequence_number=16, template_id='PHASE_THREE_BLOCK_ONE_RESULTS',
-              duration=0)
+    phase_three_block_two_instructions = add_round(cfg, round_type='INSTRUCTIONS', sequence_number=16, template_id='PHASE_THREE_BLOCK_ONE_RESULTS',
+                                                   duration=0)
+    phase_three_block_two_instructions.parameter_value_set.create(parameter=initial_resource_level_parameter, int_value=100)
     phase_three_part_two = add_round(cfg, round_type='REGULAR', sequence_number=17, repeat=6,
                                      initialize_data_values=True, duration=45)
     reset_resource_level(phase_three_part_two)

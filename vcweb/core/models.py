@@ -179,7 +179,7 @@ class ParameterValueMixin(object):
     """
 
     @transaction.atomic
-    def get_parameter_value(self, parameter=None, name=None, default=None, inheritable=False):
+    def get_parameter_value(self, parameter=None, name=None, default=None, inheritable=False, create=False):
         """
         returns the ParameterizedValue associated with the given parameter and this object's parameter value set. If
         none exists, creates one.
@@ -192,16 +192,21 @@ class ParameterValueMixin(object):
                 return parameter_value_set.get(parameter=parameter)
             elif name:
                 return parameter_value_set.get(parameter__name=name)
-        except parameter_value_set.model.DoesNotExist:
+        except parameter_value_set.model.DoesNotExist as e:
             if inheritable:
                 return self.parent.get_parameter_value(parameter=parameter, name=name, default=default)
             else:
                 if parameter is None:
                     parameter = Parameter.objects.get(name=name)
-                pv = self.parameter_value_set.create(parameter=parameter)
-                if default is not None:
-                    pv.update(default)
-                return pv
+# FIXME: this is dangerous concurrency, should remove this entirely and avoid auto-creation of parameters, this causes
+# MultipleObjectExceptions since we can't guarantee atomicity of this method even with transaction.atomic
+                if create:
+                    pv = self.parameter_value_set.create(parameter=parameter)
+                    if default is not None:
+                        pv.update(default)
+                    return pv
+                else:
+                    raise e
 
     @transaction.atomic
     def set_parameter_value(self, parameter=None, value=None, name=None, **kwargs):
