@@ -6,8 +6,7 @@ import logging
 import random
 
 
-from vcweb.core.models import (
-    GroupCluster, Experiment, ParticipantRoundDataValue)
+from vcweb.core.models import (GroupCluster, Experiment, ParticipantRoundDataValue)
 from vcweb.core.tests import BaseVcwebTest
 
 from .models import (get_experiment_metadata, set_harvest_decision, GroupRelationship, get_resource_level_dv,

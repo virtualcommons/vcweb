@@ -179,7 +179,7 @@ class ParameterValueMixin(object):
     """
 
     @transaction.atomic
-    def get_parameter_value(self, parameter=None, name=None, default=None, inheritable=False, create=False):
+    def get_parameter_value(self, parameter=None, name=None, default=None, inheritable=False, create=True):
         """
         returns the ParameterizedValue associated with the given parameter and this object's parameter value set. If
         none exists, creates one.
@@ -206,7 +206,7 @@ class ParameterValueMixin(object):
                         pv.update(default)
                     return pv
                 else:
-                    raise e
+                    return DefaultValue(default)
 
     @transaction.atomic
     def set_parameter_value(self, parameter=None, value=None, name=None, **kwargs):
@@ -253,11 +253,10 @@ class DataValueMixin(object):
 
     @transaction.atomic
     def get_data_value(self, parameter=None, parameter_name=None, round_data=None, use_filter=False, default=None,
-                       **kwargs):
+                       create=True, **kwargs):
         if round_data is None:
             round_data = self.experiment.current_round_data
-        criteria = self._criteria(
-            parameter=parameter, parameter_name=parameter_name, round_data=round_data)
+        criteria = self._criteria(parameter=parameter, parameter_name=parameter_name, round_data=round_data)
         data_value_set = self.data_value_set.select_related('parameter')
         dvs = data_value_set.filter(**criteria)
         if use_filter:
@@ -268,10 +267,13 @@ class DataValueMixin(object):
             logger.warn("No data values found with criteria %s - returning default %s", criteria, default)
             if parameter is None:
                 parameter = Parameter.objects.get(name='parameter_name')
-            dv = self.data_value_set.create(parameter=parameter, round_data=round_data)
-            if default is not None:
-                dv.update(default)
-            return dv
+            if create:
+                dv = self.data_value_set.create(parameter=parameter, round_data=round_data)
+                if default is not None:
+                    dv.update(default)
+                return dv
+            else:
+                return DefaultValue(default)
 
     @transaction.atomic
     def copy_to_next_round(self, *data_values, **kwargs):
@@ -283,10 +285,14 @@ class DataValueMixin(object):
             # no explicit round data to copy to, retrieve the next round data
             next_round_data, created = e.get_or_create_round_data(round_configuration=e.next_round,
                                                                   increment_repeated_round_sequence_number=True)
+            logger.warn("No explicit next round data, generating next round data %s.", next_round_data)
+        logger.debug("Copying data values %s to next round %s", data_values, next_round_data)
         for existing_dv in data_values:
-            # setting the pk to None generates a new data value
-            # http://stackoverflow.com/questions/12182657/copy-or-clone-an-object-instance-in-django-python
+            # setting pk to None generates a new data value
+            # https://docs.djangoproject.com/en/1.9/topics/db/queries/#copying-model-instances
             existing_dv.pk = None
+            existing_dv.id = None
+            existing_dv.save()
             existing_dv.round_data = next_round_data
             existing_dv.save()
 
@@ -1447,6 +1453,7 @@ class Experiment(models.Model):
             return None
         return self.start_round()
 
+    @transaction.atomic
     def get_or_create_round_data(self, round_configuration=None, increment_repeated_round_sequence_number=False):
         """ FIXME: needs refactoring to properly handle current_repeated_round_sequence_number """
         current_round = self.current_round
@@ -1469,9 +1476,8 @@ class Experiment(models.Model):
                 if increment_repeated_round_sequence_number:
                     rrsn += 1
             ps['repeating_round_sequence_number'] = rrsn
-        with transaction.atomic():
-            self.round_data_set.select_for_update()
-            round_data, created = self.round_data_set.get_or_create(**ps)
+        self.round_data_set.select_for_update()
+        round_data, created = self.round_data_set.get_or_create(**ps)
         if self.experiment_configuration.is_experimenter_driven:
             # create participant ready data values for every round in
             # experimenter driven experiments
@@ -2334,12 +2340,12 @@ class ExperimentGroup(models.Model, DataValueMixin):
         return round_configuration_value
 
     def _criteria(self, parameter=None, parameter_name=None, round_data=None, **kwargs):
+        if round_data is None:
+            round_data = self.current_round_data
         criteria = dict([
             ('is_active', True),
-            ('parameter__pk', parameter.pk) if parameter else (
-                'parameter__name', parameter_name),
-            ('round_data__pk',
-             self.current_round_data.pk if round_data is None else round_data.pk)
+            ('parameter', parameter) if parameter else ('parameter__name', parameter_name),
+            ('round_data', round_data)
         ])
         criteria.update(kwargs)
         return criteria

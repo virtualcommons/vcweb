@@ -64,9 +64,10 @@ def get_observe_other_group_parameter():
 def get_shared_resource_enabled_parameter():
     return Parameter.objects.for_round(name='shared_resource')
 
-#@simplecache
-# def get_empty_resource_death_parameter():
-#    return Parameter.objects.for_round(name='empty_resource_death_enabled')
+
+@simplecache
+def get_empty_resource_death_parameter():
+    return Parameter.objects.for_round(name='empty_resource_death_enabled')
 
 
 ''' value accessors '''
@@ -475,8 +476,7 @@ def update_resource_level(experiment, group, round_data, regrowth_rate, max_reso
         ''' set group round data resource_level for each group + regrowth '''
         group.log("Transferring resource level %s to next round" %
                   current_resource_level_dv.int_value)
-        group.copy_to_next_round(
-            current_resource_level_dv, group_harvest_dv, regrowth_dv)
+        group.copy_to_next_round(current_resource_level_dv, group_harvest_dv, regrowth_dv)
 
 
 # FIXME: reduce duplication between this and update_resource_level
@@ -508,25 +508,21 @@ def update_shared_resource_level(experiment, group_cluster, round_data, regrowth
             # adjust each individual harvest for each group in this cluster
             group_harvest = adjust_harvest_decisions(shared_resource_level, group, round_data, group_harvest,
                                                      group_size=group_cluster_size)
-        #set_group_harvest(group, group_harvest, round_data)
+        # set_group_harvest(group, group_harvest, round_data)
         shared_resource_level = shared_resource_level - group_harvest
     # set regrowth after shared_resource_level has been modified by all groups
     # in this cluster
-    resource_regrowth = calculate_regrowth(
-        shared_resource_level, regrowth_rate, max_resource_level)
-    group.log("Regrowth: adding %s to shared resource level %s" %
-              (resource_regrowth, shared_resource_level))
+    resource_regrowth = calculate_regrowth(shared_resource_level, regrowth_rate, max_resource_level)
+    group.log("Regrowth: adding %s to shared resource level %s" % (resource_regrowth, shared_resource_level))
     shared_regrowth_dv.update_int(resource_regrowth)
-    #group_cluster.set_data_value(parameter=get_regrowth_parameter(), round_data=round_data, value=resource_regrowth)
+    # group_cluster.set_data_value(parameter=get_regrowth_parameter(), round_data=round_data, value=resource_regrowth)
     # clamp resource level to max_resource_level
-    shared_resource_level_dv.update_int(
-        min(shared_resource_level + resource_regrowth, max_resource_level))
+    shared_resource_level_dv.update_int(min(shared_resource_level + resource_regrowth, max_resource_level))
     if experiment.has_next_round:
         ''' transfer shared resource levels to next round '''
         group.log("Transferring shared resource level %s to next round" %
                   shared_resource_level_dv.int_value)
-        group_cluster.copy_to_next_round(
-            shared_resource_level_dv, shared_regrowth_dv)
+        group_cluster.copy_to_next_round(shared_resource_level_dv, shared_regrowth_dv)
 
 
 @transaction.atomic
@@ -535,21 +531,22 @@ def update_participants(experiment, round_data, round_configuration):
     cost_of_living = get_cost_of_living(round_configuration)
     next_round_data, created = experiment.get_or_create_round_data(round_configuration=experiment.next_round,
                                                                    increment_repeated_round_sequence_number=True)
-    for pgr in experiment.participant_group_relationships:
-        player_status_dv = get_player_status_dv(pgr, round_data)
-        storage_dv = get_storage_dv(pgr, round_data)
-        player_alive = player_status_dv.boolean_value
-        if player_alive:
-            harvest_decision = get_harvest_decision(pgr, round_data)
-            updated_storage = storage_dv.int_value + \
-                harvest_decision - cost_of_living
-            if updated_storage < 0:
-                # player has "died"
-                player_status_dv.update_boolean(False)
-            # clamp storage to 0 to avoid negative earnings
-            storage_dv.update_int(max(0, updated_storage))
-        pgr.copy_to_next_round(
-            player_status_dv, storage_dv, next_round_data=next_round_data)
+    for group in experiment.groups:
+        for pgr in group.participant_group_relationship_set.all():
+            player_status_dv = get_player_status_dv(pgr, round_data)
+            storage_dv = get_storage_dv(pgr, round_data)
+            player_alive = player_status_dv.boolean_value
+            if player_alive:
+                harvest_decision = get_harvest_decision(pgr, round_data)
+                logger.error("storage dv %s harvest decision %s cost of living %s", storage_dv.int_value, harvest_decision,
+                             cost_of_living)
+                updated_storage = storage_dv.int_value + harvest_decision - cost_of_living
+                if updated_storage < 0:
+                    # player has "died"
+                    player_status_dv.update_boolean(False)
+                # clamp storage to 0 to avoid negative earnings
+                storage_dv.update_int(max(0, updated_storage))
+            pgr.copy_to_next_round(player_status_dv, storage_dv, next_round_data=next_round_data)
 
 
 @receiver(signals.round_ended, sender=EXPERIMENT_METADATA_NAME)
@@ -567,7 +564,7 @@ def round_ended_handler(sender, experiment=None, **kwargs):
             regrowth_rate = get_regrowth_rate(round_configuration)
             harvest_decision_parameter = get_harvest_decision_parameter()
             for pgr in experiment.participant_group_relationships:
-                # FIXME: not thread-safe but this *should* only be invoked once per experiment.  If we start getting
+                # FIXME: not thread-safe but this *should* only be invoked once per experiment. If we start getting
                 # spurious data values, revisit this section
                 prdvs = ParticipantRoundDataValue.objects.filter(
                     round_data=round_data,
@@ -576,18 +573,18 @@ def round_ended_handler(sender, experiment=None, **kwargs):
                     is_active=True)
                 # create zero harvest decisions for any unsubmitted harvest
                 # decisions
-                if prdvs.count() == 0:
+                number_of_harvest_decisions = prdvs.count()
+                if number_of_harvest_decisions == 0:
                     prdv = ParticipantRoundDataValue.objects.create(round_data=round_data,
                                                                     participant_group_relationship=pgr,
                                                                     parameter=harvest_decision_parameter,
                                                                     is_active=True,
                                                                     int_value=0)
                     logger.debug("autozero harvest decision for participant %s", pgr)
-                elif prdvs.count() > 1:
-                    # another degenerate data condition, deactivate all prior
-                    logger.debug(
-                        "multiple harvest decisions found for %s, deactivating all but the latest", pgr)
-                    prdv = prdvs.latest('date_created')
+                elif number_of_harvest_decisions > 1:
+                    # deactivate all prior harvest decisions
+                    logger.debug("multiple harvest decisions found for %s, deactivating all but the latest", pgr)
+                    latest_harvest_decision = prdvs.latest('date_created')
                     prdvs.exclude(pk=prdv.pk).update(is_active=False)
 
             # FIXME: generify and merge update_shared_resource_level and
@@ -595,12 +592,10 @@ def round_ended_handler(sender, experiment=None, **kwargs):
             # possible
             if is_shared_resource_enabled(round_configuration):
                 for group_cluster in experiment.active_group_clusters:
-                    update_shared_resource_level(
-                        experiment, group_cluster, round_data, regrowth_rate)
+                    update_shared_resource_level(experiment, group_cluster, round_data, regrowth_rate)
             else:
                 for group in experiment.groups:
-                    update_resource_level(
-                        experiment, group, round_data, regrowth_rate)
+                    update_resource_level(experiment, group, round_data, regrowth_rate)
             update_participants(experiment, round_data, round_configuration)
     except:
         logger.exception('Failed to end round cleanly')
