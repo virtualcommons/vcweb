@@ -891,7 +891,7 @@ class Experiment(models.Model):
 
     @property
     def participant_group_relationships(self):
-        return ParticipantGroupRelationship.objects.select_related('group').filter(group__experiment=self)
+        return ParticipantGroupRelationship.objects.select_related('group').filter(group__in=self.groups)
 
     @property
     def display_name(self):
