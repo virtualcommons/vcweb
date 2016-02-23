@@ -571,21 +571,20 @@ def round_ended_handler(sender, experiment=None, **kwargs):
                     participant_group_relationship=pgr,
                     parameter=harvest_decision_parameter,
                     is_active=True)
-                # create zero harvest decisions for any unsubmitted harvest
-                # decisions
                 number_of_harvest_decisions = prdvs.count()
                 if number_of_harvest_decisions == 0:
-                    prdv = ParticipantRoundDataValue.objects.create(round_data=round_data,
-                                                                    participant_group_relationship=pgr,
-                                                                    parameter=harvest_decision_parameter,
-                                                                    is_active=True,
-                                                                    int_value=0)
+                    # create zero harvest decisions for any unsubmitted harvest decisions
+                    ParticipantRoundDataValue.objects.create(round_data=round_data,
+                                                             participant_group_relationship=pgr,
+                                                             parameter=harvest_decision_parameter,
+                                                             is_active=True,
+                                                             int_value=0)
                     logger.debug("autozero harvest decision for participant %s", pgr)
                 elif number_of_harvest_decisions > 1:
                     # deactivate all prior harvest decisions
                     logger.debug("multiple harvest decisions found for %s, deactivating all but the latest", pgr)
-                    latest_harvest_decision = prdvs.latest('date_created')
-                    prdvs.exclude(pk=latest_harvest_decision.pk).update(is_active=False)
+                    final_harvest_decision = prdvs.latest('date_created')
+                    prdvs.exclude(pk=final_harvest_decision.pk).update(is_active=False)
 
             # FIXME: generify and merge update_shared_resource_level and
             # update_resource_level to operate on "group-like" objects if

@@ -3,7 +3,7 @@ Fabric==1.10.2
 Markdown==2.6.5
 PyYAML==3.11
 coverage==4.0.3
-django-autocomplete-light==2.3.3
+django-autocomplete-light==3.0.4
 django-bootstrap3==6.2.2
 django-contact-form==1.2
 django-extensions==1.6.1
