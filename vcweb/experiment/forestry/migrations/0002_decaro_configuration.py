@@ -76,6 +76,7 @@ def create_forestry_configuration(apps, schema_editor):
     phase_one_part_two_instructions.parameter_value_set.create(parameter=initial_resource_level_parameter, int_value=100)
     phase_one_part_two = add_round(cfg, round_type='REGULAR', sequence_number=7, repeat=6, initialize_data_values=True,
                                    duration=45)
+    reset_resource_level(phase_one_part_two)
 # reset resource level again
     # Survey 1 and Phase 2, C
     phase_two_instructions = add_round(cfg, round_type='INSTRUCTIONS', sequence_number=8,

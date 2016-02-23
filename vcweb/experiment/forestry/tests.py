@@ -94,10 +94,6 @@ class ResourceLevelTest(BaseVcwebTest):
         """
         e = self.advance_to_data_round()
         expected_resource_level = 100
-        sample_group = e.groups[0]
-        group_size = sample_group.size
-        self.assertEqual(get_max_harvest_decision(sample_group, e.current_round_data, e.experiment_configuration),
-                         self.expected_max_harvest)
         while e.has_next_round:
             current_round_configuration = e.current_round
             if should_reset_resource_level(current_round_configuration, e):
@@ -114,7 +110,7 @@ class ResourceLevelTest(BaseVcwebTest):
                         self.assertEqual(get_resource_level(group), expected_resource_level)
                         set_harvest_decision(pgr, max_harvest_decision)
                 expected_resource_level = self.calculate_expected_resource_level(expected_resource_level,
-                                                                                 max_harvest_decision * group_size)
+                                                                                 max_harvest_decision * group.size)
                 e.end_round()
                 for group in e.groups:
                     self.assertEqual(get_resource_level(group), expected_resource_level)

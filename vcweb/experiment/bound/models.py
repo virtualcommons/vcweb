@@ -585,7 +585,7 @@ def round_ended_handler(sender, experiment=None, **kwargs):
                     # deactivate all prior harvest decisions
                     logger.debug("multiple harvest decisions found for %s, deactivating all but the latest", pgr)
                     latest_harvest_decision = prdvs.latest('date_created')
-                    prdvs.exclude(pk=prdv.pk).update(is_active=False)
+                    prdvs.exclude(pk=latest_harvest_decision.pk).update(is_active=False)
 
             # FIXME: generify and merge update_shared_resource_level and
             # update_resource_level to operate on "group-like" objects if
