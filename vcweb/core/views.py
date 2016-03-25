@@ -825,8 +825,8 @@ def create_cas_participant(username, cas_tree):
     except User.DoesNotExist:
         # If this exception is thrown it means that User Logged in via CAS is a new user
         logger.debug("No user found with username %s", username)
-        # Create vcweb Participant only if the user is an undergrad student
-        if not directory_profile.is_graduate:
+        # Create vcweb participant only if the user is an undergrad student
+        if not directory_profile.is_undergraduate:
             logger.error("CAS authenticated user %s is not an undergrad student", username)
             return None
 
