@@ -15,6 +15,17 @@ class ExperimentRoundDataSerializer(serializers.ModelSerializer):
         model = RoundData
 
 
+class ExperimentRegistrationSerializer(serializers.Serializer):
+    number_of_participants = serializers.IntegerField()
+    username_suffix = serializers.CharField()
+    email_suffix = serializers.CharField()
+    institution = serializers.CharField()
+    experiment = serializers.IntegerField()
+    emails = serializers.ListField(child=serializers.EmailField())
+    from_email = serializers.EmailField()
+    sender = serializers.CharField()
+
+
 class ExperimentSerializer(serializers.ModelSerializer):
 
     experimenter = serializers.StringRelatedField()

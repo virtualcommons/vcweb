@@ -18,9 +18,10 @@ from django.views.generic import FormView, TemplateView, ListView
 from django.views.generic.detail import SingleObjectMixin
 from django.views.decorators.http import require_GET, require_POST
 
-from rest_framework.decorators import detail_route, list_route
 from rest_framework import viewsets, status, renderers
-from .serializers import ExperimentSerializer
+from rest_framework.decorators import detail_route, list_route
+from rest_framework.response import Response
+from .serializers import ExperimentSerializer, ExperimentRegistrationSerializer
 from .permissions import CanEditExperiment
 
 from contact_form.views import ContactFormView
@@ -463,11 +464,10 @@ class ManageExperimentViewSet(viewsets.ModelViewSet):
     permission_classes = [CanEditExperiment]
     renderer_classes = (renderers.TemplateHTMLRenderer, renderers.JSONRenderer)
 
-
     @detail_route(methods=['post'])
     def submit_register_test_participants(self, request, pk=None):
         experiment = self.get_object()
-        serializer = ExperimentRegistrationSerializer(data=request.data)
+        serializer = ExperimentRegistrationSerializer(data=request.data, experiment=experiment)
         if serializer.is_valid():
             serializer.save()
             return Response({'success': True})
@@ -486,8 +486,7 @@ class RegisterTestParticipantsView(BaseExperimentRegistrationView):
     def form_valid(self, form):
         valid = super(RegisterTestParticipantsView, self).form_valid(form)
         if valid:
-            number_of_participants = form.cleaned_data.get(
-                'number_of_participants')
+            number_of_participants = form.cleaned_data.get('number_of_participants')
             username_suffix = form.cleaned_data.get('username_suffix')
             email_suffix = form.cleaned_data.get('email_suffix')
             institution = form.cleaned_data.get('institution')
