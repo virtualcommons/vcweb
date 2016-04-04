@@ -278,34 +278,30 @@ def manage_participant_attendance(request, pk=None):
 @ownership_required(ExperimentSession)
 @require_POST
 def add_participant(request, pk=None):
-    user_email = request.POST.get('participantEmail')
-    participant = get_object_or_404(Participant.objects.select_related('user'), user__email=user_email)
-    invitations = Invitation.objects.filter(participant=participant, experiment_session__pk=pk)
-    logger.debug("Found %s invitations for participant %s while adding him to experiment session %s", len(invitations), participant, pk)
-
+    participant_email = request.POST.get('participantEmail')
+    participant = get_object_or_404(Participant.objects.select_related('user'), user__email=participant_email)
     es = get_object_or_404(ExperimentSession, pk=pk)
-
-    # First check, the experiment session should be over
+    # First check that the experiment session has already been completed
     if es.scheduled_end_date < datetime.now():
-        logger.debug("Experimeter %s tried adding participant %s to experiment session %s that isn't still over",
+        logger.debug("%s tried to add participant %s to pending experiment session %s - ignoring",
                      request.user, participant, pk)
-        return JsonResponse({'success': False, 'error': "Can't add a participant to yet not finished experiment session"})
+        return JsonResponse({'success': False, 'error': "You can't manually add a participant to a pending experiment session."})
 
-    # second check, the participant must have recevied invitations
-    if invitations.exists():
-        logger.debug("Experimeter %s tried adding participant %s to experiment session %s, who hasn't recevied invitation for the same",
+# there should only be a single invitation for a given experiment session and a given participant
+    invitation = es.invitation_set.filter(participant=participant)
+    # second check, the participant must have received an invitation
+    if not invitation.exists():
+        logger.debug("%s tried to add participant %s without an invitation to experiment session %s. Creating a new one.",
                      request.user, participant, pk)
-        return JsonResponse({'success': False, 'error': "Can't add a participant who hasn't received invitation"})
+        # create an invitation for that user
+        invitation = Invitation.objects.create(participant=participant, experiment_session=es, sender=request.user)
 
-    signups = ParticipantSignup.objects.filter(invitation__in=invitations).count()
-
-    # third and final check, the participant must not have already signedup for the experiment session
-    if signups > 0:
-        logger.debug("Experimeter %s tried adding participant %s to experiment session %s, who is already signed up for the same",
+    # third and final check, the participant must not have already signed up for the experiment session
+    if invitation.signup_set.exists():
+        logger.debug("%s tried to add participant %s to experiment session %s but they are already signed up",
                      request.user, participant, pk)
-        return JsonResponse({'success': False, 'error': 'Participant is already signed up of the experiment session'})
-
-    ParticipantSignup(invitation=invitations[0], attendance=ParticipantSignup.ATTENDANCE.participated).save()
+        return JsonResponse({'success': False, 'error': 'Participant is already signed up for this experiment session'})
+    ParticipantSignup.objects.create(invitation=invitation, attendance=ParticipantSignup.ATTENDANCE.participated)
     return JsonResponse({'success': True})
 
 
