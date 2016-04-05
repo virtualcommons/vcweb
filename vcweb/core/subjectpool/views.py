@@ -282,7 +282,7 @@ def add_participant(request, pk=None):
     participant = get_object_or_404(Participant.objects.select_related('user'), user__email=participant_email)
     es = get_object_or_404(ExperimentSession, pk=pk)
     # First check that the experiment session has already been completed
-    if es.scheduled_end_date < datetime.now():
+    if es.scheduled_end_date > datetime.now():
         logger.debug("%s tried to add participant %s to pending experiment session %s - ignoring",
                      request.user, participant, pk)
         return JsonResponse({'success': False, 'error': "You can't manually add a participant to a pending experiment session."})

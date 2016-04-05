@@ -253,6 +253,7 @@ def deploy(vcs_branch_dict):
             if confirm("Run database migrations?"):
                 _virtualenv(sudo, '%(python)s manage.py migrate' % env, user=env.deploy_user)
             _virtualenv(sudo, '%(python)s manage.py collectstatic' % env, user=env.deploy_user)
+            execute(reload_uwsgi)
             sudo_chain(
                 'chmod -R ug+rw .',
                 'find %(static_root)s %(virtualenv_path)s -type d -exec chmod a+x {} \;' % env,
@@ -261,4 +262,3 @@ def deploy(vcs_branch_dict):
                 'chown -R %(deploy_user)s:%(deploy_group)s . %(static_root)s %(virtualenv_path)s' % env,
                 _restart_command(),
                 pty=True)
-            execute(reload_uwsgi)
