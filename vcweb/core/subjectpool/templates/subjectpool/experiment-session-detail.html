@@ -47,7 +47,8 @@
                     </div>
                 </div>
             </form>
-            <div id="add-participant-error" class="alert-danger"></div>
+            {# FIXME: replace with KO #}
+            <div class='alert-danger' id='add-participant-error'></div>
             <form class="form-horizontal" id="addParticipant">
                 {% csrf_token %}
                 <div class="form-group">
@@ -117,7 +118,7 @@
     <script type="text/javascript" src="//cdn.datatables.net/1.10.11/js/jquery.dataTables.min.js"></script>
 
     <script type="text/javascript">
-        $(function(){
+        $(function() {
 
             $("#bulkAction").change(function() {
                 var optionVal = $(this).val();
@@ -129,17 +130,19 @@
             $("#addParticipant").submit(function(event) {
                 $.post("{% url 'subjectpool:add_participant' session.pk %}", $(event.target).serialize(), function(data) {
                     console.log(data.success);
-                    if(data.success) {
+                    if (data.success) {
                         // reload page to show the added participant
-                        location.reload();
+                        location.reload(true);
                     } else {
-                        $("#add-participant-error").text("ERROR: " + data.error);
+                        $("#add-participant-error").addClass('alert').text("ERROR: " + data.error);
                     }
                 }).fail(function(data) {
-                    if(data.status == 404) {
-                        $("#add-participant-error").text("ERROR: Participant not found in the system. Please contact the administrator");
-                    } else {
-                        $("#add-participant-error").text("ERROR: Something went wrong. Please try again, If issue persists please contact the administrator");
+                    {# FIXME: replace with KO / react #}
+                    if (data.status == 404) {
+                        $("#add-participant-error").addClass('alert').html(" <i class='fa fa-exclamation-triangle'></i> Sorry, we couldn't find a participant with that email.");
+                    }
+                    else {
+                        $("#add-participant-error").addClass('alert').html(" <i class='fa fa-exclamation-triangle'></i> ERROR: Something went wrong. Please contact us if this persists.");
                     }
                 });
                 event.preventDefault();
