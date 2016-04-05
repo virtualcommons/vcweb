@@ -1,4 +1,8 @@
 {% extends "experimenter/base.html" %}
+{% block head %}
+{{ block.super }}
+<link rel='stylesheet' href='//cdn.datatables.net/1.10.11/css/jquery.dataTables.min.css'>
+{% endblock %}
 {% block title %}
     Experiment Session Detail
 {% endblock %}
@@ -16,34 +20,46 @@
             <p><strong>Location: </strong> {{ session.location }}</p>
             <p><strong>Capacity: </strong> {{ session.capacity }}</p>
             <p><strong>Waitlist enabled: </strong> {{ session.waitlist }}</p>
+            {% if formset.forms|length > 0 %}
+            <a target="_blank" href="/subject-pool/session/{{ session.pk }}/download/">
+               <i class='fa fa-table'></i> Download registered participant list (CSV)
+            </a>
+            {% endif %}
         </div>
         <div class="alert alert-warning">
-            {% if formset.forms|length > 0 %}
-                <a target="_blank" href="/subject-pool/session/{{ session.pk }}/download/">Download Registered Participants</a>
-            {% endif %}
-            <form class="form-inline">
+            <form class="form-horizontal">
                 <div class="form-group">
-                    <label for="bulkAction">Mark All Participants as: </label>
-                    <select id="bulkAction" name="bulkAction" class="form-control input-sm">
-                        <option value="-1">select Action</option>
-                        <option value="0">participated</option>
-                        <option value="1">turned away</option>
-                        <option value="2">absent</option>
-                        <option value="3">signed up</option>
-                        <option value="4">waitlisted</option>
-                    </select>
-                    Note: This will not save the changes, you still need to click on the save button to save the changes.
+                    <label class='control-label col-sm-4' for="bulkAction">Mark all participants' attendance as</label>
+                    <div class='col-sm-6'>
+                        <select id="bulkAction" name="bulkAction" class="form-control input-sm">
+                            <option value="-1">Select an option</option>
+                            <option value="0">participated</option>
+                            <option value="1">turned away</option>
+                            <option value="2">absent</option>
+                            <option value="3">signed up</option>
+                            <option value="4">waitlisted</option>
+                        </select>
+                    </div>
+                </div>
+                <div class='form-group'>
+                    <div class='col-sm-offset-4 col-sm-6'>
+                        <b><i class='fa fa-exclamation-triangle'></i> Note:</b> This does not save any changes, click on the save button below to apply these changes.
+                    </div>
                 </div>
             </form>
-        </div>
-        <div class="alert alert-warning">
-            <span id="add-participant-error" class="alert-danger"></span>
-            <form class="form-inline" id="addParticipant">
+            <div id="add-participant-error" class="alert-danger"></div>
+            <form class="form-horizontal" id="addParticipant">
                 {% csrf_token %}
                 <div class="form-group">
-                    <label for="participantEmail">Add Participant with Email: </label>
-                    <input type="text" id="participantEmail" name="participantEmail" class="form-control input-sm" />
-                    <button type="submit" class="btn btn-default input-sm">Add Participant</button>
+                    <label class='control-label col-sm-4' for="participantEmail">Manually add participant by email</label>
+                    <div class='col-sm-6'>
+                        <input type="email" id="participantEmail" name="participantEmail" placeholder='participant email' class="form-control input-sm" />
+                    </div>
+                </div>
+                <div class='form-group'>
+                    <div class='col-sm-offset-4 col-sm-6'>
+                        <button type="submit" class="btn btn-default input-sm">Add Participant</button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -73,10 +89,11 @@
                 {% with form.instance.invitation.participant as participant %}
                 <tr>
                     <td>
+                        {{ participant.first_name }}
                         {% for hidden in form.hidden_fields %}
-                            {{ hidden }}
+                        {{ hidden }}
                         {% endfor %}
-                        {{ participant.first_name }}</td>
+                    </td>
                     <td>{{ participant.last_name }}</td>
                     <td>{{ participant.email }}</td>
                     <td>{{ participant.major }}</td>
@@ -85,21 +102,19 @@
                         <td>{{ field }}</td>
                     {% endfor %}
                 </tr>
-                    {% endwith %}
+                {% endwith %}
             {% endfor %}
             </table>
+            <hr>
             {% if formset.forms|length > 0 %}
-                <button type="submit" class="btn btn-success" id="submit-attendance">
-                    <i class="fa fa-floppy-o"></i>
-                    save
-                </button>
+            <button type="submit" class="btn btn-success" id="submit-attendance"><i class="fa fa-floppy-o"></i> Save attendance changes</button>
             {% endif %}
         </form>
     </div>
 {% endblock %}
 {% block javascript %}
     {{ block.super }}
-    <script type="text/javascript" src="//cdn.datatables.net/1.10.5/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="//cdn.datatables.net/1.10.11/js/jquery.dataTables.min.js"></script>
 
     <script type="text/javascript">
         $(function(){
@@ -138,9 +153,9 @@
 
             // SEARCH - Add the placeholder for Search and Turn it into in-line formcontrol
             var search_input = $('#participant-table').closest('.dataTables_wrapper').find('div[id$=_filter] input');
-            search_input.attr('placeholder', 'Search');
+            search_input.attr('placeholder', 'name, email, major, or class');
             search_input.addClass('form-control input-sm');
-            search_input.css('width', '150px');
+            search_input.css('width', '190px');
 
             // hack to make sure that the table has all the rows before making post
             // required to make django formset to work
