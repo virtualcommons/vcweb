@@ -1,3 +1,4 @@
+from django.conf import settings as vcweb_settings
 from fabric.api import local, sudo, cd, env, lcd, execute, hosts, roles, task
 from fabric.context_managers import prefix
 from fabric.contrib.console import confirm
@@ -6,6 +7,7 @@ from fabric.contrib.project import rsync_project
 import sys
 import os
 import logging
+
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +30,7 @@ env.deploy_group = 'vcweb'
 env.deploy_parent_dir = '/opt/'
 env.hg_url = 'https://bitbucket.org/virtualcommons/vcweb'
 env.git_url = 'https://github.com/virtualcommons/vcweb.git'
-env.services = 'nginx redis supervisord'
+env.services = 'nginx redis'
 # FIXME: use django conf INSTALLED_APPS to introspect instead, similar to
 # experiment_urls
 env.docs_path = os.path.join(env.project_path, 'docs')
@@ -56,8 +58,6 @@ env.vcs_commands = {
 
 # django integration for access to settings, etc.
 django.project(env.project_name)
-from django.conf import settings as vcweb_settings
-
 
 @hosts('vcweb-dev.asu.edu')
 @task
@@ -198,6 +198,22 @@ def _restart_command(systemd=True):
     return cmd % env
 
 
+@task(alias='relu')
+def reload_uwsgi():
+    sudo("supervisorctl restart vcweb-uwsgi vcweb-sockjs")
+    """
+    fallback if supervisorctl socket not set up properly..
+    status_line = sudo("supervisorctl status | grep %(project_name)s" % env)
+    m = re.search('RUNNING(?:\s+)pid\s(\d+)', status_line)
+    if m:
+        uwsgi_pid = m.group(1)
+        logger.debug("sending HUP to %s", uwsgi_pid)
+        sudo("kill -HUP {}".format(uwsgi_pid))
+    else:
+        logger.warning("No pid found: %s", status_line)
+    """
+
+
 @roles('localhost')
 @task
 def clean():
@@ -245,3 +261,4 @@ def deploy(vcs_branch_dict):
                 'chown -R %(deploy_user)s:%(deploy_group)s . %(static_root)s %(virtualenv_path)s' % env,
                 _restart_command(),
                 pty=True)
+            execute(reload_uwsgi)

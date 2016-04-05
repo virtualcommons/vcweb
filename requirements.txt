@@ -1,4 +1,4 @@
-Django==1.9.4
+Django==1.9.5
 Fabric==1.10.2
 Markdown==2.6.6
 PyYAML==3.11
@@ -22,7 +22,7 @@ psycopg2==2.6.1
 pycrypto==2.6.1
 python-coveralls==2.7.0
 python-openid==2.2.5
-raven==5.11.1
+raven==5.12.0
 requests==2.9.1
 sockjs-tornado==1.0.2
 tornado==4.3
