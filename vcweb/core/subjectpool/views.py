@@ -287,22 +287,26 @@ def add_participant(request, pk=None):
                      request.user, participant, pk)
         return JsonResponse({'success': False, 'error': "You can't manually add a participant to a pending experiment session."})
 
-# there should only be a single invitation for a given experiment session and a given participant
-    invitation = es.invitation_set.filter(participant=participant)
-    # second check, the participant must have received an invitation
-    if not invitation.exists():
+    # there should only be a single invitation for a given experiment session and a given participant
+    try:
+        invitation = es.invitation_set.get(participant=participant)
+    except Invitation.DoesNotExist:
         logger.debug("%s tried to add participant %s without an invitation to experiment session %s. Creating a new one.",
                      request.user, participant, pk)
         # create an invitation for that user
         invitation = Invitation.objects.create(participant=participant, experiment_session=es, sender=request.user)
+    except Invitation.MultipleObjectsReturned:
+        logger.error("Experiment session %s had multiple invitations created for participant %s", es, participant)
+        invitation = es.invitation_set.first()
 
     # third and final check, the participant must not have already signed up for the experiment session
     if invitation.signup_set.exists():
         logger.debug("%s tried to add participant %s to experiment session %s but they are already signed up",
                      request.user, participant, pk)
         return JsonResponse({'success': False, 'error': 'Participant is already signed up for this experiment session'})
-    ParticipantSignup.objects.create(invitation=invitation, attendance=ParticipantSignup.ATTENDANCE.participated)
-    return JsonResponse({'success': True})
+    else:
+        ParticipantSignup.objects.create(invitation=invitation, attendance=ParticipantSignup.ATTENDANCE.participated)
+        return JsonResponse({'success': True})
 
 
 @group_required(PermissionGroup.participant)
