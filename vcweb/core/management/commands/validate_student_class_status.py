@@ -1,6 +1,5 @@
 from django.core.management.base import BaseCommand
 from django.conf import settings
-from django.db import transaction
 from vcweb.core.models import Participant, ASUWebDirectoryProfile, create_markdown_email
 
 import unicodecsv as csv
@@ -26,8 +25,6 @@ class Command(BaseCommand):
                 directory_profile = ASUWebDirectoryProfile(participant.username)
                 if directory_profile.profile_data is None or not directory_profile.is_undergraduate:
                     invalid_participants.append(participant)
-                    participant.is_active = False
-                    participant.save()
         with open(filename, 'wb') as csvfile:
             writer = csv.writer(csvfile, delimiter=',')
             writer.writerow(['PK', 'Username', 'Email', 'Date Joined', 'Class Status'])
