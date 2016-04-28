@@ -21,6 +21,6 @@ class Command(BaseCommand):
                 username = line.strip()
                 if username:
                     usernames.append(username)
-            logger.debug("usernames: %s", usernames)
-            inactive_users = User.objects.filter(username__in=usernames).update(is_active=False)
-            logger.debug("deactivated %s users", inactive_users.count())
+            logger.debug("Deactivating %s usernames", len(usernames))
+            deactivated_users = User.objects.filter(username__in=usernames, is_active=True).update(is_active=False)
+            logger.debug("Updated %s users", deactivated_users)
