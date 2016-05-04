@@ -5,6 +5,7 @@ from django.db import transaction
 from django.forms.models import modelformset_factory
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.http import require_GET, require_POST
 
@@ -15,7 +16,7 @@ from vcweb.core.models import (Participant, ParticipantSignup, PermissionGroup, 
 from vcweb.core.views import mimetypes
 
 from .forms import (SessionInviteForm, ExperimentSessionForm, ParticipantAttendanceForm, CancelSignupForm)
-from .models import InvitationEmail
+from .models import InvitationEmail, generate_participant_report
 
 from datetime import datetime
 from time import mktime
@@ -404,6 +405,19 @@ def download_experiment_session(request, pk=None):
         participant = ps.invitation.participant
         writer.writerow([participant.email, participant.full_name, participant.username, participant.class_status,
                          ps.get_attendance_display()])
+    return response
+
+
+@group_required(PermissionGroup.experimenter)
+@ownership_required(ExperimentSession)
+@require_GET
+def download_experiment_metadata_participants(request, pk=None):
+    experiment_metadata = get_object_or_404(ExperimentMetadata, pk=pk)
+
+    response = HttpResponse(content_type=mimetypes.types_map['.csv'])
+    response['Content-Disposition'] = 'attachment; filename={0}-participants.csv'.format(experiment_metadata.namespace)
+    writer = unicodecsv.writer(response, encoding='utf-8')
+    generate_participant_report(writer, experiment_metadata)
     return response
 
 

@@ -3206,6 +3206,10 @@ class ParticipantSignupQuerySet(models.query.QuerySet):
             criteria.update(invitation__participant=participant)
         return self.select_related('invitation__participant', 'invitation__experiment_session').filter(**criteria)
 
+    def with_experiment_metadata(self, experiment_metadata=None, **kwargs):
+        criteria = ParticipantSignupQuerySet._experiment_metadata_criteria(kwargs, experiment_metadata=experiment_metadata)
+        return self.select_related('invitation__participant', 'invitation__experiment_session').filter(**criteria)
+
 
 class ParticipantSignup(models.Model):
     ATTENDANCE = Choices(

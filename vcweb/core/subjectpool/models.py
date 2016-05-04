@@ -1,6 +1,7 @@
 from django.contrib.sites.shortcuts import get_current_site
 from django.template.loader import get_template
-from vcweb.core.models import ExperimentSession
+from django.utils import timezone
+from vcweb.core.models import ExperimentSession, ParticipantSignup
 
 class InvitationEmail(object):
 
@@ -22,3 +23,25 @@ class InvitationEmail(object):
             'invitation_text': message,
             'session_list': ExperimentSession.objects.filter(pk__in=session_ids),
         })
+
+
+def generate_participant_report(writer=None, experiment_metadata=None):
+    if writer is None or experiment_metadata is None:
+        raise ValueError("Please enter in a valid writable thing and an experiment metadata")
+    writer.writerow(["Participant List for {0}".format(experiment_metadata.title), experiment_metadata.namespace,
+                     "Generated on {0}".format(timezone.now())])
+    writer.writerow(['Email', 'Name', 'Username', 'Class Status', 'Attendance', 'Experiment Session Location',
+                     'Experiment Session Start Time', 'Experiment Session End Time', 'Experiment Session Capacity',
+                     'Experiment Session Creator', ])
+    for ps in ParticipantSignup.objects.with_experiment_metadata(experiment_metadata=experiment_metadata):
+        invitation = ps.invitation
+        participant = invitation.participant
+        experiment_session = invitation.experiment_session
+        writer.writerow([participant.email, participant.full_name, participant.username, participant.class_status,
+                         ps.get_attendance_display(),
+                         experiment_session.location,
+                         experiment_session.scheduled_date,
+                         experiment_session.scheduled_end_date,
+                         experiment_session.capacity,
+                         experiment_session.creator
+                         ])
