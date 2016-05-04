@@ -400,11 +400,10 @@ def download_experiment_session(request, pk=None):
     writer.writerow(["Participant list", experiment_session, experiment_session.location, experiment_session.capacity,
                      experiment_session.creator])
     writer.writerow(['Email', 'Name', 'Username', 'Class Status', 'Attendance'])
-    for ps in ParticipantSignup.objects.select_related('invitation__participant').filter(
-            invitation__experiment_session=experiment_session):
+    for ps in ParticipantSignup.objects.select_related('invitation__participant').filter(invitation__experiment_session=experiment_session):
         participant = ps.invitation.participant
         writer.writerow([participant.email, participant.full_name, participant.username, participant.class_status,
-                         ps.attendance])
+                         ps.get_attendance_display()])
     return response
 
 
