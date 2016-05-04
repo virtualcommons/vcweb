@@ -3208,6 +3208,7 @@ class ParticipantSignupQuerySet(models.query.QuerySet):
 
     def with_experiment_metadata(self, experiment_metadata=None, **kwargs):
         criteria = ParticipantSignupQuerySet._experiment_metadata_criteria(kwargs, experiment_metadata=experiment_metadata)
+        logger.debug("criteria: %s", criteria)
         return self.select_related('invitation__participant', 'invitation__experiment_session').filter(**criteria)
 
 

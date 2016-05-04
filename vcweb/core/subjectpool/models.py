@@ -25,7 +25,7 @@ class InvitationEmail(object):
         })
 
 
-def generate_participant_report(writer=None, experiment_metadata=None):
+def generate_participant_report(writer=None, experiment_metadata=None, **kwargs):
     if writer is None or experiment_metadata is None:
         raise ValueError("Please enter in a valid writable thing and an experiment metadata")
     writer.writerow(["Participant List for {0}".format(experiment_metadata.title), experiment_metadata.namespace,
@@ -33,7 +33,7 @@ def generate_participant_report(writer=None, experiment_metadata=None):
     writer.writerow(['Email', 'Name', 'Username', 'Class Status', 'Attendance', 'Experiment Session Location',
                      'Experiment Session Start Time', 'Experiment Session End Time', 'Experiment Session Capacity',
                      'Experiment Session Creator', ])
-    for ps in ParticipantSignup.objects.with_experiment_metadata(experiment_metadata=experiment_metadata):
+    for ps in ParticipantSignup.objects.with_experiment_metadata(experiment_metadata=experiment_metadata, **kwargs):
         invitation = ps.invitation
         participant = invitation.participant
         experiment_session = invitation.experiment_session

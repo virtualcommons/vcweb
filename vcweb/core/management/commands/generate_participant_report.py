@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 import unicodecsv
 import logging
 
-from vcweb.core.models import ExperimentMetadata
+from vcweb.core.models import ExperimentMetadata, ParticipantSignup
 from vcweb.core.subjectpool.models import generate_participant_report
 
 
@@ -10,11 +10,11 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-    help = '''Generate participant data report for the subject pool'''
+    help = '''Generates a CSV with all ParticipantSignups for the given ExperimentMetadata'''
 
     def add_arguments(self, parser):
         parser.add_argument('--experiment-metadata-pk', dest='experiment_metadata_pk', required=True,
-                            help='')
+                            help='ExperimentMetadata PK used to filter ParticipantSignups')
         parser.add_argument('--outfile', dest='outfile',
                             required=False,
                             default='experiment-participants.txt',
@@ -26,4 +26,5 @@ class Command(BaseCommand):
         output_filename = options['outfile']
         with open(output_filename, 'wb') as outfile:
             writer = unicodecsv.writer(outfile, encoding='utf-8')
-            generate_participant_report(writer, experiment_metadata)
+            generate_participant_report(writer, experiment_metadata,
+                                        attendance=ParticipantSignup.ATTENDANCE.participated)
