@@ -18,7 +18,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 SECRET_KEY = 'CUSTOMIZE_ME'
 
 RAVEN_CONFIG = {
-    'dsn': 'https://public:secret@vcsentry.asu.edu/1',
+    'dsn': 'https://public:secret@sentry.commons.asu.edu/1',
 }
 
 SITE_URL = 'https://vcweb.asu.edu'
