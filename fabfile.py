@@ -172,7 +172,7 @@ def create_postgres_user(username='vcweb'):
 @task(alias='rfd')
 def restore_from_dump(dumpfile='vcweb.sql', username='vcweb', dbname='vcweb'):
     execute(setup_postgres)
-    local("dropdb {} -U {}".format(env.db_name, env.db_user))
+    local("dropdb {} -U {} --if-exists".format(env.db_name, env.db_user))
     create_postgres_db(env.db_user, env.db_name)
     local("psql {} {} < {}".format(env.db_name, env.db_user, dumpfile))
     dj('migrate')
