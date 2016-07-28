@@ -138,7 +138,7 @@ CACHES = {
         'BACKEND': 'django_redis.cache.RedisCache',
         'LOCATION': 'redis://127.0.0.1:6379/1',
         'OPTIONS': {
-            'MAX_ENTRIES': 1536,
+            'MAX_ENTRIES': 4096,
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
             'IGNORE_EXCEPTIONS': True,
         }
@@ -311,7 +311,7 @@ CAS_CUSTOM_FORBIDDEN = 'cas_error'
 
 # override in local.py to enable more verbose logging e.g.,
 # DISABLED_TEST_LOGLEVEL = logging.NOTSET
-DISABLED_TEST_LOGLEVEL = logging.WARNING
+DISABLED_TEST_LOGLEVEL = logging.DEBUG
 
 # revision reporting support using dealer
 DEALER_TYPE = 'git'
