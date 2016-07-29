@@ -87,7 +87,7 @@ class ActivityStatusList(object):
             activity_status = self.get_activity_status(activity.pk)
             activity_dict['status'] = activity_status
             activity_dict['availableNow'] = activity_status == 'available'
-            activity_dict['availabilities'] = [aa.to_dict() for aa in activity_availability_cache[activity.pk]]
+            activity_dict['availabilities'] = activity_availability_cache[activity.pk]
             adl.append(activity_dict)
         adl.sort(key=_activity_status_sort_key)
         self.activity_dict_list = adl

@@ -4,14 +4,6 @@ from email.utils import parseaddr
 from string import Template
 from urllib import urlencode
 from enum import Enum
-import itertools
-import logging
-import markdown
-import random
-import string
-import hashlib
-import urllib2
-import xml.etree.ElementTree as ET
 
 from django.apps import apps
 from django.conf import settings
@@ -29,6 +21,17 @@ from django.template.defaultfilters import slugify
 from django.template.loader import select_template, get_template
 from django.utils.translation import ugettext_lazy as _
 from model_utils import Choices
+
+import hashlib
+import itertools
+import json
+import logging
+import markdown
+import random
+import string
+import urllib2
+import xml.etree.ElementTree as ET
+
 
 from . import signals, simplecache
 from .decorators import log_signal_errors, retry
@@ -51,12 +54,9 @@ class PermissionGroup(Enum):
     demo_experimenter = 'Demo Experimenters'
 
     def get_django_group(self):
-        key = 'permissions.{0}'.format(self.name)
-        g = cache.get(key)
-        if not g:
-            g = Group.objects.get(name=self.value)
-            cache.set(key, g)
-        return g
+        if getattr(self, 'group', None) is None:
+            self.group = Group.objects.get(name=self.value)
+        return self.group
 
     def __str__(self):
         return self.value
@@ -2099,8 +2099,16 @@ class ParameterizedValue(models.Model):
         cv = cache.get(ck)
         if cv is None:
             cv = self.value
-            cache.set(ck, cv)
-        return cv
+            if isinstance(cv, models.Model):
+                cache.set(ck, serializers.serialize('json', [cv]))
+            else:
+                cache.set(ck, cv)
+            return cv
+        try:
+            json.loads(cv)
+            return serializers.deserialize('json', cv).next().object
+        except:
+            return cv
 
     @property
     def value(self):
