@@ -1,4 +1,6 @@
 
+from cas import views as cas_views
+
 from django.conf import settings
 from django.conf.urls import url, include
 from django.contrib import admin
@@ -7,14 +9,9 @@ from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.views.generic.base import TemplateView
 
-from .core.views import AntiSpamContactFormView
-
 urlpatterns = [
     url(r'^$', TemplateView.as_view(template_name='index.html'), name='home'),
     url(r'^about/$', TemplateView.as_view(template_name='index.html'), name='about'),
-    url(r'^contact/$', AntiSpamContactFormView.as_view(), name='contact_form'),
-    url(r'^contact/sent/$', TemplateView.as_view(template_name='contact_form/contact_form_sent.html'),
-        name='contact_form_sent'),
     url(r'^invalid-request$', TemplateView.as_view(template_name='invalid_request.html'),
         name='invalid_request'),
     url(r'^accounts/password/reset/$', auth_views.password_reset,
@@ -37,8 +34,8 @@ urlpatterns = [
     #    url(r'^broker/', include('vcweb.experiment.broker.urls', namespace='broker', app_name='broker')),
     url(r'^admin/', include(admin.site.urls)),
     url(r'^autocomplete/', include('autocomplete_light.urls')),
-    url(r'^cas/login', 'cas.views.login', name='cas_login'),
-    url(r'^cas/logout', 'cas.views.logout', name='cas_logout'),
+    url(r'^cas/login', cas_views.login, name='cas_login'),
+    url(r'^cas/logout', cas_views.logout, name='cas_logout'),
     url(r'^cas/error', TemplateView.as_view(template_name='cas_access_forbidden.html'), name='cas_error'),
     # subject pool urls
     url(r'^subject-pool/', include('vcweb.core.subjectpool.urls',
