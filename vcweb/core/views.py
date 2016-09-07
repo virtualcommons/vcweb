@@ -275,40 +275,6 @@ class LogoutView(TemplateView):
         return redirect('home')
 
 
-"""
-NOTE: Open registration currently disabled.
-class RegistrationView(FormView, AnonymousMixin):
-    form_class = RegistrationForm
-    template_name = 'accounts/register.html'
-
-    def form_valid(self, form):
-        email = form.cleaned_data['email'].lower()
-        password = form.cleaned_data['password']
-        first_name = form.cleaned_data['first_name']
-        last_name = form.cleaned_data['last_name']
-        institution_string = form.cleaned_data['institution']
-        experimenter_requested = form.cleaned_data['experimenter']
-        institution, created = Institution.objects.get_or_create(
-            name=institution_string)
-        user = User.objects.create_user(email, email, password, first_name=first_name, last_name=last_name)
-        if experimenter_requested:
-            experimenter_request = ExperimenterRequest.objects.create(user=user)
-            logger.debug("creating new experimenter request: %s", experimenter_request)
-        participant = Participant.objects.create(user=user, institution=institution)
-        logger.debug("Creating new participant: %s", participant)
-        request = self.request
-        # auth + login the newly created user
-        auth.login(
-            request, auth.authenticate(username=email, password=password))
-        set_authentication_token(user, request.session.session_key)
-        return super(RegistrationView, self).form_valid(form)
-
-    def get_success_url(self):
-        return reverse('core:dashboard')
-
-"""
-
-
 @login_required
 @require_GET
 def account_profile(request):

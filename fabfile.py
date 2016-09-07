@@ -19,7 +19,7 @@ sys.path.append(os.path.abspath(env.project_path))
 # default env configuration
 env.roledefs = {
     'localhost': ['localhost'],
-    'staging': ['vcweb-dev.asu.edu'],
+    'staging': ['dev.vcweb.asu.edu'],
     'prod': ['vcweb.asu.edu'],
 }
 env.python = 'python'
