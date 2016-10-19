@@ -252,7 +252,7 @@ def deploy(vcs_branch_dict):
                 _virtualenv(sudo, '%(python)s manage.py installtasks' % env, user=env.deploy_user)
             if confirm("Run database migrations?"):
                 _virtualenv(sudo, '%(python)s manage.py migrate' % env, user=env.deploy_user)
-            _virtualenv(sudo, '%(python)s manage.py collectstatic' % env, user=env.deploy_user)
+            _virtualenv(sudo, '%(python)s manage.py collectstatic --noinput' % env, user=env.deploy_user)
             execute(reload_uwsgi)
             sudo_chain(
                 'chmod -R ug+rw .',
