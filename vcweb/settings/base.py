@@ -172,7 +172,6 @@ VCWEB_EXPERIMENTS = (
     'vcweb.experiment.forestry',
     'vcweb.experiment.lighterprints',
     'vcweb.experiment.bound',
-    'vcweb.experiment.broker',
     'vcweb.experiment.irrigation',
 )
 
