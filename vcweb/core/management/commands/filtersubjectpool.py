@@ -14,8 +14,15 @@ class Command(BaseCommand):
     generates an output.txt file suitable for import into ASU's AMDF facility'''
     args = '<csv-file-with-emails-and-asurite-ids-to-process>'
 
-    def handle(self, emails, *args, **options):
-        with open(emails, 'rb') as infile, open('spool-amdf.txt', 'wb') as outfile, open('spool-dupes.txt', 'wb') as dupes:
+    def add_arguments(self, parser):
+        parser.add_argument('filename',
+                            help='CSV file with "First Name, Last Name, ASU Email, Regular Email, ASURITE ID" header"',
+                            default='freshman.csv',
+                            )
+
+    def handle(self, *args, **options):
+        input_filename = options['filename']
+        with open(input_filename, 'rb') as infile, open('spool-amdf.txt', 'wb') as outfile, open('spool-dupes.txt', 'wb') as dupes:
             r = csv.reader(infile)
             header = next(r, None)
             # FIXME: make this more broadly generalizable if needed
