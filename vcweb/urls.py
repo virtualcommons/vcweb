@@ -12,6 +12,8 @@ from django.views.generic.base import TemplateView
 urlpatterns = [
     url(r'^$', TemplateView.as_view(template_name='index.html'), name='home'),
     url(r'^about/$', TemplateView.as_view(template_name='index.html'), name='about'),
+    url(r'^contact/sent/$', TemplateView.as_view(template_name='contact_form/contact_form_sent.html'),
+        name='contact_form_sent'),
     url(r'^invalid-request$', TemplateView.as_view(template_name='invalid_request.html'),
         name='invalid_request'),
     url(r'^accounts/password/reset/$', auth_views.password_reset,

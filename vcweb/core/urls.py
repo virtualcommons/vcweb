@@ -82,8 +82,6 @@ urlpatterns = [
     # url(r'api/login', participant_api_login, name='participant_api_login'),
     # url(r'api/logout', api_logout, name='api_logout'),
     url(r'^contact/$', views.AntiSpamContactFormView.as_view(), name='contact_form'),
-    url(r'^contact/sent/$', TemplateView.as_view(template_name='contact_form/contact_form_sent.html'),
-        name='contact_form_sent'),
 ]
 
 router = routers.DefaultRouter(trailing_slash=False)

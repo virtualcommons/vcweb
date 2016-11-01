@@ -4,7 +4,7 @@
 {% load raven %}
 {% url 'about' as about %}
 {% url 'home' as home %}
-{% url 'contact_form' as contact %}
+{% url 'core:contact_form' as contact %}
 {% url 'core:dashboard' as dashboard %}
 {% url 'core:login' as login %}
 {% url 'core:logout' as logout %}
@@ -16,7 +16,7 @@
 {% url 'subjectpool:subjectpool_index' as subjectpool %}
 <!DOCTYPE html>
 <html lang="en">
-{% with jquery_version="1.12.0" bootstrap_version="3.3.6" bootswatch_version="3.3.6" fontawesome_version="4.5.0" knockout_version="3.4.0" ravenjs_version="1.1.19" %}
+{% with jquery_version="1.12.4" bootstrap_version="3.3.7" bootswatch_version="3.3.7" fontawesome_version="4.7.0" knockout_version="3.4.0" ravenjs_version="3.7.0" %}
 <head>
 {% block head %}
 <title>{% block title %}Virtual Commons Web Experiment{% endblock %}</title>
@@ -165,7 +165,7 @@
     <script src='{% static "js/ko/knockout.helper.js" %}'></script>
     <script src='{% static "js/common.js" %}'></script>
     {% if not DEBUG %}
-    <script src="//cdn.ravenjs.com/{{ravenjs_version}}/jquery,native/raven.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/raven.js/{{ravenjs_version}}/raven.min.js"></script>
     <script>
         var options = { tags: { git_commit: '{{ REVISION }}'} }
         Raven.config('{% sentry_public_dsn %}', options).install();
