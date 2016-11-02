@@ -15,7 +15,6 @@ from django.core.mail import EmailMultiAlternatives
 from django.core.validators import RegexValidator
 from django.db import models, transaction
 from django.db.models import Max, Sum, Count
-
 from django.dispatch import receiver
 from django.template.defaultfilters import slugify
 from django.template.loader import select_template, get_template
@@ -192,14 +191,14 @@ class ParameterValueMixin(object):
                 return parameter_value_set.get(parameter=parameter)
             elif name:
                 return parameter_value_set.get(parameter__name=name)
-        except parameter_value_set.model.DoesNotExist as e:
+        except parameter_value_set.model.DoesNotExist:
             if inheritable:
                 return self.parent.get_parameter_value(parameter=parameter, name=name, default=default)
             else:
                 if parameter is None:
                     parameter = Parameter.objects.get(name=name)
-# FIXME: this is dangerous concurrency, should remove this entirely and avoid auto-creation of parameters, this causes
-# MultipleObjectExceptions since we can't guarantee atomicity of this method even with transaction.atomic
+# FIXME: critical section that must be protected, should remove this entirely to avoid auto-creation of parameters. May
+# be the cause of MultipleObjectExceptions
                 if create:
                     pv = self.parameter_value_set.create(parameter=parameter)
                     if default is not None:
@@ -1240,7 +1239,7 @@ class Experiment(models.Model):
 
         demo_participants_group = PermissionGroup.demo_participant.get_django_group()
 
-        for i in xrange(1, count + 1):
+        for i in range(1, count + 1):
             email_address = u's{0}{1}@{2}'.format(i, username_suffix, email_suffix)
             userqs = User.objects.select_for_update().filter(
                 models.Q(email=email_address) | models.Q(username=email_address))
@@ -2585,7 +2584,7 @@ class ParticipantQuerySet(models.query.QuerySet):
 
 
 class Participant(CommonsUser):
-    GENDER_CHOICES = (('M', 'Male'), ('F', 'Female'),)
+    GENDER_CHOICES = (('M', _('Male')), ('F', _('Female')), ('N', _('Prefer not to say')),)
     CLASS_CHOICES = Choices('Freshman', 'Sophomore', 'Junior', 'Senior', 'Graduate', 'Other')
     SPORT_CHOICES = Choices('Football', 'Baseball', 'Hockey', 'Basketball', 'Other')
     COLOR_CHOICES = Choices('red', 'blue', 'green', 'yellow', 'black', 'white', 'pink', 'purple', 'other')

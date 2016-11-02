@@ -122,7 +122,7 @@ class BaseVcwebTest(TestCase):
                                                                           name='Test Experiment Configuration',
                                                                           exchange_rate=0.02,
                                                                           creator=experimenter)
-        for index in xrange(1, number_of_rounds):
+        for index in range(1, number_of_rounds):
             should_initialize = (index == 1)
             experiment_configuration.round_configuration_set.create(sequence_number=index,
                                                                     randomize_groups=should_initialize,
@@ -233,7 +233,9 @@ class SubjectPoolTest(BaseVcwebTest):
         password = "test"
         participants = []
         institution = Institution.objects.get(name="Arizona State University")
-        for x in xrange(number):
+        genders = [g[0] for g in Participant.GENDER_CHOICES]
+        class_statuses = [c[0] for c in Participant.CLASS_CHOICES][:4]
+        for x in range(number):
             email = 'student%s@asu.edu' % x
             user = User.objects.create_user(first_name='Student', last_name='%d' % x, username=email, email=email,
                                             password=password)
@@ -247,10 +249,10 @@ class SubjectPoolTest(BaseVcwebTest):
             p = Participant(
                 user=user,
                 can_receive_invitations=random.choice([True, False]),
-                gender=random.choice(['M', 'F']),
+                gender=random.choice(genders),
                 birthdate=random_date,
                 major='Complex Adaptive Systems',
-                class_status=random.choice(['Freshman', 'Sophomore', 'Junior', 'Senior']),
+                class_status=random.choice(class_statuses),
                 institution=institution
             )
             participants.append(p)
@@ -263,7 +265,7 @@ class SubjectPoolTest(BaseVcwebTest):
         today = date.today()
         year = today.year
         month = today.month
-        for x in xrange(number):
+        for x in range(number):
             if start_date is None:
                 day = random.choice(range(1, 29))
                 start_date = datetime(year, month, day)
