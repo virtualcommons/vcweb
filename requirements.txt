@@ -26,7 +26,6 @@ tornado==4.5.1
 tornado-redis==2.4.18
 redis==2.10.5
 unicodecsv==0.14.1
-wsgiref==0.1.2
 xlrd==1.0.0
 xlwt==1.2.0
 dealer==2.0.5
