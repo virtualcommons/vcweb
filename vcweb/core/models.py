@@ -2549,6 +2549,22 @@ class ParticipantQuerySet(models.query.QuerySet):
     def active(self, *args, **kwargs):
         return self.filter(user__is_active=True, *args, **kwargs).exclude(user__email__contains=('mailinator.com'))
 
+    def expired(self, *args, **kwargs):
+        # get current year
+        today = date.today()
+        offsets = {'Freshman': timedelta(days=365 * 3.5), 'Sophomore': timedelta(days=365 * 2.5),
+                   'Junior': timedelta(days=365 * 1.5), 'Senior': timedelta(days=188)}
+        return self.filter(
+            (
+                (models.Q(user__date_joined__lte=today-offsets['Senior']) & models.Q(class_status='Senior')) |
+                (models.Q(user__date_joined__lte=today-offsets['Junior']) & models.Q(class_status='Junior')) |
+                (models.Q(user__date_joined__lte=today-offsets['Sophomore']) & models.Q(class_status='Sophomore')) |
+                (models.Q(user__date_joined__lte=today-offsets['Freshman']) & models.Q(class_status='Freshman'))
+            ),
+            user__is_active=True,
+            **kwargs
+        )
+
     def invalid_participants(self, *args, **kwargs):
         return self.filter(user__email__contains='mailinator.com')
 
