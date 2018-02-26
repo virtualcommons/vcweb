@@ -1,4 +1,4 @@
-Django==1.10.7
+Django<1.12
 Fabric==1.14.0
 Markdown==2.6.10
 PyYAML==3.12
