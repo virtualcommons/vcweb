@@ -1,20 +1,18 @@
 import logging
 
-from datetime import datetime
 
 from django import forms
 from django.forms import widgets, CheckboxInput, ModelForm
 from django.utils.translation import ugettext_lazy as _
-from autocomplete_light import shortcuts as autocomplete_light
+from dal import autocomplete
 
-from vcweb.core.autocomplete_light_registry import InstitutionAutocomplete
 from vcweb.core.forms import NumberInput
 from vcweb.core.models import (ParticipantSignup, ExperimentSession)
 
 
 logger = logging.getLogger(__name__)
 
-HOUR_CHOICES = [(i, i) for i in xrange(0, 23)]
+HOUR_CHOICES = [(i, i) for i in range(0, 23)]
 MIN_CHOICES = [(i, i) for i in (0, 15, 30, 45)]
 
 
@@ -66,8 +64,16 @@ class SessionInviteForm(forms.Form):
         help_text=_("Limit to self-reported undergraduate students"),
         widget=CheckboxInput(attrs={'checked': True}), required=False)
     gender = forms.ChoiceField(choices=GENDER_CHOICES)
-    affiliated_institution = forms.CharField(required=False, widget=autocomplete_light.TextWidget(
-        InstitutionAutocomplete, attrs={'value': 'Arizona State University'}))
+    affiliated_institution = forms.CharField(
+        required=False,
+        widget=autocomplete.ModelSelect2(
+            url='institution-autocomplete',
+            attrs={
+                'data-placeholder': 'Institution name',
+                'data-minimum-input-length': 3,
+            }
+        )
+    )
     invitation_subject = forms.CharField(widget=widgets.TextInput())
     invitation_text = forms.CharField(widget=widgets.Textarea(attrs={'rows': '4'}))
 

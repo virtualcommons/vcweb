@@ -1,7 +1,7 @@
 import email
 import logging
 import re
-from autocomplete_light import shortcuts as autocomplete_light
+from dal import autocomplete
 import time
 
 from hashlib import sha1
@@ -14,7 +14,6 @@ from django.core.validators import validate_email
 from django.forms import widgets, ValidationError, CheckboxInput
 from django.utils.translation import ugettext_lazy as _
 
-from .autocomplete_light_registry import InstitutionAutocomplete, ParticipantMajorAutocomplete
 from .models import (User, Experimenter, Institution, Participant, ExperimentMetadata, ExperimentConfiguration,
                      ExperimentParameterValue, RoundConfiguration, RoundParameterValue)
 
@@ -112,8 +111,9 @@ class AsuRegistrationForm(forms.ModelForm):
 
     first_name = forms.CharField(widget=widgets.TextInput)
     last_name = forms.CharField(widget=widgets.TextInput)
-    email = forms.EmailField(widget=widgets.TextInput, help_text=_('''When experiments are scheduled you may receive an
-    invitation to participate. Please be sure to enter a valid email address. We will never share your email.'''))
+    email = forms.EmailField(
+        widget=widgets.TextInput,
+        help_text=_('''When experiments are scheduled you may receive an invitation to participate. Please be sure to enter a valid email address. We will never share your email.'''))
 
     def __init__(self, *args, **kwargs):
         instance = kwargs.get('instance')
@@ -127,7 +127,13 @@ class AsuRegistrationForm(forms.ModelForm):
         fields = ['first_name', 'last_name', 'email', 'gender', 'class_status', 'major', 'favorite_sport',
                   'favorite_food', 'favorite_color', 'favorite_movie_genre']
         widgets = {
-            'major': autocomplete_light.TextWidget(ParticipantMajorAutocomplete)
+            'major': autocomplete.ModelSelect2(
+                url='major-autocomplete',
+                attrs={
+                    'data-placeholder': 'Major',
+                    'data-minimum-input-length': 3,
+                }
+            )
         }
 
     def save(self, commit=True):
@@ -149,8 +155,16 @@ class AccountForm(forms.ModelForm):
     first_name = forms.CharField(widget=widgets.TextInput)
     last_name = forms.CharField(widget=widgets.TextInput)
     email = forms.EmailField(widget=widgets.TextInput, help_text=_('We will never share your email.'))
-    institution = forms.CharField(widget=autocomplete_light.TextWidget(InstitutionAutocomplete), required=False,
-                                  help_text=_('The primary institution, if any, you are affiliated with.'))
+    institution = forms.CharField(
+        widget=autocomplete.ModelSelect2(
+            url='institution-autocomplete',
+            attrs={
+                'data-placeholder': 'Institution',
+                'data-minimum-input-length': 3,
+            }
+        ),
+        required=False,
+        help_text=_('The primary institution, if any, you are affiliated with.'))
 
     def __init__(self, *args, **kwargs):
         instance = kwargs.get('instance')
@@ -201,7 +215,13 @@ class ParticipantAccountForm(AccountForm):
             'can_receive_invitations': _('Receive invitations for experiments?')
         }
         widgets = {
-            'major': autocomplete_light.TextWidget(ParticipantMajorAutocomplete),
+            'major': autocomplete.ModelSelect2(
+                url='major-autocomplete',
+                attrs={
+                    'data-placeholder': 'Major',
+                    'data-minimum-input-length': 3,
+                }
+            )
         }
 
     def clean(self):
@@ -414,10 +434,17 @@ class RegisterParticipantsForm(forms.Form):
         required=False,
         min_length=3,
         help_text=_('Participant login password. If blank, a unique password will be generated for each participant.'))
-    institution_name = forms.CharField(min_length=3, label="Institution name",
-                                       required=False, initial='Arizona State University',
-                                       widget=autocomplete_light.TextWidget(InstitutionAutocomplete),
-                                       help_text=_('Institution to associate with these participants.'))
+    institution_name = forms.CharField(
+        min_length=3, label="Institution name",
+        required=False, initial='Arizona State University',
+        widget=autocomplete.ModelSelect2(
+            url='institution-autocomplete',
+            attrs={
+                'data-placeholder': 'Institution',
+                'data-minimum-input-length': 3,
+            }
+        ),
+        help_text=_('Institution to associate with these participants.'))
     registration_email_from_address = forms.EmailField(
         widget=EmailInput(),
         label=_('Sender email'),

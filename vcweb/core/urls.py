@@ -75,6 +75,10 @@ urlpatterns = [
     url(r'^api/dashboard', get_dashboard_view_model, name='dashboard_view_model'),
     url(r'bug-report', RedirectView.as_view(url='https://github.com/virtualcommons/vcweb/issues/new'),
         name='report_issues'),
+    url(r'^autocomplete/participant-institution/$', views.InstitutionAutocomplete.as_view(),
+        name='institution-autocomplete'),
+    url(r'^autocomplete/participant-major/$', views.ParticipantMajorAutocomplete.as_view(),
+        name='major-autocomplete'),
     # url(r'bug-report', BugReportFormView.as_view(), name='report_issues'),
     # match arbitrary experiment URL prefix fragments for logging / login /
     # logout / accessing the dashboard view model

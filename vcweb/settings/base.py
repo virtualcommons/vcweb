@@ -149,6 +149,8 @@ DJANGO_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
+    'dal',
+    'dal_select2',
     'django.contrib.admin',
     'django.contrib.messages',
     'django.contrib.staticfiles',
@@ -163,7 +165,6 @@ THIRD_PARTY_APPS = (
     'bootstrap3',
     'cas',
     'django_redis',
-    'autocomplete_light',
     'kronos',
 )
 
@@ -217,6 +218,7 @@ MEDIA_URL = '/static/media/'
 
 def is_accessible(directory_path):
     return os.path.isdir(directory_path) and os.access(directory_path, os.W_OK | os.X_OK)
+
 
 LOG_DIRECTORY = '/opt/vcweb/logs'
 

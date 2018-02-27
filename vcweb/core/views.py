@@ -5,11 +5,14 @@ import mimetypes
 import unicodecsv
 import uuid
 
+from dal import autocomplete
+
 from django.conf import settings
 from django.contrib import auth, messages
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
+from django.db import models
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.decorators import method_decorator
@@ -992,3 +995,22 @@ class AntiSpamContactFormView(ContactFormView):
 @group_required(PermissionGroup.experimenter)
 def audit_report(request):
     return render(request, 'admin/audit_report.html', get_audit_data())
+
+
+# Sets up Autocomplete functionality for Institution Field on Participant
+# Account Profile
+class InstitutionAutocomplete(autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        if self.q:
+            return Institution.objects.filter(models.Q(name__istartswith=self.q) |
+                                              models.Q(acronym__istartswith=self.q))
+        return Institution.objects.all()
+
+
+# Sets up autocomplete functionality for major field on participant account profile
+class ParticipantMajorAutocomplete(autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = Participant.objects.order_by('major').distinct('major')
+        if self.q:
+            qs = qs.filter(major__istartswith=self.q)
+        return qs.values_list('major', flat=True)

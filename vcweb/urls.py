@@ -35,7 +35,6 @@ urlpatterns = [
     #                                    app_name='lighterprints')),
     #    url(r'^broker/', include('vcweb.experiment.broker.urls', namespace='broker', app_name='broker')),
     url(r'^admin/', include(admin.site.urls)),
-    url(r'^autocomplete/', include('autocomplete_light.urls')),
     url(r'^cas/login', cas_views.login, name='cas_login'),
     url(r'^cas/logout', cas_views.logout, name='cas_logout'),
     url(r'^cas/error', TemplateView.as_view(template_name='cas_access_forbidden.html'), name='cas_error'),
