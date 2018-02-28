@@ -23,6 +23,7 @@ python-coveralls==2.9.1
 raven==6.4.0
 requests==2.18.4
 sockjs-tornado==1.0.3
+pillow==5.0.0
 tornado==4.5.2
 tornado-redis==2.4.18
 redis==2.10.6
