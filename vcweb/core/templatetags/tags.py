@@ -7,13 +7,13 @@ register = template.Library()
 
 
 @register.filter(is_safe=True)
-def active(request, pattern):
-    return 'active' if pattern == request.path else ''
+def active(path, pattern):
+    return 'active' if pattern == path else ''
 
 
 @register.filter(is_safe=True)
-def active_re(request, pattern):
-    return 'active' if re.search(pattern, request.path) else ''
+def active_re(path, pattern):
+    return 'active' if re.search(pattern, path) else ''
 
 
 @register.filter(is_safe=True)
