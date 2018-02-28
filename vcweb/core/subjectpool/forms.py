@@ -7,7 +7,7 @@ from django.utils.translation import ugettext_lazy as _
 from dal import autocomplete
 
 from vcweb.core.forms import NumberInput
-from vcweb.core.models import (ParticipantSignup, ExperimentSession)
+from vcweb.core.models import (ParticipantSignup, ExperimentSession, Institution)
 
 
 logger = logging.getLogger(__name__)
@@ -64,10 +64,11 @@ class SessionInviteForm(forms.Form):
         help_text=_("Limit to self-reported undergraduate students"),
         widget=CheckboxInput(attrs={'checked': True}), required=False)
     gender = forms.ChoiceField(choices=GENDER_CHOICES)
-    affiliated_institution = forms.CharField(
+    affiliated_institution = forms.ModelChoiceField(
+        queryset=Institution.objects.all(),
         required=False,
         widget=autocomplete.ModelSelect2(
-            url='institution-autocomplete',
+            url='core:institution-autocomplete',
             attrs={
                 'data-placeholder': 'Institution name',
                 'data-minimum-input-length': 3,

@@ -1,4 +1,3 @@
-from django.conf import settings as vcweb_settings
 from fabric.api import local, sudo, cd, env, lcd, execute, hosts, roles, task
 from fabric.context_managers import prefix
 from fabric.contrib.console import confirm
@@ -13,8 +12,11 @@ logger = logging.getLogger(__name__)
 
 # default to current working directory
 env.project_path = os.path.dirname(__file__)
-# needed to push vcweb.settings onto the path.
+# push current directory onto the path to access core.settings
 sys.path.append(os.path.abspath(env.project_path))
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "vcweb.settings.dev")
+
+from django.conf import settings
 
 # default env configuration
 env.roledefs = {
@@ -24,7 +26,7 @@ env.roledefs = {
 }
 env.python = 'python'
 env.project_name = 'vcweb'
-env.project_conf = 'vcweb.settings'
+env.project_conf = os.environ.get('DJANGO_SETTINGS_MODULE')
 env.deploy_user = 'vcweb'
 env.deploy_group = 'vcweb'
 env.deploy_parent_dir = '/opt/'
@@ -105,7 +107,7 @@ def test(name=None, coverage=False):
     if name is not None:
         env.apps = name
     else:
-        env.apps = ' '.join(vcweb_settings.VCWEB_APPS)
+        env.apps = ' '.join(settings.VCWEB_APPS)
     if coverage:
         ignored = ['*{0}*'.format(ignored_pkg) for ignored_pkg in env.ignored_coverage]
         env.python = "coverage run --source='.' --omit=" + ','.join(ignored)
@@ -115,7 +117,7 @@ def test(name=None, coverage=False):
 @task
 def sockjs(port=None):
     if port is None:
-        port = vcweb_settings.WEBSOCKET_PORT
+        port = settings.WEBSOCKET_PORT
     _virtualenv(local, "{python} vcweb/sockjs-redis.py {port}".format(python=env.python, port=port), capture=False)
 
 
@@ -149,7 +151,6 @@ def prod():
 @roles('localhost')
 @task
 def setup():
-    local('cp vcweb/settings/local.py.example vcweb/settings/local.py')
     execute(setup_postgres)
     create_postgres_user(env.db_user)
     create_postgres_db(env.db_user, env.db_name)
@@ -158,8 +159,8 @@ def setup():
 @roles('localhost')
 @task
 def setup_postgres():
-    env.db_name = vcweb_settings.DATABASES['default']['NAME']
-    env.db_user = vcweb_settings.DATABASES['default']['USER']
+    env.db_name = settings.DATABASES['default']['NAME']
+    env.db_user = settings.DATABASES['default']['USER']
 
 
 def create_postgres_db(username='vcweb', dbname='vcweb'):
@@ -245,7 +246,7 @@ def deploy(vcs_branch_dict):
                 'chmod g+s logs',
                 'chmod -R g+rw logs/',
                 user=env.deploy_user, pty=True)
-            env.static_root = vcweb_settings.STATIC_ROOT
+            env.static_root = settings.STATIC_ROOT
             if confirm("Update pip dependencies?"):
                 _virtualenv(sudo, 'pip install -Ur requirements.txt', user=env.deploy_user)
             if confirm("Update cron?"):

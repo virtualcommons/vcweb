@@ -61,9 +61,15 @@ urlpatterns.append(
 
 
 if settings.DEBUG:
+    import debug_toolbar
     urlpatterns += staticfiles_urlpatterns()
     urlpatterns += [
         url(r'^500/$', TemplateView.as_view(template_name='500.html')),
         url(r'^404/$', TemplateView.as_view(template_name='404.html')),
         url(r'^403/$', TemplateView.as_view(template_name='403.html')),
     ]
+    urlpatterns = [
+        url(r'^__debug__/', include(debug_toolbar.urls)),
+    ] + urlpatterns
+
+

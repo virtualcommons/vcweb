@@ -128,7 +128,7 @@ class AsuRegistrationForm(forms.ModelForm):
                   'favorite_food', 'favorite_color', 'favorite_movie_genre']
         widgets = {
             'major': autocomplete.ModelSelect2(
-                url='major-autocomplete',
+                url='core:major-autocomplete',
                 attrs={
                     'data-placeholder': 'Major',
                     'data-minimum-input-length': 3,
@@ -155,9 +155,10 @@ class AccountForm(forms.ModelForm):
     first_name = forms.CharField(widget=widgets.TextInput)
     last_name = forms.CharField(widget=widgets.TextInput)
     email = forms.EmailField(widget=widgets.TextInput, help_text=_('We will never share your email.'))
-    institution = forms.CharField(
+    institution = forms.ModelChoiceField(
+        queryset=Institution.objects.all(),
         widget=autocomplete.ModelSelect2(
-            url='institution-autocomplete',
+            url='core:institution-autocomplete',
             attrs={
                 'data-placeholder': 'Institution',
                 'data-minimum-input-length': 3,
@@ -216,7 +217,7 @@ class ParticipantAccountForm(AccountForm):
         }
         widgets = {
             'major': autocomplete.ModelSelect2(
-                url='major-autocomplete',
+                url='core:major-autocomplete',
                 attrs={
                     'data-placeholder': 'Major',
                     'data-minimum-input-length': 3,
@@ -434,11 +435,12 @@ class RegisterParticipantsForm(forms.Form):
         required=False,
         min_length=3,
         help_text=_('Participant login password. If blank, a unique password will be generated for each participant.'))
-    institution_name = forms.CharField(
-        min_length=3, label="Institution name",
-        required=False, initial='Arizona State University',
+    institution_name = forms.ModelChoiceField(
+        label="Institution name",
+        required=False,
+        queryset=Institution.objects.all(),
         widget=autocomplete.ModelSelect2(
-            url='institution-autocomplete',
+            url='core:institution-autocomplete',
             attrs={
                 'data-placeholder': 'Institution',
                 'data-minimum-input-length': 3,

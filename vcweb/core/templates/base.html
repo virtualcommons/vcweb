@@ -16,7 +16,7 @@
 {% url 'subjectpool:subjectpool_index' as subjectpool %}
 <!DOCTYPE html>
 <html lang="en">
-{% with jquery_version="1.12.4" bootstrap_version="3.3.7" bootswatch_version="3.3.7" fontawesome_version="4.7.0" knockout_version="3.4.0" ravenjs_version="3.7.0" path=request.path if request else '' %}
+{% with bootstrap_version="3.3.7" bootswatch_version="3.3.7" fontawesome_version="4.7.0" knockout_version="3.4.0" ravenjs_version="3.7.0" path=request.path %}
 <head>
 {% block head %}
 <title>{% block title %}Virtual Commons Web Experiment{% endblock %}</title>
@@ -155,8 +155,8 @@
     </div><!-- /.modal -->
     {% endblock footer %}
 </footer>
-    <script src='//code.jquery.com/jquery-{{jquery_version}}.min.js'></script>
     <!-- Latest compiled and minified JavaScript -->
+    <script type="text/javascript" src="{% static 'admin/js/vendor/jquery/jquery.js' %}"></script>
     <script src="//maxcdn.bootstrapcdn.com/bootstrap/{{bootstrap_version}}/js/bootstrap.min.js"></script>
     <script src='{% static "js/bootbox.min.js" %}'></script>
     <script src='{% static "js/jquery.cookie.js" %}'></script>
