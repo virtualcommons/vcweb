@@ -39,7 +39,7 @@ from .forms import (LoginForm, ParticipantAccountForm, ExperimenterAccountForm, 
 from .models import (User, ChatMessage, Participant, ParticipantExperimentRelationship, ParticipantGroupRelationship,
                      ExperimentConfiguration, Experiment, Institution, BookmarkedExperimentMetadata, OstromlabFaqEntry,
                      ExperimentParameterValue, RoundConfiguration, RoundParameterValue, ParticipantSignup,
-                     get_model_fields, PermissionGroup, get_audit_data, ASUWebDirectoryProfile)
+                     get_model_fields, PermissionGroup, get_audit_data, )
 
 from ..redis_pubsub import RedisPubSub
 
@@ -180,9 +180,6 @@ def dashboard(request):
 def cas_asu_registration(request):
     user = request.user
     if is_participant(user) and user.participant.should_update_profile:
-        directory_profile = ASUWebDirectoryProfile(user.username)
-        logger.debug("participant %s needs to update their profile, requested directory profile %s",
-                     user, directory_profile)
         return render(request, 'accounts/asu_registration.html',
                       {'form': AsuRegistrationForm(instance=user.participant)})
     else:
@@ -782,31 +779,9 @@ def get_cas_user(tree):
 
 
 def create_cas_participant(username, cas_tree):
-    try:
-        directory_profile = ASUWebDirectoryProfile(username)
-        logger.debug("found user profile %s (%s)", directory_profile, directory_profile.email)
-        # check existence of users who've manually registered via email
-        # or have been registered for experiments directly
-        user = User.objects.get(username=directory_profile.email)
-        user.username = username
-        user.save()
-    except User.DoesNotExist:
-        # If this exception is thrown it means that User Logged in via CAS is a new user
-        logger.debug("No user found with username %s", username)
-        # Create vcweb participant only if the user is an undergrad student
-        if not directory_profile.is_undergraduate:
-            logger.error("CAS authenticated user %s is not an undergrad student", username)
-            return None
-
-        user = create_cas_user_and_assign_group(username, first_name=directory_profile.first_name,
-                                                last_name=directory_profile.last_name, email=directory_profile.email,
-                                                major=directory_profile.major)
-        logger.debug("%s (%s)", directory_profile, user.email)
-    except:
-        logger.exception("ASU Web Directory Down: Error retrieving info for %s", username)
-        logger.debug("Creating user with username %s and random password", username)
-        user = create_cas_user_and_assign_group(username=username)
-    return user
+    # If this exception is thrown it means that User Logged in via CAS is a new user
+    logger.debug("No user found with username %s", username)
+    return create_cas_user_and_assign_group(username=username)
 
 
 def create_cas_user_and_assign_group(username, first_name=None, last_name=None, email=None, major=None):
@@ -819,7 +794,6 @@ def create_cas_user_and_assign_group(username, first_name=None, last_name=None, 
         user = User.objects.create_user(username=username)
         participant = Participant.objects.create(user=user, institution=institution, can_receive_invitations=True)
     logger.debug("CAS backend created participant %s from web directory", participant)
-    # FIXME: create function that emails user with password and a thank you for registering?
     password = User.objects.make_random_password()
     user.set_password(password)
     # Assign the user to participant permission group

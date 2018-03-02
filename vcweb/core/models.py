@@ -68,6 +68,9 @@ class ASUWebDirectoryProfile(object):
     FIXME: refactor. replace urllib with requests, cache xml response into a dict instead of doing an XML lookup on
     every invocation
     https://github.com/virtualcommons/vcweb/issues/106
+
+    Also, ASU web directory is no longer available, need to figure out where to pull demo data given an asurite (or if
+    this is even possible anymore)
     """
 
     def __init__(self, username):
