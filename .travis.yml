@@ -2,6 +2,7 @@ language: python
 sudo: false
 python:
     - "2.7"
+    - "3.6"
 notifications:
     email: virtualcommons-dev@googlegroups.com
 env: DB=postgres
@@ -12,7 +13,7 @@ services:
     - postgresql
 before_script:
     - fab setup
-install: "pip install -Ur requirements.txt"
+install: "pip install -r requirements.txt"
 script: fab coverage
 after_success:
     - coveralls
