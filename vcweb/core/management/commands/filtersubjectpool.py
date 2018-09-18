@@ -23,10 +23,11 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         input_filename = options['filename']
         with open(input_filename, 'rb') as infile, open('spool-amdf.txt', 'wb') as outfile, open('spool-dupes.txt', 'wb') as dupes:
-            r = csv.reader(infile)
-            header = next(r, None)
+            r = csv.reader(infile, dialect=csv.excel)
+            header = tuple([_.decode('utf-8-sig') for _ in next(r, None)])
             # FIXME: make this more broadly generalizable if needed
-            assert tuple(header) == ("First Name", "Last Name", "Asu Email Addr", "Email Addr", "Asu Asurite Id")
+            print("header: %s", header)
+            assert header == ("First Name", "Last Name", "Asu Email Addr", "Email Addr", "Asu Asurite Id")
             for row in r:
                 (first_name, last_name, asu_email, regular_email, asurite) = row
                 if Participant.objects.filter(user__username=asurite).exists():
