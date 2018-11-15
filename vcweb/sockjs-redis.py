@@ -16,7 +16,7 @@ from tornado import web, ioloop
 from tornadoredis import pubsub
 
 
-sys.path.append(path.abspath(path.join(path.dirname(path.abspath(__file__)), '..')))
+sys.path.append('/code')
 os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings'
 
 LOG_FILENAME = "sockjs-redis.log"

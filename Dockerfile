@@ -21,15 +21,13 @@ RUN sed -i "s|archive.ubuntu.com|${UBUNTU_MIRROR}|" /etc/apt/sources.list \
     && chmod a+x /etc/service/django/run /etc/service/sockjs/run /etc/postgresql-backup-pre \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+WORKDIR /code
+COPY requirements.txt /tmp/
+# Set execute bit on the cron script and install pip dependencies
+RUN pip3 install -r /tmp/requirements.txt
+
 COPY ./deploy/db/autopostgresqlbackup.conf /etc/default/autopostgresqlbackup
 COPY ./deploy/db/postgresql-backup-pre /etc/
 COPY ${DJANGO_RUNIT_SCRIPT} /etc/service/django/run
 COPY ./deploy/runit/sockjs.sh /etc/service/sockjs/run
-
 COPY deploy/mail/main.cf /etc/postfix/main.cf
-
-WORKDIR /code
-COPY requirements.txt /code/
-# Set execute bit on the cron script and install pip dependencies
-RUN pip3 install -r /code/requirements.txt
-
