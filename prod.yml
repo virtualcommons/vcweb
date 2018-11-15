@@ -5,7 +5,7 @@ services:
     build:
       context: ./
       args:
-        DJANGO_RUNIT_SCRIPT: "./deploy/docker/prod.sh"
+        DJANGO_RUNIT_SCRIPT: "./deploy/runit/prod.sh"
     image: virtualcommons/vcweb/prod:latest
     restart: always
     volumes:

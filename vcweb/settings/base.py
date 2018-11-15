@@ -1,5 +1,5 @@
-from __future__ import print_function
 from enum import Enum
+import configparser
 import logging
 import os
 
@@ -33,7 +33,9 @@ SITE_URL = 'http://localhost:8000'
 SITE_ID = 1
 
 # set BASE_DIR one level up since we're in a settings directory.
-BASE_DIR = os.path.dirname(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)))
+PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# base directory is one level above the project directory
+BASE_DIR = os.path.dirname(PROJECT_DIR)
 
 # GITHUB
 GITHUB_URL = "https://api.github.com"
@@ -56,19 +58,6 @@ MANAGERS = ADMINS
 
 DATA_DIR = 'data'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(DATA_DIR, 'vcweb.db'),
-    },
-    'postgres': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'vcweb',
-        'USER': 'vcweb',
-        'PASSWORD': '',
-    }
-}
-
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
 # although not all choices may be available on all operating systems.
@@ -88,8 +77,42 @@ USE_I18N = False
 # trailing slash.  Default is '/static/admin/'
 # ADMIN_MEDIA_PREFIX = '/static/admin/'
 
+# configure secrets / config.ini
+config = configparser.ConfigParser()
+
+config.read('/secrets/config.ini')
+
+# default from email for various automated emails sent by Django
+DEFAULT_FROM_EMAIL = config.get('email', 'DEFAULT_FROM_EMAIL', fallback='commons@asu.edu')
+# email address used for errors emails sent to ADMINS and MANAGERS
+SERVER_EMAIL = config.get('email', 'SERVER_EMAIL', fallback='commons@asu.edu')
+# recaptcha config
+RECAPTCHA_PUBLIC_KEY = config.get('captcha', 'RECAPTCHA_PUBLIC_KEY', fallback='')
+RECAPTCHA_PRIVATE_KEY = config.get('captcha', 'RECAPTCHA_PRIVATE_KEY', fallback='')
+
+RAVEN_CONFIG = {
+    'dsn': config.get('logging', 'SENTRY_DSN', fallback=''),
+    'public_dsn': config.get('logging', 'SENTRY_PUBLIC_DSN', fallback=''),
+    # If you are using git, you can also automatically configure the
+    # release based on the git info.
+    # 'release': raven.fetch_git_sha(BASE_DIR),
+}
+
 # Make this unique, and don't share it with anybody.
-SECRET_KEY = 'keep it secret. keep it safe'
+SECRET_KEY = config.get('django', 'SECRET_KEY')
+
+# Database configuration
+# https://docs.djangoproject.com/en/2.0/ref/settings/#databases
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': config.get('database', 'DB_NAME'),
+        'USER': config.get('database', 'DB_USER'),
+        'PASSWORD': config.get('database', 'DB_PASSWORD'),
+        'HOST': config.get('database', 'DB_HOST'),
+        'PORT': config.get('database', 'DB_PORT'),
+    }
+}
 
 CSRF_FAILURE_VIEW = 'vcweb.core.views.csrf_failure'
 

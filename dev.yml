@@ -5,7 +5,7 @@ services:
     build:
       context: ./
       args:
-        DJANGO_RUNIT_SCRIPT: "./deploy/docker/dev.sh"
+        DJANGO_RUNIT_SCRIPT: "./deploy/runit/dev.sh"
     image: virtualcommons/vcweb/dev:latest
     environment:
       DJANGO_SETTINGS_MODULE: 'vcweb.settings.dev'
