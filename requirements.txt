@@ -13,13 +13,12 @@ django-model-utils==3.0.0
 django-mptt==0.9.0
 django-redis==4.8.0
 djangorestframework==3.7.7
-ecdsa==0.13
 ipython
 oauth2
-psycopg2==2.7.4
+psycopg2-binary
 python-coveralls==2.9.1
 raven==6.4.0
-requests==2.18.4
+requests==2.20.1
 sockjs-tornado==1.0.3
 pillow==5.0.0
 tornado==4.5.2

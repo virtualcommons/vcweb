@@ -1,16 +1,10 @@
 language: python
 sudo: false
 python:
-    - "2.7"
     - "3.6"
 notifications:
     email: virtualcommons-dev@googlegroups.com
 env: DB=postgres
-addons:
-    postgresql: "9.4"
-services:
-    - redis
-    - postgresql
 before_script:
     - fab setup
 install: "pip install -r requirements.txt"

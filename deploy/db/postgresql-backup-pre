@@ -1,0 +1,4 @@
+#!/bin/bash
+
+cd /code;
+invoke db.pgpass 2> /dev/null;
