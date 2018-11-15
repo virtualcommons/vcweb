@@ -1,0 +1,30 @@
+version: '3'
+services:
+  redis:
+    image: redis:latest
+    restart: always
+  db:
+    image: postgres:10
+    volumes:
+      - data:/var/lib/postgresql/data
+      - ./deploy/conf/postgres_password:/run/secrets/password
+    environment:
+      POSTGRES_USER: vcweb
+      POSTGRES_PASSWORD_FILE: /run/secrets/password
+      POSTGRES_DB: vcweb
+  django:
+    volumes:
+      - .:/code
+      - ./deploy/conf/config.ini:/secrets/config.ini
+      - logs:/shared/logs
+    environment:
+      DJANGO_SETTINGS_MODULE: 'vcweb.settings.dev'
+      LANG: "C.UTF-8"
+    depends_on:
+      - db
+      - redis
+volumes:
+  data:
+    driver: local
+  logs:
+    driver: local

@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Convenience script for creating local docker-compose
+DOCKER_COMPOSE_ENV=${1:-dev}
+
+docker-compose -f base.yml -f ${DOCKER_COMPOSE_ENV}.yml config > docker-compose.yml
