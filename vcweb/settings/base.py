@@ -1,3 +1,11 @@
+"""
+For more information on this file, see
+https://docs.djangoproject.com/en/2.0/topics/settings/
+
+For the full list of settings and their values, see
+https://docs.djangoproject.com/en/2.0/ref/settings/
+"""
+
 from enum import Enum
 import configparser
 import logging
@@ -136,7 +144,7 @@ TEMPLATES = [
     },
 ]
 
-MIDDLEWARE_CLASSES = [
+MIDDLEWARE = [
     'raven.contrib.django.raven_compat.middleware.Sentry404CatchMiddleware',
     'raven.contrib.django.raven_compat.middleware.SentryResponseErrorIdMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -159,11 +167,10 @@ SESSION_CACHE_ALIAS = 'default'
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': 'redis://127.0.0.1:6379/1',
+        # FIXME: switch to TCP in prod
+        'LOCATION': 'redis://redis:6379/1',
         'OPTIONS': {
-            'MAX_ENTRIES': 4096,
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-            'IGNORE_EXCEPTIONS': True,
         }
     }
 }
@@ -221,29 +228,32 @@ AUTHENTICATION_BACKENDS = (
     "django.contrib.auth.backends.ModelBackend",
 )
 
-STATICFILES_FINDERS = (
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/2.0/howto/static-files/
+
+STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-)
+]
+
+STATIC_ROOT = '/shared/static'
 STATIC_URL = '/static/'
-STATIC_ROOT = '/var/www/vcweb/static/'
-STATICFILES_DIRS = (os.path.join(BASE_DIR, 'vcweb', 'static'),)
 
 # Absolute path to the directory that holds media (user uploads).
 # Example: "/home/media/media.lawrence.com/"
-MEDIA_ROOT = os.path.join(STATIC_ROOT, 'media')
+MEDIA_ROOT = '/shared/media'
 
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash if there is a path component (optional in other cases).
 # Examples: "http://media.lawrence.com", "http://example.com/media/"
-MEDIA_URL = '/static/media/'
+MEDIA_URL = '/media/'
 
 
 def is_accessible(directory_path):
     return os.path.isdir(directory_path) and os.access(directory_path, os.W_OK | os.X_OK)
 
 
-LOG_DIRECTORY = '/opt/vcweb/logs'
+LOG_DIRECTORY = config.get('logging', 'LOG_DIRECTORY', fallback=os.path.join(BASE_DIR, 'logs'))
 
 if not is_accessible(LOG_DIRECTORY):
     try:
@@ -319,7 +329,6 @@ LOGGING = {
 # Required if using CAS
 CAS_UNIVERSITY_NAME = "Arizona State University"
 CAS_UNIVERSITY_URL = "http://www.asu.edu"
-WEB_DIRECTORY_URL = "https://webapp4.asu.edu/directory/ws/search?asuriteId="
 
 # Required settings for CAS Library
 CAS_SERVER_URL = "https://weblogin.asu.edu/cas/"
