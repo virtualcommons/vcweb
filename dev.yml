@@ -5,8 +5,8 @@ services:
     build:
       context: ./
       args:
-        RUN_SCRIPT: "./deploy/docker/dev.sh"
-    image: virtualcommons/vcweb:latest
+        DJANGO_RUNIT_SCRIPT: "./deploy/docker/dev.sh"
+    image: virtualcommons/vcweb/dev:latest
     environment:
       DJANGO_SETTINGS_MODULE: 'vcweb.settings.dev'
     ports:

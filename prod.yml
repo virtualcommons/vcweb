@@ -5,8 +5,8 @@ services:
     build:
       context: ./
       args:
-        RUN_SCRIPT: "./deploy/docker/prod.sh"
-    image: virtualcommons/vcweb:${RELEASE_VERSION}
+        DJANGO_RUNIT_SCRIPT: "./deploy/docker/prod.sh"
+    image: virtualcommons/vcweb/prod:latest
     restart: always
     volumes:
       - ./deploy/backup/cron-script:/etc/cron.daily/autopgsqlbackup
