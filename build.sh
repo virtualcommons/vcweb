@@ -4,6 +4,7 @@ set -o errexit
 set -o pipefail
 set -o nounset
 
+DEPLOY=${1:-dev} # dev | prod
 CONFIG_INI=deploy/conf/config.ini
 CONFIG_TEMPLATE_INI=deploy/conf/config.template.ini
 POSTGRES_PASSWORD_FILE=deploy/conf/postgres_password
@@ -28,10 +29,11 @@ if [ -f "$CONFIG_INI" ]; then
     echo "Backed up old config file to $backup_name"
 fi
 
-echo "Creating config.ini"
+echo "Creating config.ini for ${DEPLOY}"
 cat "$CONFIG_TEMPLATE_INI" | envsubst > "$CONFIG_INI"
 echo $DB_PASSWORD > ${POSTGRES_PASSWORD_FILE}
 
+./compose ${DEPLOY}
 docker-compose up -d db
 sleep 10;
 docker-compose exec db bash -c "psql -U ${DB_USER} -d ${DB_NAME} -c \"ALTER USER ${DB_USER} WITH PASSWORD '${DB_PASSWORD}'\""
