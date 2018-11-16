@@ -1,6 +1,5 @@
 -r requirements.txt
 # development dependencies
-fabric
 django-sslserver
 django-debug-toolbar
 ipython

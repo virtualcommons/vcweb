@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import django
 import json
 import logging
 import os
@@ -13,11 +14,14 @@ from sockjs.tornado import SockJSRouter, SockJSConnection
 from tornado import web, ioloop
 from tornadoredis import pubsub
 
+# assumes containerized execution
 sys.path.append('/code')
 from vcweb.redis_pubsub import RedisPubSub
 
-os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings.prod'
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'vcweb.settings.prod')
 from django.conf import settings
+
+django.setup()
 
 LOG_FILENAME = "sockjs-redis.log"
 TORNADO_LOG = path.join(settings.LOG_DIRECTORY, LOG_FILENAME)
