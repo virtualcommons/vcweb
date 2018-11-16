@@ -247,7 +247,7 @@ class ExperimentTest(BaseVcwebTest):
         self.assertEqual(0, e.current_round_elapsed_time.seconds)
         self.advance_to_data_round()
         self.assertTrue(e.time_remaining > 0)
-        self.assertTrue(e.total_elapsed_time.total_seconds > 0)
+        self.assertTrue(e.total_elapsed_time.total_seconds() > 0)
         self.assertFalse(e.is_time_expired)
         self.assertTrue(int(e.time_remaining_label) > 0)
 

@@ -1,6 +1,7 @@
+import logging
+import sys
 from collections import defaultdict
 from datetime import datetime
-import logging
 
 from django.core.cache import cache
 from django.db import models
@@ -10,8 +11,6 @@ from mptt.models import (MPTTModel, TreeForeignKey, TreeManager)
 
 from vcweb.core import simplecache
 from vcweb.core.models import (ExperimentMetadata, GroupRoundDataValue, Parameter, User)
-import sys
-
 
 logger = logging.getLogger(__name__)
 
