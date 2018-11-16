@@ -21,8 +21,6 @@ class BaseTest(BaseVcwebTest):
                                 'air-dry-clothes', 'bike-or-walk', 'eat-green-lunch', 'computer-off-night',
                                 'cold-water-wash')
 
-    default_activities = Activity.objects.all()
-
     def setUp(self, treatment_type='LEVEL_BASED', leaderboard=True, linear_public_good=True, **kwargs):
         super(BaseTest, self).setUp(experiment_metadata=get_lighterprints_experiment_metadata(), number_of_rounds=3,
                                     **kwargs)
@@ -43,6 +41,9 @@ class BaseTest(BaseVcwebTest):
     def scheduled_activity_ids(self):
         return Activity.objects.filter(name__in=BaseTest.scheduled_activity_names).values_list('pk', flat=True)
 
+    def default_activities(self):
+        return Activity.objects.all()
+
     def create_scheduled_activities(self):
         ec = self.experiment_configuration
         for rc in ec.round_configuration_set.all():
@@ -55,7 +56,7 @@ class BaseTest(BaseVcwebTest):
         if round_data is None:
             round_data = e.current_round_data
         if activities is None:
-            activities = self.default_activities
+            activities = self.default_activities()
         performed_activities = set()
         for pgr in e.participant_group_relationships:
             participant = pgr.participant
@@ -93,15 +94,15 @@ class LevelBasedTest(BaseTest):
     as well by adding available_activity parameters and scheduled activities
     """
 
-    default_activities = Activity.objects.at_level(1)
-
     def setUp(self, **kwargs):
         super(LevelBasedTest, self).setUp(treatment_type='LEVEL_BASED', **kwargs)
+
+    def default_activities(self):
+        return Activity.objects.at_level(1)
 
 
 class ScheduledActivityTest(BaseTest):
 
-    @property
     def default_activities(self):
         return list(Activity.objects.scheduled(self.experiment.current_round))
 
@@ -501,8 +502,10 @@ class LikeTest(BaseTest):
             for cm in ChatMessage.objects.for_group(pgr.group):
                 if cm.participant_group_relationship != pgr:
                     self.assertTrue(self.login_participant(pgr.participant))
-                    response = self.post('lighterprints:like',
-                                         {'participant_group_id': pgr.pk,  'target_id': cm.pk})
+                    response = self.post(
+                        'lighterprints:like',
+                        {'participant_group_id': pgr.pk, 'target_id': cm.pk}
+                    )
                     self.assertEqual(response.status_code, 200)
                     self.assertTrue(json.loads(response.content)['success'])
                     self.assertTrue(Like.objects.filter(participant_group_relationship__pk=pgr.pk,

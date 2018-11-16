@@ -2094,9 +2094,9 @@ class ParameterizedValue(models.Model):
                 cache.set(ck, cv)
             return cv
         try:
-            json.loads(cv)
-            return serializers.deserialize('json', cv).next().object
+            return next(serializers.deserialize('json', cv)).object
         except:
+            logger.error("Couldn't deserialize %s", cv)
             return cv
 
     @property

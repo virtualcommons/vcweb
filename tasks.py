@@ -21,5 +21,6 @@ def dj(ctx, subcommand, **kwargs):
 
 
 @task(aliases=['sh'])
-def shell(c):
-    c.run("./manage.py shell_plus --ipython --print-sql", pty=True)
+def shell(c, print_sql=False):
+    flags = "--ipython{}".format('--print-sql' if print_sql else '')
+    c.run("./manage.py shell_plus {}".format(flags), pty=True)
