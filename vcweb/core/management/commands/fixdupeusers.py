@@ -42,5 +42,5 @@ class Command(BaseCommand):
             "%d: duplicate users: %s", len(duplicate_users), duplicate_users)
 # fix ParticipantExperimentRelationship and ParticipantGroupRelationship
         dupe_pks = [
-            dupe.pk for dupe in itertools.chain(*duplicate_users.values())]
+            dupe.pk for dupe in itertools.chain(*list(duplicate_users.values()))]
         User.objects.filter(pk__in=dupe_pks).delete()

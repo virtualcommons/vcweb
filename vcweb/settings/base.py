@@ -33,6 +33,13 @@ class Environment(Enum):
 # valid values: 'DEVELOPMENT', 'STAGING', 'PRODUCTION'
 ENVIRONMENT = Environment.DEVELOPMENT
 
+# see https://github.com/kraiz/django-crontab
+CRONJOBS = [
+    ('0 0 * * *', 'vcweb.cron.system_daily_tick'),
+    ('0 0 * * 0', 'vcweb.cron.system_weekly_tick'),
+    ('0 0 1 * *', 'vcweb.cron.system_monthly_tick'),
+]
+
 DEBUG = True
 
 USE_TZ = False
@@ -195,7 +202,7 @@ THIRD_PARTY_APPS = (
     'bootstrap3',
     'cas',
     'django_redis',
-    'kronos',
+    'django_crontab',
 )
 
 
@@ -259,7 +266,7 @@ if not is_accessible(LOG_DIRECTORY):
     try:
         os.makedirs(LOG_DIRECTORY)
     except OSError:
-        print("Unable to create absolute log directory at {}, setting to relative path logs instead".format(LOG_DIRECTORY))
+        print(("Unable to create absolute log directory at {}, setting to relative path logs instead".format(LOG_DIRECTORY)))
         LOG_DIRECTORY = 'logs'
         if not is_accessible(LOG_DIRECTORY):
             try:

@@ -26,7 +26,7 @@ class Command(BaseCommand):
             r = csv.reader(infile, dialect=csv.excel)
             header = tuple([_.decode('utf-8-sig') for _ in next(r, None)])
             # FIXME: make this more broadly generalizable if needed
-            print("header: %s", header)
+            print(("header: %s", header))
             assert header == ("First Name", "Last Name", "Asu Email Addr", "Email Addr", "Asu Asurite Id")
             for row in r:
                 (first_name, last_name, asu_email, regular_email, asurite) = row

@@ -6,11 +6,12 @@ from django.dispatch import receiver
 
 from vcweb.core import signals, simplecache
 from vcweb.core.models import (ExperimentMetadata, Parameter, ParticipantRoundDataValue, RoundConfiguration,)
+import sys
 
 
 logger = logging.getLogger(__name__)
 
-EXPERIMENT_METADATA_NAME = intern('forestry')
+EXPERIMENT_METADATA_NAME = sys.intern('forestry')
 MAX_RESOURCE_LEVEL = 100
 
 

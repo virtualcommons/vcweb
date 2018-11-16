@@ -17,9 +17,9 @@ logger = logging.getLogger(__name__)
 
 
 class BaseTest(BaseVcwebTest):
-    scheduled_activity_names = (u'eat-local-lunch', u'enable-sleep-on-computer', u'share-your-ride', u'recycle-paper',
-                                u'air-dry-clothes', u'bike-or-walk', u'eat-green-lunch', u'computer-off-night',
-                                u'cold-water-wash')
+    scheduled_activity_names = ('eat-local-lunch', 'enable-sleep-on-computer', 'share-your-ride', 'recycle-paper',
+                                'air-dry-clothes', 'bike-or-walk', 'eat-green-lunch', 'computer-off-night',
+                                'cold-water-wash')
 
     default_activities = Activity.objects.all()
 

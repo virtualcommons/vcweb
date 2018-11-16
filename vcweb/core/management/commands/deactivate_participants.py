@@ -1,7 +1,8 @@
-from __future__ import print_function
+
 from django.core.management.base import BaseCommand
 from vcweb.core.models import User
 
+import csv
 import logging
 
 logger = logging.getLogger(__name__)
@@ -30,9 +31,10 @@ class Command(BaseCommand):
             logger.debug("Deactivating %s usernames", len(usernames))
         invalid_users = User.objects.filter(username__in=usernames, is_active=True)
         with open(output_filename, 'wb') as outfile:
-            print("PK, Username, Date joined, Class status, Email", file=outfile)
+            writer = csv.writer(outfile, delimiter=',')
+            header = ['PK', 'Username', 'Date joined', 'Class status', 'Email']
+            writer.writerow(header)
             for user in invalid_users:
-                print(",".join(map(str, [user.pk, user.username, user.date_joined, user.participant.class_status, user.email])),
-                      file=outfile)
+                writer.writerow([user.pk, user.username, user.date_joined, user.participant.class_status, user.email])
         deactivated_users = invalid_users.update(is_active=False)
         logger.debug("Updated %s users", deactivated_users)

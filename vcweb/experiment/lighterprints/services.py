@@ -470,7 +470,7 @@ class GroupScores(object):
         """
         # cached because we invoke this often via get_group_rank
         if self.group_rankings is None:
-            sorted_group_scores = sorted(self.scores_dict.items(),
+            sorted_group_scores = sorted(list(self.scores_dict.items()),
                                          key=lambda x: x[1]['average_daily_points'],
                                          reverse=True)
             group_dict = self.group_dict
@@ -569,7 +569,7 @@ class GroupActivity(object):
 
     @property
     def all_activities(self):
-        return sorted(itertools.chain.from_iterable(self.all_activity.values()),
+        return sorted(itertools.chain.from_iterable(list(self.all_activity.values())),
                       key=itemgetter('date_created_sort_key'), reverse=True)
 
     @property

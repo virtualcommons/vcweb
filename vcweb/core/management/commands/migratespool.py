@@ -43,7 +43,7 @@ class Command(BaseCommand):
                     skipped_participants.append("%s %s" % (username, email))
             try:
                 u = User.objects.get(email=email)
-                self.stdout.write(u"user already exists: {}".format(u))
+                self.stdout.write("user already exists: {}".format(u))
                 set_full_name(u, full_name)
                 existing_users.append(u)
             except User.DoesNotExist:
@@ -54,7 +54,7 @@ class Command(BaseCommand):
             u.save()
             try:
                 p = Participant.objects.get(user=u)
-                self.stdout.write(u"Participant %s already exists" % p)
+                self.stdout.write("Participant %s already exists" % p)
             except Participant.DoesNotExist:
                 p = Participant(user=u)
             if not p.major:
@@ -70,12 +70,12 @@ class Command(BaseCommand):
                 self.stdout.write("Updating existing participant {}".format(p))
                 p.save()
             else:
-                self.stdout.write(u"Creating participant {} major: {} gender: {} class_status {} institution {}".format(
+                self.stdout.write("Creating participant {} major: {} gender: {} class_status {} institution {}".format(
                     p, p.major, p.gender, p.class_status, asu_institution))
                 new_participants.append(p)
             if p.user is None or not p.user.pk:
                 self.stdout.write(
-                    u"XXX: participant %s with user %s, %s" % (p, p.user, p.user.pk))
+                    "XXX: participant %s with user %s, %s" % (p, p.user, p.user.pk))
         # User.objects.bulk_create(new_users)
         Participant.objects.bulk_create(new_participants)
         self.stdout.write("existing users: %s" % existing_users)

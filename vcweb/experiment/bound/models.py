@@ -1,5 +1,6 @@
 from collections import defaultdict
 import logging
+import sys
 
 from django.db import models, transaction
 from django.dispatch import receiver
@@ -18,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 # FIXME: hacky, figure out a better way to bind module with its dependent
 # ExperimentMetadata instance
-EXPERIMENT_METADATA_NAME = intern('bound')
+EXPERIMENT_METADATA_NAME = sys.intern('bound')
 # constants that should live in configuration as well
 MAX_RESOURCE_LEVEL = 240
 MAX_SHARED_RESOURCE_LEVEL = 480
@@ -280,7 +281,7 @@ def get_player_data(group, previous_round_data, current_round_data, self_pgr):
     for prdv in prdvs:
         player_dict[prdv.participant_group_relationship][prdv.parameter] = prdv
     player_data = []
-    for pgr, pgrdv_dict in player_dict.iteritems():
+    for pgr, pgrdv_dict in list(player_dict.items()):
         # FIXME: figure out a way to handle default values elegantly in this case since we aren't using the accessor
         # methods
         for int_parameter in (get_harvest_decision_parameter(), get_storage_parameter()):
@@ -503,7 +504,7 @@ def update_shared_resource_level(experiment, group_cluster, round_data, regrowth
         group_harvest_dict[group] = group_harvest
         shared_group_harvest += group_harvest
         group.log("total group harvest: %s" % group_harvest)
-    for group, group_harvest in group_harvest_dict.items():
+    for group, group_harvest in list(group_harvest_dict.items()):
         if shared_group_harvest > shared_resource_level:
             # adjust each individual harvest for each group in this cluster
             group_harvest = adjust_harvest_decisions(shared_resource_level, group, round_data, group_harvest,

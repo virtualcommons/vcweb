@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 from django.db import models, migrations
 
@@ -202,7 +202,7 @@ _activities = [
     },
     {
         "display_name": "Eat a green lunch",
-        "description": "You can save 500 pounds of CO2 a year by reducing waste at lunch time. This means packing your lunch in a reusable container, using reusable/washable utensils, and don\u2019t use paper napkins.",
+        "description": "You can save 500 pounds of CO2 a year by reducing waste at lunch time. This means packing your lunch in a reusable container, using reusable/washable utensils, and don\\u2019t use paper napkins.",
         "available_all_day": False,
         "url": "http://www.savecarbon.org/activity_form/lunches",
         "level": 3,

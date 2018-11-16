@@ -5,7 +5,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 number_of_users = 500
-usernames = ['s%dasu@mailinator.com' % n for n in xrange(0, number_of_users)]
+usernames = ['s%dasu@mailinator.com' % n for n in range(0, number_of_users)]
 
 
 class LighterprintsTaskSet(TaskSet):

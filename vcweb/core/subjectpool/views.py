@@ -98,7 +98,7 @@ def timestamp_to_datetime(timestamp):
     """
     Converts string timestamp to python datetime object with json fix
     """
-    if isinstance(timestamp, (str, unicode)):
+    if isinstance(timestamp, str):
 
         if len(timestamp) == 13:
             timestamp = int(timestamp) / 1000

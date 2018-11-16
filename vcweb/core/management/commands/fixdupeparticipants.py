@@ -42,7 +42,7 @@ class Command(BaseCommand):
 
         logger.debug("duplicate participants: %s", duplicate_participants)
 # fix ParticipantExperimentRelationship and ParticipantGroupRelationship
-        for canonical, dupes in duplicate_participants.iteritems():
+        for canonical, dupes in list(duplicate_participants.items()):
             pers = ParticipantExperimentRelationship.objects.filter(
                 participant__in=dupes)
             logger.debug(
@@ -55,5 +55,5 @@ class Command(BaseCommand):
             logger.debug("pgrs: %s, updated %s", pgrs, num_updated)
 
         dupe_pks = [dupe.pk for dupe in itertools.chain(
-            *duplicate_participants.values())]
+            *list(duplicate_participants.values()))]
         Participant.objects.filter(pk__in=dupe_pks).delete()

@@ -10,11 +10,12 @@ from mptt.models import (MPTTModel, TreeForeignKey, TreeManager)
 
 from vcweb.core import simplecache
 from vcweb.core.models import (ExperimentMetadata, GroupRoundDataValue, Parameter, User)
+import sys
 
 
 logger = logging.getLogger(__name__)
 
-EXPERIMENT_METADATA_NAME = intern('lighterprints')
+EXPERIMENT_METADATA_NAME = sys.intern('lighterprints')
 
 
 def get_activity_points_cache():
@@ -209,7 +210,7 @@ class Activity(MPTTModel):
 
     def __unicode__(self):
         # return unicode(self.pk)
-        return unicode(self.label)
+        return str(self.label)
         # return u'%s : %s' % (self.label, self.points)
 
     class MPTTMeta:
@@ -229,11 +230,11 @@ class ActivityAvailability(models.Model):
     end_time = models.TimeField(null=True, blank=True)
 
     def __unicode__(self):
-        return u'%s (%s - %s)' % (self.activity, self.start_time, self.end_time)
+        return '%s (%s - %s)' % (self.activity, self.start_time, self.end_time)
 
     @property
     def time_slot(self):
-        return u'%s-%s' % (_to_hour(self.start_time), _to_hour(self.end_time))
+        return '%s-%s' % (_to_hour(self.start_time), _to_hour(self.end_time))
 
     def to_dict(self, attrs=('start_time', 'end_time')):
         d = {}

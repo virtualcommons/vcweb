@@ -94,7 +94,7 @@ class ExperimenterDashboardViewModel(DashboardViewModel):
         self.experiment_metadata_list = []
         bem_pks = BookmarkedExperimentMetadata.objects.filter(
             experimenter=self.experimenter).values_list('experiment_metadata', flat=True)
-        for em, ecs in self.experiment_metadata_dict.iteritems():
+        for em, ecs in list(self.experiment_metadata_dict.items()):
             d = em.to_dict(include_configurations=True, configurations=ecs)
             d['bookmarked'] = em.pk in bem_pks
             self.experiment_metadata_list.append(d)

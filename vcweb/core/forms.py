@@ -251,7 +251,7 @@ class ExperimentConfigurationForm(forms.ModelForm):
         if post_dict:
             self.request_type = post_dict.get('request_type')
 
-        for name, field in self.fields.items():
+        for name, field in list(self.fields.items()):
             help_text = field.help_text
             field.help_text = None
             if help_text != '':
@@ -290,7 +290,7 @@ class ExperimentParameterValueForm(forms.ModelForm):
 
         self.fields['parameter'].queryset = self.fields['parameter'].queryset.filter(scope='experiment')
 
-        for name, field in self.fields.items():
+        for name, field in list(self.fields.items()):
             if isinstance(field.widget, CheckboxInput):
                 field.widget.attrs['data-bind'] = 'checked: %s' % name
             else:
@@ -327,7 +327,7 @@ class RoundConfigurationForm(forms.ModelForm):
             self.old_sequence_number = instance.sequence_number
         super(RoundConfigurationForm, self).__init__(post_dict, instance=instance, **kwargs)
 
-        for name, field in self.fields.items():
+        for name, field in list(self.fields.items()):
             if isinstance(field.widget, CheckboxInput):
                 field.widget.attrs['data-bind'] = 'checked: %s' % name
             else:
@@ -373,7 +373,7 @@ class RoundParameterValueForm(forms.ModelForm):
 
         self.fields['parameter'].queryset = self.fields['parameter'].queryset.filter(scope='round')
 
-        for name, field in self.fields.items():
+        for name, field in list(self.fields.items()):
             if isinstance(field.widget, CheckboxInput):
                 field.widget.attrs['data-bind'] = 'checked: %s' % name
             else:
@@ -408,7 +408,7 @@ class EmailListField(forms.CharField):
         lines = value.split('\n')
         # emails = email_separator_re.split(value)
         if not lines:
-            raise ValidationError(_(u'You must enter at least one email address.'))
+            raise ValidationError(_('You must enter at least one email address.'))
         emails = []
         for line in lines:
             # check for emails in the form of Allen T Lee <allen.t.lee@asu.edu>
@@ -645,4 +645,4 @@ class BugReportForm(AntiSpamForm):
         super(BugReportForm, self).__init__(*args, **kwargs)
 
     title = forms.CharField(max_length=512)
-    body = forms.CharField(widget=forms.Textarea, label=u'Description')
+    body = forms.CharField(widget=forms.Textarea, label='Description')

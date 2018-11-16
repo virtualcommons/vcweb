@@ -48,7 +48,7 @@ class ExperimentMetadataTest(BaseVcwebTest):
         em.save()
         self.assertTrue(em.pk and (em.pk > 0),
                         'test unicode namespace experiment metadata record should have valid id now')
-        self.assertTrue(unicode(em))
+        self.assertTrue(str(em))
 
 
 class ExperimentConfigurationTest(BaseVcwebTest):
@@ -466,7 +466,7 @@ class ParameterizedValueMixinTest(BaseVcwebTest):
         self.assertEqual(dpv.int_value, 23)
         self.assertEqual(dpv.anything, 23)
         self.assertEqual(str(dpv), '23')
-        self.assertEqual(unicode(dpv), u'23')
+        self.assertEqual(str(dpv), '23')
 
     def test_set_parameter_value(self):
         e = self.experiment
@@ -557,7 +557,7 @@ class BookmarkedExperimentMetadataTest(BaseVcwebTest):
         bookmarks = ExperimentMetadata.objects.bookmarked(e)
         self.assertEqual(ExperimentMetadata.objects.count(), bookmarks.count())
         for em in bookmarks:
-            self.assertEquals(em.bookmarked, em in (forestry, bound))
+            self.assertEqual(em.bookmarked, em in (forestry, bound))
         new_experimenter = self.create_experimenter()
         bookmarks = ExperimentMetadata.objects.bookmarked(new_experimenter)
         self.assertEqual(ExperimentMetadata.objects.count(), bookmarks.count())

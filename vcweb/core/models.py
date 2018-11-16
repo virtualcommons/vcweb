@@ -2,7 +2,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta, date, time
 from email.utils import parseaddr
 from string import Template
-from urllib import urlencode
+from urllib.parse import urlencode
 from enum import Enum
 
 from django.apps import apps
@@ -28,7 +28,7 @@ import logging
 import markdown
 import random
 import string
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import xml.etree.ElementTree as ET
 
 
@@ -37,6 +37,7 @@ from .decorators import log_signal_errors, retry
 from .http import dumps
 
 from vcweb.redis_pubsub import RedisPubSub
+import sys
 
 logger = logging.getLogger(__name__)
 
@@ -83,9 +84,9 @@ class ASUWebDirectoryProfile(object):
         self.profile_data = root.find('person')
         logger.debug("profile data %s", self.profile_data)
 
-    @retry(urllib2.URLError, tries=3, delay=3, backoff=2, logger=logger)
+    @retry(urllib.error.URLError, tries=3, delay=3, backoff=2, logger=logger)
     def urlopen_with_retry(self):
-        return urllib2.urlopen(urllib2.Request(self.profile_url, headers={"Accept": "application/xml"}))
+        return urllib.request.urlopen(urllib.request.Request(self.profile_url, headers={"Accept": "application/xml"}))
 
     def __str__(self):
         return "{0} {1} ({2}) (email: {3}) (major: {4}) (class: {5})".format(
@@ -170,7 +171,7 @@ class DefaultValue(object):
         return str(self.value)
 
     def __unicode__(self):
-        return unicode(self.value)
+        return str(self.value)
 
 
 class ParameterValueMixin(object):
@@ -381,9 +382,9 @@ class ExperimentMetadata(models.Model):
 
     def __unicode__(self):
         if self.namespace:
-            return u"{0} /{1}".format(self.title, self.namespace)
+            return "{0} /{1}".format(self.title, self.namespace)
         else:
-            return u"{0} /none".format(self.title)
+            return "{0} /none".format(self.title)
 
     class Meta:
         ordering = ['title', 'namespace']
@@ -396,7 +397,7 @@ class ActivityLog(models.Model):
     log_type = models.CharField(max_length=64, choices=LogType, default=LogType.System)
 
     def __unicode__(self):
-        return u"{0} - {1}".format(self.date_created.strftime("%m-%d-%Y %H:%M"), self.log_message)
+        return "{0} - {1}".format(self.date_created.strftime("%m-%d-%Y %H:%M"), self.log_message)
 
 
 class OstromlabFaqEntry(models.Model):
@@ -407,7 +408,7 @@ class OstromlabFaqEntry(models.Model):
     contributor = models.ForeignKey(User)
 
     def __unicode__(self):
-        return u"{0}: {1}".format(self.question, self.answer)
+        return "{0}: {1}".format(self.question, self.answer)
 
     class Meta:
         ordering = ['question', '-date_created']
@@ -432,7 +433,7 @@ class CommonsUser(models.Model):
     Base class for both Participants and Experimenters.  The actual participant or experimenter can be resolved as
     user.participant or user.experimenter due to the OneToOne with django.contrib.User.
     """
-    user = models.OneToOneField(User, related_name='%(class)s', verbose_name=u'Django User', unique=True)
+    user = models.OneToOneField(User, related_name='%(class)s', verbose_name='Django User', unique=True)
     failed_password_attempts = models.PositiveIntegerField(default=0)
     institution = models.ForeignKey(Institution, null=True, blank=True)
     authentication_token = models.CharField(max_length=64, blank=True)
@@ -485,7 +486,7 @@ class CommonsUser(models.Model):
         return self.user.is_superuser
 
     def __unicode__(self):
-        return u"{0} ({1})".format(self.full_name, self.user.email)
+        return "{0} ({1})".format(self.full_name, self.user.email)
 
     class Meta:
         abstract = True
@@ -526,7 +527,7 @@ class BookmarkedExperimentMetadata(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
 
     def __unicode__(self):
-        return u"Bookmark: {} by {}".format(self.experimenter, self.experiment_metadata)
+        return "Bookmark: {} by {}".format(self.experimenter, self.experiment_metadata)
 
     class Meta:
         unique_together = (('experimenter', 'experiment_metadata'),)
@@ -538,12 +539,12 @@ class ExperimenterRequest(models.Model):
     """
     a request for this user to be an experimenter, should notify admins
     """
-    user = models.OneToOneField(User, verbose_name=u'Django User', unique=True)
+    user = models.OneToOneField(User, verbose_name='Django User', unique=True)
     date_created = models.DateTimeField(auto_now_add=True)
     approved = models.BooleanField(default=False)
 
     def __unicode__(self):
-        return u"Experimenter request by {} on {}. Approved: {}".format(self.user,
+        return "Experimenter request by {} on {}. Approved: {}".format(self.user,
                                                                         self.date_created,
                                                                         self.approved)
 
@@ -853,25 +854,25 @@ class Experiment(models.Model):
 
     @property
     def channel_name(self):
-        return u"{0}.{1}".format(self.namespace, self.pk)
+        return "{0}.{1}".format(self.namespace, self.pk)
 
     @property
     def status_label(self):
-        return u"{0}, {1}".format(self.get_status_display(), self.current_round.get_round_type_display())
+        return "{0}, {1}".format(self.get_status_display(), self.current_round.get_round_type_display())
 
     @property
     def sequence_label(self):
         cr = self.current_round
         final_sequence_number = self.experiment_configuration.final_sequence_number
-        _label = u"Round {0}/{1}".format(cr.sequence_number, final_sequence_number)
+        _label = "Round {0}/{1}".format(cr.sequence_number, final_sequence_number)
         if cr.is_repeating_round:
-            _label += u" (repeating round {} of {})".format(self.current_repeated_round_sequence_number + 1,
+            _label += " (repeating round {} of {})".format(self.current_repeated_round_sequence_number + 1,
                                                             cr.repeat)
         return _label
 
     @property
     def status_line(self):
-        return u"{0} #{1} | {2}".format(self.experiment_configuration,
+        return "{0} #{1} | {2}".format(self.experiment_configuration,
                                         self.pk,
                                         self.sequence_label)
 
@@ -1243,7 +1244,7 @@ class Experiment(models.Model):
         demo_participants_group = PermissionGroup.demo_participant.get_django_group()
 
         for i in range(1, count + 1):
-            email_address = u's{0}{1}@{2}'.format(i, username_suffix, email_suffix)
+            email_address = 's{0}{1}@{2}'.format(i, username_suffix, email_suffix)
             userqs = User.objects.select_for_update().filter(
                 models.Q(email=email_address) | models.Q(username=email_address))
             if userqs.exists():
@@ -1357,7 +1358,7 @@ class Experiment(models.Model):
         if round_configuration is None:
             round_configuration = self.current_round
         preserve_existing_groups = round_configuration.preserve_existing_groups
-        session_id = round_configuration.session_id or u''
+        session_id = round_configuration.session_id or ''
         # clear out all existing groups
         # cap max group size at 1
         max_group_size = 1
@@ -1514,7 +1515,7 @@ class Experiment(models.Model):
         self.save()
         # notify registered game handlers
         if sender is None:
-            sender = intern(self.experiment_metadata.namespace.encode('utf8'))
+            sender = sys.intern(self.experiment_metadata.namespace.encode('utf8'))
         return signals.round_started.send_robust(sender, experiment=self, time=datetime.now(),
                                                  round_configuration=current_round_configuration)
 
@@ -1544,7 +1545,7 @@ class Experiment(models.Model):
         # reset all survey completed flags on participant group relationships
         # within this experiment
         ParticipantGroupRelationship.objects.for_experiment(self).update(survey_completed=False)
-        sender = intern(self.experiment_metadata.namespace.encode('utf8')) if sender is None else sender
+        sender = sys.intern(self.experiment_metadata.namespace.encode('utf8')) if sender is None else sender
         self.log('%s ending round with elapsed time %s' % (sender, self.current_round_elapsed_time))
         return signals.round_ended.send_robust(sender, experiment=self, round_configuration=self.current_round)
 
@@ -1646,7 +1647,7 @@ class Experiment(models.Model):
         if include_round_data:
             experiment_dict['allRoundData'] = self.all_round_data()
             experiment_dict['chatMessages'] = [chat_message.to_dict() for chat_message in self.all_chat_messages]
-            experiment_dict['messages'] = map(str, self.activity_log_set.order_by('-date_created')[:100])
+            experiment_dict['messages'] = list(map(str, self.activity_log_set.order_by('-date_created')[:100]))
             # FIXME: experimenterNotes should be included in allRoundData instead
             crd = self.current_round_data
             experiment_dict['experimenterNotes'] = crd.experimenter_notes if crd else ''
@@ -1691,7 +1692,7 @@ class Experiment(models.Model):
             **kwargs)
 
     def __unicode__(self):
-        return u"%s #%s | %s" % (self.experiment_configuration, self.pk, self.experimenter)
+        return "%s #%s | %s" % (self.experiment_configuration, self.pk, self.experimenter)
 
     class Meta:
         ordering = ['date_created', 'status']
@@ -1827,15 +1828,15 @@ class RoundConfiguration(ParameterValueMixin, models.Model):
 
     @property
     def display_label(self):
-        return u"Round %d" % self.round_number if self.is_regular_round else self.get_round_type_display()
+        return "Round %d" % self.round_number if self.is_regular_round else self.get_round_type_display()
 
     @property
     def sequence_label(self):
         if self.is_repeating_round:
-            return u"%d of %d [x %d]" % (
+            return "%d of %d [x %d]" % (
                 self.sequence_number, self.experiment_configuration.final_sequence_number, self.repeat)
         else:
-            return u"%d of %d" % (self.sequence_number, self.experiment_configuration.final_sequence_number)
+            return "%d of %d" % (self.sequence_number, self.experiment_configuration.final_sequence_number)
 
     def build_survey_url(self, **kwargs):
         if self.is_survey_enabled and kwargs:
@@ -1909,7 +1910,7 @@ class RoundConfiguration(ParameterValueMixin, models.Model):
         }
 
     def __unicode__(self):
-        return u"%s %s %s %s" % (self.get_round_type_display(), self.sequence_label, self.experiment_configuration,
+        return "%s %s %s %s" % (self.get_round_type_display(), self.sequence_label, self.experiment_configuration,
                                  self.session_id)
 
     class Meta:
@@ -1943,7 +1944,7 @@ class ParameterManager(models.Manager):
 # special case curried converter for fk lookups that stores an int given a model instance or pk
 def _fk_converter(fk_cls):
     def converter(value):
-        if isinstance(value, (int, long)):
+        if isinstance(value, int):
             return value
         elif isinstance(value, fk_cls):
             return value.pk
@@ -1971,7 +1972,7 @@ class Parameter(models.Model):
     # FIXME: arcane, used to provide sane default values for each parameter
     # type when the parameter is null
     NONE_VALUES_DICT = dict(
-        map(lambda x, y: (x[0], y), ParameterType, [0, '', -1, 0.0, False, None]))
+        list(map(lambda x, y: (x[0], y), ParameterType, [0, '', -1, 0.0, False, None])))
     CONVERTERS = {
         'int': int,
         'string': str,
@@ -2067,7 +2068,7 @@ class Parameter(models.Model):
         return value
 
     def __unicode__(self):
-        return u"%s (%s)" % (self.label, self.type)
+        return "%s (%s)" % (self.label, self.type)
 
     class Meta:
         ordering = ['name']
@@ -2153,11 +2154,11 @@ class ParameterizedValue(models.Model):
             'short_date_created': self.date_created.strftime('%I:%M:%S'),
             'parameter_name': p.name,
             'parameter_label': p.label,
-            'value': unicode(self.cached_value if cacheable else self.value)
+            'value': str(self.cached_value if cacheable else self.value)
         }
 
     def __unicode__(self):
-        return u"Data value: [parameter {0}, value {1}], recorded at {2}".format(self.parameter, self.value,
+        return "Data value: [parameter {0}, value {1}], recorded at {2}".format(self.parameter, self.value,
                                                                                  self.date_created)
 
     class Meta:
@@ -2171,7 +2172,7 @@ class ExperimentParameterValue(ParameterizedValue):
 
     def to_dict(self, **kwargs):
         return {
-            'display_name': u"{0}: {1}".format(self.parameter, self.value),
+            'display_name': "{0}: {1}".format(self.parameter, self.value),
             'pk': self.pk,
             'experiment_configuration': self.experiment_configuration.pk,
             'parameter': self.parameter.pk,
@@ -2186,7 +2187,7 @@ class ExperimentParameterValue(ParameterizedValue):
 
     def __unicode__(self):
         ec = self.experiment_configuration
-        return u"{0} -> [{1}: {2}]".format(ec, self.parameter, self.value)
+        return "{0} -> [{1}: {2}]".format(ec, self.parameter, self.value)
 
 
 class RoundParameterValue(ParameterizedValue):
@@ -2200,7 +2201,7 @@ class RoundParameterValue(ParameterizedValue):
         rc = self.round_configuration
         p = self.parameter
         return {
-            'display_name': u"{0}: {1}".format(p.label, self.value),
+            'display_name': "{0}: {1}".format(p.label, self.value),
             'pk': self.pk,
             'parameter': self.parameter.pk,
             'string_value': self.string_value,
@@ -2213,7 +2214,7 @@ class RoundParameterValue(ParameterizedValue):
 
     def __unicode__(self):
         rc = self.round_configuration
-        return u"{0}:{1} -> [{2}: {3}]".format(rc.experiment_configuration, rc.sequence_label, self.parameter,
+        return "{0}:{1} -> [{2}: {3}]".format(rc.experiment_configuration, rc.sequence_label, self.parameter,
                                                self.value)
 
     class Meta:
@@ -2242,7 +2243,7 @@ class ExperimentGroup(models.Model, DataValueMixin):
 
     @property
     def name(self):
-        return u"Group {0}".format(self.identifier)
+        return "Group {0}".format(self.identifier)
 
     @property
     def identifier(self):
@@ -2390,7 +2391,7 @@ class ExperimentGroup(models.Model, DataValueMixin):
         return pgr
 
     def __unicode__(self):
-        return u"Group #{0}".format(self.number)
+        return "Group #{0}".format(self.number)
 
     class Meta:
         ordering = ['experiment', 'number']
@@ -2446,7 +2447,7 @@ class GroupCluster(models.Model, DataValueMixin):
         return GroupRelationship.objects.create(cluster=self, group=group)
 
     def __unicode__(self):
-        return u"GroupCluster #{0} {1} ({2})".format(self.pk, self.session_id, self.experiment)
+        return "GroupCluster #{0} {1} ({2})".format(self.pk, self.session_id, self.experiment)
 
     class Meta:
         ordering = ['date_created']
@@ -2458,7 +2459,7 @@ class GroupRelationship(models.Model):
     group = models.ForeignKey(ExperimentGroup, related_name='relationship_set')
 
     def __unicode__(self):
-        return u"{0} -> {1}".format(self.group, self.cluster)
+        return "{0} -> {1}".format(self.group, self.cluster)
 
     class Meta:
         ordering = ['date_created']
@@ -2498,7 +2499,7 @@ class RoundData(models.Model):
         return self.round_configuration.session_id
 
     def __unicode__(self):
-        return u"Data for round {0}".format(self.round_number)
+        return "Data for round {0}".format(self.round_number)
 
     class Meta:
         ordering = ['round_configuration', 'repeating_round_sequence_number']
@@ -2530,7 +2531,7 @@ class GroupRoundDataValue(ParameterizedValue):
         return self.round_data.round_configuration
 
     def __unicode__(self):
-        return u"{0}={1} ({2}, {3})".format(self.parameter, self.value, self.group, self.round_configuration)
+        return "{0}={1} ({2}, {3})".format(self.parameter, self.value, self.group, self.round_configuration)
 
     class Meta:
         ordering = ['round_data', 'group', 'parameter']
@@ -2544,7 +2545,7 @@ class Address(models.Model):
     zipcode = models.CharField(_('Zip code'), max_length=8, blank=True)
 
     def __unicode__(self):
-        return u"{0} {1}, {2}, {3} {4}".format(self.street1, self.street2, self.city, self.state, self.zipcode)
+        return "{0} {1}, {2}, {3} {4}".format(self.street1, self.street2, self.city, self.state, self.zipcode)
 
 
 class ParticipantQuerySet(models.query.QuerySet):
@@ -2679,11 +2680,11 @@ class Participant(CommonsUser):
 
     def __unicode__(self):
         if self.full_name:
-            return unicode(self.full_name)
+            return str(self.full_name)
         return self.user.email
 
     def all_data_string(self):
-        return u"email: {0}, class: {1}, major: {2}, gender: {3}, username: {4}".format(
+        return "email: {0}, class: {1}, major: {2}, gender: {3}, username: {4}".format(
             self.user.email, self.class_status, self.major, self.gender, self.user.username)
 
     class Meta:
@@ -2734,7 +2735,7 @@ class ParticipantExperimentRelationship(models.Model):
         return self.participant_identifier
 
     def __unicode__(self):
-        return u"Experiment {0} - participant {1} (created {2})".format(self.experiment, self.participant,
+        return "Experiment {0} - participant {1} (created {2})".format(self.experiment, self.participant,
                                                                         self.date_created)
 
 
@@ -2791,7 +2792,7 @@ class ParticipantGroupRelationship(models.Model, DataValueMixin):
 
     @property
     def participant_handle(self):
-        return u"Participant {0}".format(self.participant_number)
+        return "Participant {0}".format(self.participant_number)
 
     @property
     def experiment(self):
@@ -2823,7 +2824,7 @@ class ParticipantGroupRelationship(models.Model, DataValueMixin):
         return self.group.get_round_configuration_value(**kwargs)
 
     def __unicode__(self):
-        return u"{0}: #{1} (in {2})".format(self.participant, self.participant_number, self.group)
+        return "{0}: #{1} (in {2})".format(self.participant, self.participant_number, self.group)
 
     class Meta:
         ordering = ['group', 'participant_number']
@@ -2930,12 +2931,12 @@ class ParticipantRoundDataValue(ParameterizedValue):
             data['participant_email'] = pgr.participant.email
         tdv = self.target_data_value
         if tdv is not None:
-            data.update(target_data_value=unicode(tdv.cached_value if cacheable else tdv.value),
+            data.update(target_data_value=str(tdv.cached_value if cacheable else tdv.value),
                         target_parameter_name=tdv.parameter.name)
         return data
 
     def __unicode__(self):
-        return u"{0}:{1} pgr:{2} ({3})".format(self.parameter, self.value, self.participant_group_relationship,
+        return "{0}:{1} pgr:{2} ({3})".format(self.parameter, self.value, self.participant_group_relationship,
                                                self.round_data.experiment)
 
     class Meta:
@@ -3001,7 +3002,7 @@ class ChatMessage(ParticipantRoundDataValue):
         group = self.participant_group_relationship.group
         data.update(
             group_id=group.pk,
-            group=unicode(group),
+            group=str(group),
             participant_number=pgr.participant_number,
             event_type='chat'
         )
@@ -3013,7 +3014,7 @@ class ChatMessage(ParticipantRoundDataValue):
     def __unicode__(self):
         """ return this participant's sequence number combined with the message """
         participant_number = self.participant_group_relationship.participant_number
-        return u"{0}: {1}".format(participant_number, self.value)
+        return "{0}: {1}".format(participant_number, self.value)
 
     class Meta:
         ordering = ['-date_created']
@@ -3057,7 +3058,7 @@ class GroupActivityLog(ActivityLog):
     round_configuration = models.ForeignKey(RoundConfiguration)
 
     def __unicode__(self):
-        return u"{0} {1}".format(self.group, super(GroupActivityLog, self).__unicode__())
+        return "{0} {1}".format(self.group, super(GroupActivityLog, self).__unicode__())
 
 
 class ExperimentActivityLog(ActivityLog):
@@ -3117,7 +3118,7 @@ class ExperimentSession(models.Model):
         return data
 
     def __unicode__(self):
-        return u"{0} {1} {2}".format(self.experiment_metadata, self.scheduled_date, self.scheduled_end_date)
+        return "{0} {1} {2}".format(self.experiment_metadata, self.scheduled_date, self.scheduled_end_date)
 
     class Meta:
         ordering = ['scheduled_date']
@@ -3155,7 +3156,7 @@ class Invitation(models.Model):
     objects = InvitationQuerySet.as_manager()
 
     def __unicode__(self):
-        return u"[{0}] [{1}] ({2})".format(self.participant, self.experiment_session, self.sender)
+        return "[{0}] [{1}] ({2})".format(self.participant, self.experiment_session, self.sender)
 
     def to_dict(self, signup_count):
         experiment_session = self.experiment_session
@@ -3282,7 +3283,7 @@ class ParticipantSignup(models.Model):
         return data
 
     def __unicode__(self):
-        return u"{} {} {}".format(self.invitation, self.attendance, self.date_created)
+        return "{} {} {}".format(self.invitation, self.attendance, self.date_created)
 
     class Meta:
         ordering = ['invitation__experiment_session']
@@ -3303,7 +3304,7 @@ class SpoolParticipantStatistics(models.Model):
     invitations = models.PositiveIntegerField(default=0)
 
     def __unicode__(self):
-        return u"Participant {} - Absences: {}, Discharges: {}, Participations: {}, Invitations: {}".format(
+        return "Participant {} - Absences: {}, Discharges: {}, Participations: {}, Invitations: {}".format(
             self.participant, self.absences, self.discharges, self.participations, self.invitations)
 
 
@@ -3344,7 +3345,7 @@ def get_model_fields(model):
     if hasattr(model, 'data_fields'):
         return getattr(model, 'data_fields')
     else:
-        return filter(lambda f: f.__class__ in SCALAR_DATA_FIELDS, model._meta.fields)
+        return [f for f in model._meta.fields if f.__class__ in SCALAR_DATA_FIELDS]
 
 
 def find_duplicate_users(field='email'):

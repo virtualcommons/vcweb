@@ -189,7 +189,7 @@ def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
         experiment_model_dict['averageHarvest'] = get_average_harvest(own_group, previous_round_data)
         experiment_model_dict['averageStorage'] = get_average_storage(own_group, current_round_data)
         regrowth = experiment_model_dict['regrowth'] = get_regrowth_dv(own_group, current_round_data).value
-        c = Counter(map(itemgetter('alive'), experiment_model_dict['playerData']))
+        c = Counter(list(map(itemgetter('alive'), experiment_model_dict['playerData'])))
         experiment_model_dict['numberAlive'] = "%s out of %s" % (c[True], sum(c.values()))
         # FIXME: refactor duplication between myGroup and otherGroup data loading
         experiment_model_dict['myGroup'] = {

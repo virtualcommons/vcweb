@@ -242,9 +242,9 @@ class SubjectPoolTest(BaseVcwebTest):
             # Assign the user to participant permission group
             user.groups.add(PermissionGroup.participant.get_django_group())
             user.save()
-            year = random.choice(range(1980, 1995))
-            month = random.choice(range(1, 12))
-            day = random.choice(range(1, 28))
+            year = random.choice(list(range(1980, 1995)))
+            month = random.choice(list(range(1, 12)))
+            day = random.choice(list(range(1, 28)))
             random_date = datetime(year, month, day)
             p = Participant(
                 user=user,
@@ -267,7 +267,7 @@ class SubjectPoolTest(BaseVcwebTest):
         month = today.month
         for x in range(number):
             if start_date is None:
-                day = random.choice(range(1, 29))
+                day = random.choice(list(range(1, 29)))
                 start_date = datetime(year, month, day)
             es = ExperimentSession.objects.create(
                 experiment_metadata=e.experiment_metadata,
@@ -324,7 +324,7 @@ class SubjectPoolTest(BaseVcwebTest):
         for participant in participants:
             # recipient_list.append(participant.email)
             for es in experiment_sessions:
-                day = random.choice(range(1, 29))
+                day = random.choice(list(range(1, 29)))
 # FIXME: what is the point of setting date_created to random dates in this month & year?
                 random_date = datetime(year, month, day)
                 invitations.append(Invitation(participant=participant, experiment_session=es, date_created=random_date,

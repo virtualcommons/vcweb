@@ -10,7 +10,7 @@ from itertools import chain
 from logging.config import dictConfig
 from os import path
 from raven.contrib.tornado import AsyncSentryClient
-from redis_pubsub import RedisPubSub
+from .redis_pubsub import RedisPubSub
 from sockjs.tornado import SockJSRouter, SockJSConnection
 from tornado import web, ioloop
 from tornadoredis import pubsub
