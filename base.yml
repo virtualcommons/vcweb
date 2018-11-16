@@ -5,6 +5,7 @@ services:
     restart: always
   db:
     image: postgres:10
+    restart: always
     volumes:
       - data:/var/lib/postgresql/data
       - ./deploy/conf/postgres_password:/run/secrets/password
@@ -13,6 +14,7 @@ services:
       POSTGRES_PASSWORD_FILE: /run/secrets/password
       POSTGRES_DB: vcweb
   django:
+    restart: always
     volumes:
       - .:/code
       - ./deploy/conf/config.ini:/secrets/config.ini
