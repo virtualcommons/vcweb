@@ -22,20 +22,20 @@ def get_activity_points_cache():
     cv = 'activity_points_cache'
     activity_points_cache = cache.get(cv)
     if activity_points_cache is None:
-        activity_points_cache = dict([(a.pk, a.points) for a in Activity.objects.all()])
+        activity_points_cache = dict(Activity.objects.values_list('pk', 'points'))
         cache.set(cv, activity_points_cache, 86400)
     return activity_points_cache
 
 
 def get_activity_availability_cache():
     cv = 'activity_availability_cache'
-    aac = cache.get(cv)
-    if aac is None:
-        aac = defaultdict(list)
+    cached_availability = cache.get(cv)
+    if cached_availability is None:
+        cached_availability = defaultdict(list)
         for aa in ActivityAvailability.objects.select_related('activity').all():
-            aac[aa.activity.pk].append(aa.to_dict())
-        cache.set(cv, aac, 86400)
-    return aac
+            cached_availability[aa.activity.pk].append(aa.to_dict())
+        cache.set(cv, cached_availability, 86400)
+    return cached_availability
 
 
 def is_level_based_experiment(experiment=None, treatment_type=None, experiment_configuration=None):
@@ -209,10 +209,8 @@ class Activity(MPTTModel):
             cache.set(ck, cv)
         return cv
 
-    def __unicode__(self):
-        # return unicode(self.pk)
-        return str(self.label)
-        # return u'%s : %s' % (self.label, self.points)
+    def __str__(self):
+        return '{} : {}'.format(self.label, self.points)
 
     class MPTTMeta:
         level_attr = 'mptt_level'
@@ -230,7 +228,7 @@ class ActivityAvailability(models.Model):
     start_time = models.TimeField(null=True, blank=True)
     end_time = models.TimeField(null=True, blank=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s (%s - %s)' % (self.activity, self.start_time, self.end_time)
 
     @property
