@@ -1,0 +1,8 @@
+-r requirements.txt
+# development dependencies
+django-sslserver
+django-debug-toolbar
+coverage==4.4.2
+ipython
+python-coveralls==2.9.1
+

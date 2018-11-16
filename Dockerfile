@@ -2,6 +2,7 @@ FROM comses/base:latest
 
 ARG DJANGO_RUNIT_SCRIPT=./deploy/runit/dev.sh
 ARG UBUNTU_MIRROR=mirror.math.princeton.edu/pub
+ARG REQUIREMENTS_FILE=requirements-dev.txt
 
 RUN sed -i "s|archive.ubuntu.com|${UBUNTU_MIRROR}|" /etc/apt/sources.list \
     && apt-get update && apt-get install -q -y \
@@ -22,9 +23,9 @@ RUN sed -i "s|archive.ubuntu.com|${UBUNTU_MIRROR}|" /etc/apt/sources.list \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 WORKDIR /code
-COPY requirements.txt /tmp/
+COPY ${REQUIREMENTS_FILE} /tmp/
 # Set execute bit on the cron script and install pip dependencies
-RUN pip3 install -r /tmp/requirements.txt
+RUN pip3 install -r /tmp/${REQUIREMENTS_FILE}
 
 COPY ./deploy/db/autopostgresqlbackup.conf /etc/default/autopostgresqlbackup
 COPY ./deploy/db/postgresql-backup-pre /etc/
