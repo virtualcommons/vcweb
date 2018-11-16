@@ -23,7 +23,7 @@ RUN sed -i "s|archive.ubuntu.com|${UBUNTU_MIRROR}|" /etc/apt/sources.list \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 WORKDIR /code
-COPY ${REQUIREMENTS_FILE} /tmp/
+COPY requirements*.txt /tmp/
 # Set execute bit on the cron script and install pip dependencies
 RUN pip3 install -r /tmp/${REQUIREMENTS_FILE}
 

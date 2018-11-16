@@ -1,0 +1,13 @@
+# docker
+Dockerfile
+docker-compose.yml
+.env
+# git
+.git
+.gitattributes
+.gitignore
+# python
+**/__pycache__/*
+*.pyc
+# JetBrains
+.idea
