@@ -1,23 +1,23 @@
 #!/usr/bin/env python
-import os
-import sys
 import json
 import logging
-import tornadoredis
-
-from django.conf import settings
+import os
+import sys
 from itertools import chain
 from logging.config import dictConfig
 from os import path
+
+import tornadoredis
 from raven.contrib.tornado import AsyncSentryClient
-from .redis_pubsub import RedisPubSub
 from sockjs.tornado import SockJSRouter, SockJSConnection
 from tornado import web, ioloop
 from tornadoredis import pubsub
 
-
 sys.path.append('/code')
-os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings'
+from vcweb.redis_pubsub import RedisPubSub
+
+os.environ['DJANGO_SETTINGS_MODULE'] = 'vcweb.settings.prod'
+from django.conf import settings
 
 LOG_FILENAME = "sockjs-redis.log"
 TORNADO_LOG = path.join(settings.LOG_DIRECTORY, LOG_FILENAME)
