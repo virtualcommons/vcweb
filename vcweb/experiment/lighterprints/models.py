@@ -28,12 +28,13 @@ def get_activity_points_cache():
 
 
 def get_activity_availability_cache():
-    aac = cache.get('activity_availability_cache')
+    cv = 'activity_availability_cache'
+    aac = cache.get(cv)
     if aac is None:
         aac = defaultdict(list)
         for aa in ActivityAvailability.objects.select_related('activity').all():
             aac[aa.activity.pk].append(aa.to_dict())
-        cache.set('activity_availability_cache', aac, 86400)
+        cache.set(cv, aac, 86400)
     return aac
 
 

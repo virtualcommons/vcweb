@@ -1515,7 +1515,7 @@ class Experiment(models.Model):
         self.save()
         # notify registered game handlers
         if sender is None:
-            sender = sys.intern(self.experiment_metadata.namespace.encode('utf8'))
+            sender = sys.intern(self.experiment_metadata.namespace)
         return signals.round_started.send_robust(sender, experiment=self, time=datetime.now(),
                                                  round_configuration=current_round_configuration)
 
@@ -2729,7 +2729,7 @@ class ParticipantExperimentRelationship(models.Model):
         """
         if not self.participant_identifier:
             sha1 = hashlib.sha1()
-            sha1.update(self.participant.email)
+            sha1.update(self.participant.email.encode('utf-8'))
             self.participant_identifier = sha1.hexdigest()
             self.sequential_participant_identifier = self.experiment.participant_set.count() + 1
         return self.participant_identifier
