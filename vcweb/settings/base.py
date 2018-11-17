@@ -171,11 +171,12 @@ ROOT_URLCONF = 'vcweb.urls'
 MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 SESSION_CACHE_ALIAS = 'default'
+REDIS_HOST = "redis"
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
         # FIXME: switch to TCP in prod
-        'LOCATION': 'redis://redis:6379/1',
+        'LOCATION': 'redis://{}:6379/1'.format(REDIS_HOST),
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         }

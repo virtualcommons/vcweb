@@ -1,5 +1,7 @@
 import redis
 
+from django.conf import settings
+
 
 class RedisPubSub(object):
     """ Singleton class for Redis Client """
@@ -9,7 +11,7 @@ class RedisPubSub(object):
     @classmethod
     def get_redis_instance(cls):
         if cls.__instance is None:
-            cls.__instance = redis.Redis()
+            cls.__instance = redis.Redis(host=settings.REDIS_HOST)
         return cls.__instance
 
     @staticmethod
