@@ -1,13 +1,24 @@
 language: python
-sudo: false
+sudo: required
 python:
     - "3.6"
+services:
+  - docker
+env: 
+  - DOCKER_COMPOSE_VERSION=1.23.1
 notifications:
     email: virtualcommons-dev@googlegroups.com
-env: DB=postgres
-before_script:
-    - fab setup
-install: "pip install -r requirements.txt"
-script: fab coverage
+before_install:
+  - sudo apt-get -qq update
+  - sudo apt-get install -y docker-ce
+  - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
+  - chmod a+rx docker-compose
+  - sudo mv docker-compose /usr/local/bin
+  - sudo sysctl -w vm.max_map_count=262144
+install: 
+  - yes | DEPLOY=dev ./build.sh 
+  - pip3 install python-coveralls coverage
+script:
+  - bash deploy/test/run-tests
 after_success:
-    - coveralls
+  - bash deploy/test/run-coveralls

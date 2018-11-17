@@ -210,8 +210,8 @@ class CommunityTreatmentTest(ScheduledActivityTest):
                 self.assertTrue(email.recipients())
                 self.assertTrue("5 chat messages were posted" in email.body)
                 self.assertTrue("You earned 250 point(s)." in email.body)
-                self.assertTrue("Members of your group earned, on average, 250 point(s)." in email.body)
-                self.assertTrue("Members of all groups earned, on average, 250 point(s)." in email.body)
+                self.assertTrue("Members of your group earned, on average, 250.0 point(s)." in email.body)
+                self.assertTrue("Members of all groups earned, on average, 250.0 point(s)." in email.body)
             self.assertFalse(group_emails, "Group emails should have all been removed")
 
     def test_payment_information(self):

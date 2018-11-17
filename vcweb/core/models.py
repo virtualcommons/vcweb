@@ -1,6 +1,5 @@
 import hashlib
 import itertools
-import json
 import logging
 import random
 import string
@@ -2093,11 +2092,12 @@ class ParameterizedValue(models.Model):
             else:
                 cache.set(ck, cv)
             return cv
-        try:
-            return next(serializers.deserialize('json', cv)).object
-        except json.JSONDecodeError as e:
-            logger.exception("unable to deserialize cv: %s", cv)
-            return cv
+        if self.parameter.is_foreign_key:
+            try:
+                return next(serializers.deserialize('json', cv)).object
+            except serializers.base.DeserializationError as e:
+                logger.exception("unable to deserialize %s", cv)
+        return cv
 
     @property
     def value(self):

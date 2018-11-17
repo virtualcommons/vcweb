@@ -32,3 +32,5 @@ COPY ./deploy/db/postgresql-backup-pre /etc/
 COPY ${DJANGO_RUNIT_SCRIPT} /etc/service/django/run
 COPY ./deploy/runit/sockjs.sh /etc/service/sockjs/run
 COPY deploy/mail/main.cf /etc/postfix/main.cf
+COPY vcweb /code/vcweb
+COPY tasks.py /code

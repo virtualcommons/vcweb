@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# run standard django tests
+docker-compose run --rm django /code/deploy/test/test.sh

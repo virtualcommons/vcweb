@@ -39,4 +39,5 @@ echo $DB_PASSWORD > ${POSTGRES_PASSWORD_FILE}
 docker-compose up -d db
 sleep 10;
 docker-compose exec db bash -c "psql -U ${DB_USER} -d ${DB_NAME} -c \"ALTER USER ${DB_USER} WITH PASSWORD '${DB_PASSWORD}'\""
-echo "Sucessfully changed db password to new password"
+echo "Successfully changed postgres password"
+docker-compose build --pull
