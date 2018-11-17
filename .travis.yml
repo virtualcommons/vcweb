@@ -16,7 +16,7 @@ before_install:
   - sudo mv docker-compose /usr/local/bin
   - sudo sysctl -w vm.max_map_count=262144
 install: 
-  - yes | DEPLOY=dev ./build.sh 
+  - echo "1" | ./build.sh 
   - pip3 install python-coveralls coverage
 script:
   - bash deploy/test/run-tests
