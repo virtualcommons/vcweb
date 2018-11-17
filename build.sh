@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# invoke via ./build.sh (dev|prod)
+
 set -o errexit
 set -o pipefail
 set -o nounset
@@ -26,18 +28,14 @@ if [ -f "$CONFIG_INI" ]; then
             No) echo "Aborting build"; exit;;
         esac
     done
-    backup_name=config-backup-$(date '+%Y-%m-%d.%H-%M-%S').ini
-    mv ${CONFIG_INI} ./deploy/conf/${backup_name}
-    echo "Backed up old config file to $backup_name"
+    BACKUP_NAME=config-backup-$(date '+%Y-%m-%d.%H-%M-%S').ini
+    mv ${CONFIG_INI} ./deploy/conf/${BACKUP_NAME}
+    echo "Backed up old config file to ${BACKUP_NAME}"
 fi
 
 echo "Creating config.ini for ${DEPLOY}"
 cat "$CONFIG_TEMPLATE_INI" | envsubst > "$CONFIG_INI"
-echo $DB_PASSWORD > ${POSTGRES_PASSWORD_FILE}
+echo -e "${DB_PASSWORD}" > ${POSTGRES_PASSWORD_FILE}
 
 ./compose ${DEPLOY}
-docker-compose up -d db
-sleep 10;
-docker-compose exec db bash -c "psql -U ${DB_USER} -d ${DB_NAME} -c \"ALTER USER ${DB_USER} WITH PASSWORD '${DB_PASSWORD}'\""
-echo "Successfully changed postgres password"
 docker-compose build --pull
