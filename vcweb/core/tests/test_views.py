@@ -1,13 +1,12 @@
-from ..models import (Participant, ExperimentMetadata, ExperimentSession, Experiment, Invitation, ParticipantSignup,
-                      PermissionGroup, BookmarkedExperimentMetadata)
-from ..forms import LoginForm
-from ..views import (DashboardViewModel, ExperimenterDashboardViewModel, ParticipantDashboardViewModel)
-from .common import BaseVcwebTest, SubjectPoolTest
-
-import random
 import json
 import logging
+import random
 
+from .common import BaseVcwebTest, SubjectPoolTest
+from ..forms import LoginForm
+from ..models import (Participant, ExperimentMetadata, ExperimentSession, Invitation, ParticipantSignup,
+                      PermissionGroup, BookmarkedExperimentMetadata)
+from ..views import (DashboardViewModel, ExperimenterDashboardViewModel)
 
 logger = logging.getLogger(__name__)
 
@@ -28,8 +27,7 @@ class AuthTest(BaseVcwebTest):
         self.assertFalse(self.login(username=experiment.experimenter.email, password='jibber jabber'))
         response = self.post(self.login_url, {'email': experiment.experimenter.email,
                                               'password': 'jibber jabber'})
-        self.assertTrue(
-            LoginForm.INVALID_AUTHENTICATION_MESSAGE in response.content)
+        self.assertTrue(LoginForm.INVALID_AUTHENTICATION_MESSAGE in str(response.content))
 
     def test_inactive_user_login(self):
         participant = Participant.objects.all()[0]
@@ -41,7 +39,8 @@ class AuthTest(BaseVcwebTest):
         response = self.post(self.login_url, {'email': participant.email,
                                               'password': 'test'})
         self.assertTrue(
-            LoginForm.INACTIVE_USER_AUTHENTICATION_MESSAGE in response.content)
+            LoginForm.INACTIVE_USER_AUTHENTICATION_MESSAGE in str(response.content)
+        )
 
     def test_experimenter_permissions(self):
         self.assertTrue(self.login_experimenter())
@@ -69,7 +68,7 @@ class ParticipantProfileTest(BaseVcwebTest):
             response = self.get(self.dashboard_url)
             self.assertEqual(302, response.status_code)
             self.assertTrue(self.profile_url in response['Location'])
-# FIXME: fill in profile save
+            # FIXME: fill in profile save
             self.post(self.profile_url, {})
 
 
@@ -96,8 +95,8 @@ class ParticipantDashboardTest(BaseVcwebTest):
             self.assertTrue(self.login_participant(p))
             self.assertTrue(p.is_demo_participant)
             response = self.get(self.dashboard_url)
-# test demo participants don't need to get redirected to the account profile to fill out profile info when they visit
-# the dashboard.
+            # test demo participants don't need to get redirected to the account profile to fill out profile info when they visit
+            # the dashboard.
             self.assertEqual(200, response.status_code)
 
     def test_completed_profile_dashboard(self):
@@ -366,14 +365,14 @@ class SubjectPoolViewTest(SubjectPoolTest):
         response = self.post(self.reverse('subjectpool:manage_experiment_session',
                                           args=[response_dict['session']['pk']]),
                              {'experiment_metadata': em.pk, 'scheduled_date': '2014-09-23 2:0', 'capacity': 10,
-                              'location': 'Online', 'scheduled_end_date': '2014-09-23 4:0', 'request_type': 'delete', 'waitlist': True})
+                              'location': 'Online', 'scheduled_end_date': '2014-09-23 4:0', 'request_type': 'delete',
+                              'waitlist': True})
         self.assertEqual(200, response.status_code)
 
         response = json.loads(response.content)
         self.assertTrue(response_dict['success'])
 
     def test_experiment_session_signup_page(self):
-
         self.setup_participants()
         es_pk_list = self.setup_experiment_sessions()
         x = self.get_final_participants()
@@ -442,26 +441,26 @@ class SubjectPoolViewTest(SubjectPoolTest):
         self.setup_participants()
         es_pk_list = self.setup_experiment_sessions()
         response = self.post(self.reverse('subjectpool:get_invitations_count'), {
-                                             'session_pk_list': ",".join(map(str, es_pk_list)),
-                                             'number_of_people': 30,
-                                             'only_undergrad': 'on',
-                                             'gender': 'M',
-                                             'affiliated_institution': 'Arizona State University',
-                                             'invitation_subject': 'Text',
-                                             'invitation_text': 'Text'})
+            'session_pk_list': ",".join(map(str, es_pk_list)),
+            'number_of_people': 30,
+            'only_undergrad': 'on',
+            'gender': 'M',
+            'affiliated_institution': 'Arizona State University',
+            'invitation_subject': 'Text',
+            'invitation_text': 'Text'})
         self.assertEqual(200, response.status_code)
         response_dict = json.loads(response.content)
         self.assertTrue(response_dict['success'])
 
         # test invalid experiment sessions
         response = self.post(self.reverse('subjectpool:get_invitations_count'), {
-                                            'session_pk_list': -1,
-                                            'affiliated_institution': 'Arizona State University',
-                                            'only_undergrad':True,
-                                            'invitation_text': 'Test',
-                                            'invitation_subject': 'Test',
-                                            'gender': 'M',
-                                            'number_of_people':30})
+            'session_pk_list': -1,
+            'affiliated_institution': 'Arizona State University',
+            'only_undergrad': True,
+            'invitation_text': 'Test',
+            'invitation_subject': 'Test',
+            'gender': 'M',
+            'number_of_people': 30})
         self.assertEqual(200, response.status_code)
         response_dict = json.loads(response.content)
         self.assertFalse(response_dict['success'])
@@ -476,17 +475,18 @@ class SubjectPoolViewTest(SubjectPoolTest):
         response_dict_session = json.loads(response.content)
 
         # Test invalid form
-        response = self.post(self.reverse('subjectpool:invite_email_preview'), {'invitation_subject':'Test','invitation_text':'Test'})
+        response = self.post(self.reverse('subjectpool:invite_email_preview'),
+                             {'invitation_subject': 'Test', 'invitation_text': 'Test'})
         self.assertEqual(200, response.status_code)
         response_dict = json.loads(response.content)
         self.assertFalse(response_dict['success'])
 
         # Test valid form
         response = self.post(self.reverse('subjectpool:invite_email_preview'), {
-                                            'number_of_people':30, 'only_undergrad':'on',
-                                            'gender':'M', 'affiliated_institution':'Arizona+State+University',
-                                            'invitation_subject':'Text', 'invitation_text':'Text',
-                                            'session_pk_list': response_dict_session['session']['pk']})
+            'number_of_people': 30, 'only_undergrad': 'on',
+            'gender': 'M', 'affiliated_institution': 'Arizona+State+University',
+            'invitation_subject': 'Text', 'invitation_text': 'Text',
+            'session_pk_list': response_dict_session['session']['pk']})
         self.assertEqual(200, response.status_code)
         response_dict = json.loads(response.content)
         self.assertTrue(response_dict['success'])

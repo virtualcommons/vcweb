@@ -281,8 +281,8 @@ class SubjectPoolTest(BaseVcwebTest):
         return experiment_session_pks
 
     def get_final_participants(self):
-        potential_participants = Participant.objects.invitation_eligible(self.experiment_metadata.pk,
-                                                                         institution_name='Arizona State University')
+        potential_participants = list(Participant.objects.invitation_eligible(
+            self.experiment_metadata.pk, institution_name='Arizona State University'))
         potential_participants_count = len(potential_participants)
         # logger.debug(potential_participants)
         number_of_invitations = 50

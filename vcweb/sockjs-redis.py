@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import django
 import json
 import logging
 import os
@@ -8,6 +7,7 @@ from itertools import chain
 from logging.config import dictConfig
 from os import path
 
+import django
 import tornadoredis
 from raven.contrib.tornado import AsyncSentryClient
 from sockjs.tornado import SockJSRouter, SockJSConnection
