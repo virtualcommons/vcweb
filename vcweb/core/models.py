@@ -1,5 +1,6 @@
 import hashlib
 import itertools
+import json
 import logging
 import random
 import string
@@ -2094,7 +2095,7 @@ class ParameterizedValue(models.Model):
             return cv
         try:
             return next(serializers.deserialize('json', cv)).object
-        except serializers.JSONDecodeError as e:
+        except json.JSONDecodeError as e:
             logger.exception("unable to deserialize cv: %s", cv)
             return cv
 

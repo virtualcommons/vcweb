@@ -244,6 +244,10 @@ STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 ]
 
+STATICFILES_DIRS = [
+    os.path.join(PROJECT_DIR, "static"),
+]
+
 STATIC_ROOT = '/shared/static'
 STATIC_URL = '/static/'
 
