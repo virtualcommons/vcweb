@@ -23,6 +23,10 @@ class BaseVcwebTest(TestCase):
     """
     DEFAULT_EXPERIMENTER_PASSWORD = 'test.experimenter'
     DEFAULT_EXPERIMENTER_EMAIL = 'vcweb.test@mailinator.com'
+    DEFAULT_INSTITUTION_NAME = 'Arizona State University'
+
+    def get_default_institution(self):
+        return Institution.objects.get(name=self.DEFAULT_INSTITUTION_NAME)
 
     def load_experiment(self, experiment_metadata=None, experimenter_password=None, **kwargs):
         if experiment_metadata is None:
@@ -232,7 +236,7 @@ class SubjectPoolTest(BaseVcwebTest):
     def setup_participants(self, number=500):
         password = "test"
         participants = []
-        institution = Institution.objects.get(name="Arizona State University")
+        institution = self.get_default_institution()
         genders = [g[0] for g in Participant.GENDER_CHOICES]
         class_statuses = [c[0] for c in Participant.CLASS_CHOICES][:4]
         for x in range(number):
@@ -282,7 +286,7 @@ class SubjectPoolTest(BaseVcwebTest):
 
     def get_final_participants(self):
         potential_participants = list(Participant.objects.invitation_eligible(
-            self.experiment_metadata.pk, institution_name='Arizona State University'))
+            self.experiment_metadata.pk, institution_name=self.get_default_institution().name))
         potential_participants_count = len(potential_participants)
         # logger.debug(potential_participants)
         number_of_invitations = 50

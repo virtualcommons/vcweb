@@ -2556,7 +2556,8 @@ class ParticipantQuerySet(models.query.QuerySet):
     def invalid_participants(self, *args, **kwargs):
         return self.filter(user__email__contains='mailinator.com')
 
-    def invitation_eligible(self, experiment_metadata_pk, only_undergrad=True, gender=None, institution_name=None):
+    def invitation_eligible(self, experiment_metadata_pk, only_undergrad=True, gender=None,
+                            institution_name=None, institution=None):
         # invited_in_last_threshold_days contains all Invitations that were generated in last threshold days for the
         # given Experiment metadata
         invited_in_last_threshold_days = Invitation.objects.already_invited(
@@ -2574,7 +2575,9 @@ class ParticipantQuerySet(models.query.QuerySet):
                                                            already_participated, invalid_participants)))
 
         criteria = dict(can_receive_invitations=True, user__is_active=True)
-        if institution_name is not None:
+        if institution is not None:
+            criteria.update(institution=institution)
+        elif institution_name is not None:
             try:
                 affiliated_institution = Institution.objects.get(name=institution_name)
                 criteria.update(institution=affiliated_institution)

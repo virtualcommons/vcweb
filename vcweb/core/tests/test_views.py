@@ -270,7 +270,7 @@ class SubjectPoolViewTest(SubjectPoolTest):
         # Test with experiment sessions from from more than one experiment metadata
         response = self.post(self.reverse('subjectpool:send_invites'), {
             'number_of_people': 30,
-            'only_undergrad': 'on', 'affiliated_institution': 'Arizona State University', 'invitation_subject': 'Test',
+            'only_undergrad': 'on', 'affiliated_institution': self.get_default_institution().pk, 'invitation_subject': 'Test',
             'invitation_text': 'Testing', 'gender': 'M', 'session_pk_list': "-1"})
         self.assertEqual(200, response.status_code)
         response_dict = json.loads(response.content)
@@ -279,7 +279,7 @@ class SubjectPoolViewTest(SubjectPoolTest):
         # Test without participants
         response = self.post(self.reverse('subjectpool:send_invites'), {
             'number_of_people': 30,
-            'only_undergrad': 'on', 'gender': 'M', 'affiliated_institution': 'Arizona State University',
+            'only_undergrad': 'on', 'gender': 'M', 'affiliated_institution': self.get_default_institution().pk,
             'invitation_subject': 'Test', 'invitation_text': 'Testing', 'session_pk_list': str(es_pk_list[0])})
         self.assertEqual(200, response.status_code)
         response_dict = json.loads(response.content)
@@ -290,7 +290,7 @@ class SubjectPoolViewTest(SubjectPoolTest):
 
         response = self.post(self.reverse('subjectpool:send_invites'), {
             'number_of_people': 30,
-            'only_undergrad': 'on', 'gender': 'A', 'affiliated_institution': 'Arizona State University',
+            'only_undergrad': 'on', 'gender': 'A', 'affiliated_institution': self.get_default_institution().pk,
             'invitation_subject': 'Test', 'invitation_text': 'Testing', 'session_pk_list': str(es_pk_list[0])})
         self.assertEqual(200, response.status_code)
 
@@ -445,9 +445,10 @@ class SubjectPoolViewTest(SubjectPoolTest):
             'number_of_people': 30,
             'only_undergrad': 'on',
             'gender': 'M',
-            'affiliated_institution': 'Arizona State University',
+            'affiliated_institution': self.get_default_institution().pk,
             'invitation_subject': 'Text',
-            'invitation_text': 'Text'})
+            'invitation_text': 'Text'
+        })
         self.assertEqual(200, response.status_code)
         response_dict = json.loads(response.content)
         self.assertTrue(response_dict['success'])
@@ -455,7 +456,7 @@ class SubjectPoolViewTest(SubjectPoolTest):
         # test invalid experiment sessions
         response = self.post(self.reverse('subjectpool:get_invitations_count'), {
             'session_pk_list': -1,
-            'affiliated_institution': 'Arizona State University',
+            'affiliated_institution': self.get_default_institution().pk,
             'only_undergrad': True,
             'invitation_text': 'Test',
             'invitation_subject': 'Test',
@@ -484,7 +485,7 @@ class SubjectPoolViewTest(SubjectPoolTest):
         # Test valid form
         response = self.post(self.reverse('subjectpool:invite_email_preview'), {
             'number_of_people': 30, 'only_undergrad': 'on',
-            'gender': 'M', 'affiliated_institution': 'Arizona+State+University',
+            'gender': 'M', 'affiliated_institution': self.get_default_institution().pk,
             'invitation_subject': 'Text', 'invitation_text': 'Text',
             'session_pk_list': response_dict_session['session']['pk']})
         self.assertEqual(200, response.status_code)

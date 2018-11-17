@@ -139,7 +139,7 @@ def get_invitations_count(request):
             potential_participants = Participant.objects.invitation_eligible(
                 experiment_metadata_ids[0],
                 gender=form.cleaned_data.get('gender'),
-                institution_name=form.cleaned_data.get('affiliated_institution'),
+                institution=form.cleaned_data.get('affiliated_institution'),
                 only_undergrad=form.cleaned_data.get('only_undergrad'))
             return JsonResponse({'success': True, 'invitesCount': len(potential_participants)})
     return JsonResponse({'success': False, 'invitesCount': 0, 'errors': form.errors})
@@ -174,12 +174,12 @@ def send_invitations(request):
             # invitations belong to same experiment metadata (This has to be ensured as it is a constraint)
             experiment_metadata_pk = experiment_metadata_pk_list[0]
 
-            potential_participants = Participant.objects.invitation_eligible(
+            potential_participants = list(Participant.objects.invitation_eligible(
                 experiment_metadata_pk,
-                institution_name=affiliated_institution,
+                institution=affiliated_institution,
                 only_undergrad=form.cleaned_data.get('only_undergrad'),
-                gender=form.cleaned_data.get('gender'))
-            potential_participants_count = potential_participants.count()
+                gender=form.cleaned_data.get('gender')))
+            potential_participants_count = len(potential_participants)
 
             final_participants = None
 

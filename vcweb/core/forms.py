@@ -428,15 +428,16 @@ class RegisterParticipantsForm(forms.Form):
     required_css_class = 'required'
 
     experiment_pk = forms.IntegerField(widget=widgets.HiddenInput)
-    start_date = forms.DateField(required=False,
-                                 help_text=_('''Date this experiment should activate and start.
-                                 Used for multi-day experiments with daily rounds'''))
+    start_date = forms.DateField(
+        required=False,
+        help_text=_('''Date this experiment should activate and start. Used for multi-day experiments with daily rounds''')
+    )
     experiment_password = forms.CharField(
         required=False,
         min_length=3,
         help_text=_('Participant login password. If blank, a unique password will be generated for each participant.'))
-    institution_name = forms.ModelChoiceField(
-        label="Institution name",
+    institution = forms.ModelChoiceField(
+        label="Institution",
         required=False,
         queryset=Institution.objects.all(),
         widget=autocomplete.ModelSelect2(
@@ -446,7 +447,8 @@ class RegisterParticipantsForm(forms.Form):
                 'data-minimum-input-length': 3,
             }
         ),
-        help_text=_('Institution to associate with these participants.'))
+        help_text=_('Institution to associate with these participants.')
+    )
     registration_email_from_address = forms.EmailField(
         widget=EmailInput(),
         label=_('Sender email'),
@@ -458,18 +460,6 @@ class RegisterParticipantsForm(forms.Form):
     registration_email_text = forms.CharField(
         required=False, widget=forms.Textarea, label="Email body",
         help_text=_('Custom text placed at the start of the message before generated registration text.'))
-
-    def clean_institution(self):
-        institution_name = self.cleaned_data.get('institution_name').strip()
-        if institution_name is None:
-            self.institution = None
-        else:
-            (institution, created) = Institution.objects.get_or_create(
-                name=institution_name)
-            logger.debug(
-                "get or create institution %s - created? %s", institution_name, created)
-            self.institution = institution
-        return self.institution
 
 
 class RegisterTestParticipantsForm(RegisterParticipantsForm):
