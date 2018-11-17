@@ -61,6 +61,6 @@ view the page by clicking on the "Monitor" button to connect to the experiment a
 * Password: test 
 
 ### codebase status
-[![Build Status](https://travis-ci.org/virtualcommons/vcweb.svg?branch=develop)](https://travis-ci.org/virtualcommons/vcweb)
-[![Coverage Status](https://coveralls.io/repos/virtualcommons/vcweb/badge.png?branch=develop)](https://coveralls.io/r/virtualcommons/vcweb?branch=develop)
+[![Build Status](https://travis-ci.org/virtualcommons/vcweb.svg?branch=master)](https://travis-ci.org/virtualcommons/vcweb)
+[![Coverage Status](https://coveralls.io/repos/virtualcommons/vcweb/badge.png?branch=master)](https://coveralls.io/r/virtualcommons/vcweb?branch=develop)
 [![Code Health](https://landscape.io/github/virtualcommons/vcweb/develop/landscape.svg?style=flat)](https://landscape.io/github/virtualcommons/vcweb/develop)
