@@ -10,5 +10,4 @@ class ExperimentAppConfig(AppConfig):
     verbose_name = 'Boundary Effects Experiment App'
 
     def ready(self):
-        from .signals import round_started_handler, round_ended_handler
         logger.debug("boundary effects experiment app ready")
