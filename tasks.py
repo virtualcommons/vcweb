@@ -138,3 +138,8 @@ def create_pgpass_file(ctx, force=False):
 def backup(ctx):
     create_pgpass_file(ctx)
     ctx.run('autopostgresqlbackup')
+
+
+@task
+def prepare(ctx):
+    dj(ctx, 'collectstatic --noinput')
