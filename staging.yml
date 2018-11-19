@@ -15,7 +15,7 @@ services:
     image: nginx:latest
     restart: always
     volumes:
-      - ./deploy/nginx/nginx-haproxy.conf:/etc/nginx/nginx.conf
+      - ./deploy/nginx/nginx-staging.conf:/etc/nginx/nginx.conf
       - ./deploy/nginx/uwsgi_params:/etc/nginx/uwsgi_params
       - ./docker/shared:/shared
     command: ["nginx", "-g", "daemon off;"]
