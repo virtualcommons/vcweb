@@ -16,7 +16,7 @@ export DB_NAME=vcweb
 export DB_HOST=db
 export DB_PORT=5432
 export DB_PASSWORD=$(head /dev/urandom | tr -dc '[:alnum:]' | head -c42)
-export DJANGO_SECRET_KEY=$(head /dev/urandom | tr -dc '[:alnum:]' | head -c42)
+export DJANGO_SECRET_KEY=$(head /dev/urandom | tr -dc '[:alnum:]' | head -c90)
 
 if [ -f "$CONFIG_INI" ]; then
     echo $PWD
