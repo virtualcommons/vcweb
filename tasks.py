@@ -2,8 +2,9 @@ import os
 import pathlib
 import sys
 
-from distutils.util import strtobool
 from invoke import task
+
+from vcweb.core.utils import confirm
 
 # NB: assumes containerized execution
 sys.path.append('/code/')
@@ -21,18 +22,6 @@ def dj(c, subcommand, **kwargs):
         ),
         **kwargs
     )
-
-
-def confirm(prompt="Continue? (y/n) ", cancel_message="Aborted."):
-    response = input(prompt)
-    try:
-        response_as_bool = strtobool(response)
-    except ValueError:
-        print("Invalid response ", response_as_bool, ". Please confirm with yes (y) or no (n).")
-        confirm(prompt, cancel_message)
-    if not response_as_bool:
-        raise RuntimeError(cancel_message)
-    return True
 
 
 @task(aliases=['init'])
