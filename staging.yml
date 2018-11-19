@@ -11,6 +11,7 @@ services:
     volumes:
       - ./deploy/backup/cron-script:/etc/cron.daily/autopgsqlbackup
       - ./docker/shared:/shared
+      - sockets:/shared/sockets
   nginx:
     image: nginx:latest
     restart: always
@@ -18,6 +19,7 @@ services:
       - ./deploy/nginx/nginx-staging.conf:/etc/nginx/nginx.conf
       - ./deploy/nginx/uwsgi_params:/etc/nginx/uwsgi_params
       - ./docker/shared:/shared
+      - sockets:/shared/sockets
     command: ["nginx", "-g", "daemon off;"]
     ports:
       - "127.0.0.1:8001:80"
@@ -25,5 +27,5 @@ services:
       - django
 
 volumes:
-  uwsgisocket:
+  sockets:
     driver: local
