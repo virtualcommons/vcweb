@@ -37,12 +37,9 @@ def confirm(prompt="Continue? (y/n) ", cancel_message="Aborted."):
 
 @task(aliases=['init'])
 def run_migrations(ctx, clean=False, initial=False):
-    apps = ('core', 'home', 'library', 'curator')
     if clean:
-        for app in apps:
-            migration_dir = os.path.join(app, 'migrations')
-            ctx.run('find {0} -name 00*.py -delete -print'.format(migration_dir))
-    dj(ctx, 'makemigrations {0} --noinput'.format(' '.join(apps)))
+        ctx.run('find vcweb -name 00*.py -delete -print')
+    dj(ctx, 'makemigrations --noinput')
     migrate_command = 'migrate --noinput'
     if initial:
         migrate_command += ' --fake-initial'
@@ -68,6 +65,7 @@ def drop_db(ctx, database=None, create=False):
     if create:
         ctx.run('createdb -w {db_name} -U {db_user} -h {db_host}'.format(**db_config), echo=True)
 
+
 @task(aliases=['sh'])
 def shell(c, print_sql=False):
     flags = "--ipython{}".format('--print-sql' if print_sql else '')
@@ -89,7 +87,7 @@ def test(ctx, tests='', coverage=True):
 
 
 @task(aliases=['rfd'])
-def restore_from_dump(ctx, target_database=None, dumpfile='database.sql', force=False, migrate=True):
+def restore_from_dump(ctx, target_database=None, dumpfile='database.sql', force=False, migrate=True, clean=False):
     db_config = get_database_settings(target_database)
     dumpfile_path = pathlib.Path(dumpfile)
     if dumpfile.endswith('.sql') and dumpfile_path.is_file():
@@ -105,7 +103,8 @@ def restore_from_dump(ctx, target_database=None, dumpfile='database.sql', force=
         drop_db(ctx, database=target_database, create=True)
         ctx.run('zcat {dumpfile} | psql -w -q -h db {db_name} {db_user}'.format(dumpfile=dumpfile, **db_config), echo=True)
     if migrate:
-        run_migrations(ctx, clean=True, initial=True)
+        run_migrations(ctx, clean=clean, initial=True)
+
 
 def get_database_settings(db_key=None):
     if db_key is None:
