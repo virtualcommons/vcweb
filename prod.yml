@@ -20,7 +20,7 @@ services:
     - ./docker/shared:/shared
     command: ["nginx", "-g", "daemon off;"]
     ports:
-      - "80:80"
+      - "8001:80"
     depends_on:
       - django
 
