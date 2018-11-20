@@ -4,14 +4,13 @@ from django.db import transaction
 from django.shortcuts import render, get_object_or_404
 
 from vcweb.core.decorators import group_required
-from vcweb.core.http import JsonResponse, dumps
 from vcweb.core.forms import SingleIntegerDecisionForm
+from vcweb.core.http import JsonResponse, dumps
 from vcweb.core.models import (Experiment, ChatMessage, ParticipantGroupRelationship, RoundConfiguration,
                                PermissionGroup)
 from .models import (get_experiment_metadata, get_max_harvest_decision, get_resource_level,
                      get_initial_resource_level, get_harvest_decision_dv, get_regrowth_dv, set_harvest_decision,
-                     get_average_harvest, GroupData,)
-
+                     get_average_harvest, GroupData, )
 
 logger = logging.getLogger(__name__)
 

@@ -1,12 +1,11 @@
+import logging
 from datetime import datetime
 
+import unicodecsv
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
-
-import logging
-import unicodecsv
 
 from vcweb.core.decorators import group_required, ownership_required
 from vcweb.core.forms import (ChatForm, CommentForm, LikeForm)
@@ -18,7 +17,6 @@ from .forms import ActivityForm
 from .models import (Activity, get_lighterprints_experiment_metadata, is_high_school_treatment, get_treatment_type,
                      get_activity_performed_parameter, is_community_treatment, is_level_based_experiment)
 from .services import (ActivityStatusList, GroupScores, do_activity, get_time_remaining, GroupActivity)
-
 
 logger = logging.getLogger(__name__)
 

@@ -1,5 +1,6 @@
 from distutils.util import strtobool
 
+
 def confirm(prompt="Continue? (y/n) ", cancel_message="Aborted."):
     response = input(prompt)
     try:

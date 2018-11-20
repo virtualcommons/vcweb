@@ -1,8 +1,8 @@
-from django.apps import AppConfig
-from django.conf import settings
-
 import logging
 import mimetypes
+
+from django.apps import AppConfig
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 

@@ -7,7 +7,6 @@ from vcweb.core.http import JsonResponse, dumps
 from vcweb.core.models import Experiment, PermissionGroup
 from vcweb.experiment.irrigation.services import get_experiment_metadata
 
-
 logger = logging.getLogger(__name__)
 
 

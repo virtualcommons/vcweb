@@ -1,13 +1,12 @@
-from collections import defaultdict
 import logging
+import sys
+from collections import defaultdict
 
 from django.db import models, transaction
 from django.dispatch import receiver
 
 from vcweb.core import signals, simplecache
-from vcweb.core.models import (ExperimentMetadata, Parameter, ParticipantRoundDataValue, RoundConfiguration,)
-import sys
-
+from vcweb.core.models import (ExperimentMetadata, Parameter, ParticipantRoundDataValue, RoundConfiguration, )
 
 logger = logging.getLogger(__name__)
 

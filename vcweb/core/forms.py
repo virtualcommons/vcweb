@@ -2,11 +2,10 @@ import email
 import logging
 import re
 import time
-
 from hashlib import sha1
 
 from captcha.fields import ReCaptchaField
-
+from contact_form.forms import ContactForm
 from django import forms
 from django.conf import settings
 from django.contrib.auth.forms import PasswordResetForm, UserCreationForm, UsernameField
@@ -16,8 +15,6 @@ from django.utils.translation import ugettext_lazy as _
 
 from .models import (User, Experimenter, Institution, Participant, ExperimentMetadata, ExperimentConfiguration,
                      ExperimentParameterValue, RoundConfiguration, RoundParameterValue)
-
-from contact_form.forms import ContactForm
 
 logger = logging.getLogger(__name__)
 

@@ -7,11 +7,11 @@ from django.contrib.auth.models import Permission
 
 from .models import (
     Parameter, RoundParameterValue, ExperimentParameterValue, ExperimentConfiguration, RoundConfiguration,
-    Experimenter, Participant, ExperimentGroup, Experiment, ExperimentMetadata, Address, ParticipantExperimentRelationship,
+    Experimenter, Participant, ExperimentGroup, Experiment, ExperimentMetadata, Address,
+    ParticipantExperimentRelationship,
     ParticipantGroupRelationship, GroupRoundDataValue, ParticipantRoundDataValue, GroupActivityLog, ChatMessage,
     Comment, Like, OstromlabFaqEntry, ParticipantSignup, Invitation, ExperimentSession
 )
-
 
 models = (
     Parameter, RoundParameterValue, ExperimentParameterValue, ExperimentConfiguration, RoundConfiguration,

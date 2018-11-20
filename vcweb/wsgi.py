@@ -15,7 +15,7 @@ framework.
 """
 import os
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "vcweb.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "vcweb.settings.prod")
 
 # This application object is used by any WSGI server configured to use this
 # file. This includes Django's development server, if the WSGI_APPLICATION
@@ -23,8 +23,3 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "vcweb.settings")
 from django.core.wsgi import get_wsgi_application
 from raven.contrib.django.raven_compat.middleware.wsgi import Sentry
 application = Sentry(get_wsgi_application())
-#application = get_wsgi_application()
-
-# Apply WSGI middleware here.
-# from helloworld.wsgi import HelloWorldApplication
-# application = HelloWorldApplication(application)

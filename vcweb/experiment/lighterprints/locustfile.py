@@ -1,6 +1,6 @@
-from locust import HttpLocust, TaskSet, task
-
 import logging
+
+from locust import HttpLocust, TaskSet, task
 
 logger = logging.getLogger(__name__)
 

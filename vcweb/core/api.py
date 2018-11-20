@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_POST, require_GET
@@ -7,8 +9,6 @@ from .forms import ChatForm, ParticipantGroupIdForm
 from .http import JsonResponse, dumps
 from .models import (Experiment, RoundData, get_chat_message_parameter, ExperimentConfiguration, User, PermissionGroup,
                      ParticipantGroupRelationship, ChatMessage)
-
-import logging
 
 logger = logging.getLogger(__name__)
 

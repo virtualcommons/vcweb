@@ -5,14 +5,12 @@ from vcweb.core.models import (Experiment, GroupRoundDataValue, ParticipantExper
                                ParticipantGroupRelationship, Parameter, ParticipantRoundDataValue,
                                ExperimentConfiguration, )
 from vcweb.core.tests import BaseVcwebTest
-
 from .models import (get_experiment_metadata, EXPERIMENT_METADATA_NAME, round_started_handler, round_ended_handler,
                      get_harvest_decision_parameter, should_reset_resource_level, get_initial_resource_level,
                      get_max_harvest_decision, set_harvest_decision, get_regrowth_parameter,
                      get_group_harvest_parameter, get_resource_level_parameter, set_resource_level, get_resource_level,
                      calculate_regrowth,
                      )
-
 
 logger = logging.getLogger(__name__)
 

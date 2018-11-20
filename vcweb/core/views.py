@@ -1,49 +1,45 @@
-from collections import defaultdict
 import itertools
 import logging
 import mimetypes
-import unicodecsv
 import uuid
+from collections import defaultdict
 
+import unicodecsv
+from contact_form.views import ContactFormView
 from dal import autocomplete
-
 from django.conf import settings
 from django.contrib import auth, messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView as ContribAuthLoginView, LogoutView as ContribAuthLogoutView
-from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
+from django.core.urlresolvers import reverse
 from django.db import models
 from django.db import transaction
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext_lazy as _
+from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import FormView, TemplateView, ListView
 from django.views.generic.detail import SingleObjectMixin
-from django.views.decorators.http import require_GET, require_POST
-
 from rest_framework import viewsets, status, renderers
-from rest_framework.decorators import detail_route, list_route
+from rest_framework.decorators import detail_route
 from rest_framework.response import Response
-from .serializers import ExperimentSerializer, ExperimentRegistrationSerializer
-from .permissions import CanEditExperiment
-
-from contact_form.views import ContactFormView
 
 from .api import SUCCESS_DICT, FAILURE_DICT, create_message_event
-from .http import JsonResponse, dumps
 from .decorators import (anonymous_required, is_participant, is_experimenter, ownership_required, group_required)
 from .forms import (ParticipantAccountForm, ExperimenterAccountForm, UpdateExperimentForm,
                     AsuRegistrationForm, RegisterEmailListParticipantsForm, RegisterTestParticipantsForm,
                     BookmarkExperimentMetadataForm, ExperimentConfigurationForm, ExperimentParameterValueForm,
                     RoundConfigurationForm, RoundParameterValueForm, AntiSpamContactForm, PortOfMarsSignupForm)
+from .http import JsonResponse, dumps
 from .models import (User, ChatMessage, Participant, ParticipantExperimentRelationship, ParticipantGroupRelationship,
                      ExperimentConfiguration, Experiment, Institution, BookmarkedExperimentMetadata, OstromlabFaqEntry,
                      ExperimentParameterValue, RoundConfiguration, RoundParameterValue, ParticipantSignup,
                      get_model_fields, PermissionGroup, get_audit_data, )
-
+from .permissions import CanEditExperiment
+from .serializers import ExperimentSerializer, ExperimentRegistrationSerializer
 from ..redis_pubsub import RedisPubSub
 
 logger = logging.getLogger(__name__)

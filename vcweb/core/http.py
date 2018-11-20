@@ -1,11 +1,11 @@
+import json
+
 from django.core.serializers import serialize
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Model
 from django.db.models.query import QuerySet
 from django.http import JsonResponse as DjangoJsonResponse
 from django.utils.functional import curry
-
-import json
 
 
 class VcwebJSONEncoder(DjangoJSONEncoder):

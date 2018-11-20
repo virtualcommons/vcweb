@@ -1,13 +1,14 @@
+import logging
+from datetime import datetime
+
 from django.conf import settings
 from django.core import management
 from django.dispatch import receiver
-from datetime import datetime
 
 from . import signals
 from .decorators import log_signal_errors
 from .models import get_audit_data, create_markdown_email
 
-import logging
 logger = logging.getLogger(__name__)
 
 

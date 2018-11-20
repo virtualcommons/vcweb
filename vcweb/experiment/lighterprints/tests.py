@@ -1,11 +1,12 @@
 import json
 import logging
-
 from datetime import date, timedelta
+
 from django.conf import settings
 from django.core.cache import cache
-from vcweb.core.tests import BaseVcwebTest
+
 from vcweb.core.models import ParticipantRoundDataValue, ChatMessage, Like, Comment
+from vcweb.core.tests import BaseVcwebTest
 from .models import (Activity, get_lighterprints_experiment_metadata, get_activity_performed_parameter,
                      get_footprint_level, get_treatment_type_parameter, get_leaderboard_parameter,
                      get_linear_public_good_parameter, is_scheduled_activity_experiment, is_level_based_experiment,

@@ -2,12 +2,11 @@ import logging
 
 from django.conf.urls import url
 from django.views.generic import RedirectView, TemplateView
-
 from rest_framework import routers
 
+from . import views
 from .api import (get_round_data, save_experimenter_notes, create_experiment, clone_experiment, is_email_available,
                   handle_chat_message, check_ready_participants, participant_ready, )
-from . import views
 from .views import (dashboard, LoginView, LogoutView, monitor, RegisterEmailListView, RegisterTestParticipantsView,
                     completed_survey, toggle_bookmark_experiment_metadata, check_survey_completed, ParticipateView,
                     download_data, download_participants, export_configuration, get_dashboard_view_model,

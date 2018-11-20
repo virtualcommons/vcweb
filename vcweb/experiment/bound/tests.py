@@ -5,10 +5,8 @@ boundary effects experiment unit tests
 import logging
 import random
 
-
 from vcweb.core.models import (GroupCluster, Experiment, ParticipantRoundDataValue)
 from vcweb.core.tests import BaseVcwebTest
-
 from .models import (get_experiment_metadata, set_harvest_decision, GroupRelationship, get_resource_level_dv,
                      get_regrowth_rate, calculate_regrowth, set_resource_level, get_resource_level,
                      get_harvest_decision_parameter, get_max_resource_level, get_harvest_decision,

@@ -1,6 +1,6 @@
+import logging
 from collections import Counter
 from operator import itemgetter
-import logging
 
 from django.contrib import messages
 from django.db import transaction
@@ -15,7 +15,6 @@ from .models import (get_experiment_metadata, get_regrowth_rate, get_max_harvest
                      get_resource_level, get_initial_resource_level, get_final_session_storage_queryset,
                      get_harvest_decision_dv, set_harvest_decision, can_observe_other_group, get_average_harvest,
                      get_average_storage, get_total_harvest, get_number_alive, get_player_data, get_regrowth_dv)
-
 
 logger = logging.getLogger(__name__)
 

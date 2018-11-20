@@ -1,7 +1,12 @@
+import itertools
+import locale
+import logging
+import re
 from collections import defaultdict
 from datetime import datetime, date, time, timedelta
 from operator import itemgetter
 
+import markdown
 from django.conf import settings
 from django.core import mail
 from django.core.mail import EmailMultiAlternatives
@@ -9,19 +14,12 @@ from django.db import transaction
 from django.template.loader import select_template
 from django.utils.timesince import timesince
 
-
 from vcweb.core.models import (ParticipantRoundDataValue, ChatMessage, Like, Comment)
 from .models import (Activity, is_scheduled_activity_experiment, get_activity_availability_cache, has_leaderboard,
                      get_activity_performed_parameter, ActivityAvailability, is_linear_public_good_experiment,
                      get_activity_points_cache, get_footprint_level, get_group_threshold, get_experiment_completed_dv,
                      get_footprint_level_dv, get_treatment_type, is_community_treatment, is_high_school_treatment,
-                     is_level_based_experiment,)
-
-import itertools
-import locale
-import logging
-import markdown
-import re
+                     is_level_based_experiment, )
 
 logger = logging.getLogger(__name__)
 

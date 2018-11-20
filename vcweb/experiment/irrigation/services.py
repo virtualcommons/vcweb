@@ -1,6 +1,7 @@
+import sys
+
 from vcweb.core import simplecache
 from vcweb.core.models import ExperimentMetadata
-import sys
 
 EXPERIMENT_METADATA_NAME = sys.intern('irrigation')
 
