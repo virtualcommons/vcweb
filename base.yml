@@ -7,7 +7,7 @@ services:
     image: postgres:10
     restart: always
     volumes:
-      - data:/var/lib/postgresql/data
+      - ./docker/shared/pgdata:/var/lib/postgresql/data
       - ./deploy/conf/postgres_password:/run/secrets/password
     environment:
       POSTGRES_USER: vcweb
@@ -18,15 +18,10 @@ services:
     volumes:
       - .:/code
       - ./deploy/conf/config.ini:/secrets/config.ini
-      - logs:/shared/logs
+      - ./docker/shared:/shared
     environment:
       DJANGO_SETTINGS_MODULE: 'vcweb.settings.dev'
       LANG: "C.UTF-8"
     depends_on:
       - db
       - redis
-volumes:
-  data:
-    driver: local
-  logs:
-    driver: local
