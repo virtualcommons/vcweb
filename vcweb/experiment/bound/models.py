@@ -9,7 +9,7 @@ from vcweb.core import signals, simplecache
 from vcweb.core.models import (DefaultValue, ExperimentMetadata, Parameter, ParticipantRoundDataValue,
                                GroupRelationship, RoundConfiguration, get_participant_ready_parameter)
 from vcweb.experiment.forestry.models import (
-    get_harvest_decision_parameter, get_harvest_decision, get_harvest_decision_dv, get_group_harvest_parameter,
+    get_harvest_decision_parameter, get_harvest_decision, get_group_harvest_parameter,
     get_reset_resource_level_parameter, get_regrowth_parameter, get_initial_resource_level_parameter,
     get_resource_level_parameter, get_resource_level_dv as get_unshared_resource_level_dv, get_group_harvest_dv,
     get_regrowth_dv, )

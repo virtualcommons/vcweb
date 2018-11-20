@@ -9,12 +9,12 @@ from django.shortcuts import render, get_object_or_404, redirect
 from vcweb.core.decorators import group_required
 from vcweb.core.forms import SingleIntegerDecisionForm
 from vcweb.core.http import JsonResponse, dumps
-from vcweb.core.models import (
-    Experiment, ParticipantGroupRelationship, ChatMessage, PermissionGroup)
+from vcweb.core.models import (Experiment, ParticipantGroupRelationship, ChatMessage, PermissionGroup)
+from vcweb.experiment.forestry.models import (set_harvest_decision, get_harvest_decision_dv, get_regrowth_dv)
 from .models import (get_experiment_metadata, get_regrowth_rate, get_max_harvest_decision, get_cost_of_living,
                      get_resource_level, get_initial_resource_level, get_final_session_storage_queryset,
-                     get_harvest_decision_dv, set_harvest_decision, can_observe_other_group, get_average_harvest,
-                     get_average_storage, get_total_harvest, get_number_alive, get_player_data, get_regrowth_dv)
+                     can_observe_other_group, get_average_harvest, get_average_storage, get_total_harvest,
+                     get_number_alive, get_player_data)
 
 logger = logging.getLogger(__name__)
 
@@ -162,7 +162,6 @@ def get_view_model_dict(experiment, participant_group_relationship, **kwargs):
         experiment_model_dict['surveyUrl'] = survey_url
         experiment_model_dict['surveyCompleted'] = participant_group_relationship.survey_completed
         logger.debug("survey enabled, setting survey url to %s", survey_url)
-
 
     if current_round.is_debriefing_round:
         experiment_model_dict['totalHarvest'] = get_total_harvest(participant_group_relationship,
