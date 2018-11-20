@@ -25,6 +25,7 @@ services:
     command: ["nginx", "-g", "daemon off;"]
     ports:
       - "127.0.0.1:8001:80"
+      - "127.0.0.1:8882:8882"
     depends_on:
       - django
 volumes:
