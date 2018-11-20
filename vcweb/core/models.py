@@ -2625,9 +2625,11 @@ class Participant(CommonsUser):
 
     @property
     def should_update_profile(self):
-        if self.is_demo_participant or not self.can_receive_invitations:
-            # incomplete profile doesn't matter if they're not set to receive experiment invitations or they are a demo
-            # participant
+        if self.is_demo_participant or not self.can_receive_invitations or self.is_port_of_mars_participant():
+            """
+            incomplete profile doesn't matter if they're (1) not set to receive experiment invitations (2) a demo
+            participant or (3) a port of mars participant
+            """
             return False
         # returns true if any of the following fields are not set
         return not all([self.class_status, self.gender, self.favorite_sport, self.favorite_color, self.favorite_food,
@@ -2662,6 +2664,9 @@ class Participant(CommonsUser):
             delta = class_status_offsets[class_status]
             return date_created + delta > now
         return False
+
+    def is_port_of_mars_participant(self):
+        return get_port_of_mars_group().user_set.filter(pk=self.user.pk).exists()
 
     def add_to_port_of_mars_group(self):
         groups = self.user.groups

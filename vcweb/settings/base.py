@@ -103,8 +103,14 @@ DEFAULT_FROM_EMAIL = config.get('email', 'DEFAULT_FROM_EMAIL', fallback='commons
 # email address used for errors emails sent to ADMINS and MANAGERS
 SERVER_EMAIL = config.get('email', 'SERVER_EMAIL', fallback='commons@asu.edu')
 # recaptcha config
-RECAPTCHA_PUBLIC_KEY = config.get('captcha', 'RECAPTCHA_PUBLIC_KEY', fallback='')
-RECAPTCHA_PRIVATE_KEY = config.get('captcha', 'RECAPTCHA_PRIVATE_KEY', fallback='')
+RECAPTCHA_PUBLIC_KEY = config.get('captcha', 'RECAPTCHA_PUBLIC_KEY',
+                                  fallback='6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI')
+RECAPTCHA_PRIVATE_KEY = config.get('captcha', 'RECAPTCHA_PRIVATE_KEY',
+                                   fallback='6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe')
+
+NOCAPTCHA = True
+
+RECAPTCHA_USE_SSL = False
 
 # read in version
 RELEASE_VERSION_FILE = "release-version.txt"
@@ -208,6 +214,7 @@ DJANGO_APPS = (
 
 THIRD_PARTY_APPS = (
     'raven.contrib.django.raven_compat',
+    'captcha',
     'contact_form',
     'django_extensions',
     'mptt',

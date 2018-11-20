@@ -5,6 +5,8 @@ import time
 
 from hashlib import sha1
 
+from captcha.fields import ReCaptchaField
+
 from django import forms
 from django.conf import settings
 from django.contrib.auth.forms import PasswordResetForm, UserCreationForm, UsernameField
@@ -42,7 +44,7 @@ class PortOfMarsSignupForm(UserCreationForm):
     required_css_class = 'required'
 
     username = UsernameField(label="ASURITE ID",
-                             help_text=_("Please enter your ASURITE id here to use CAS authentication in the future."))
+                             help_text=_("Please enter your ASURITE id for CAS authentication."))
     first_name = forms.CharField(widget=widgets.TextInput, help_text=_("Your given name"))
     last_name = forms.CharField(widget=widgets.TextInput, help_text=_("Your family name"))
     asu_undergraduate = forms.BooleanField(label='Current ASU Undergraduate', help_text=_("I confirm I am a currently-enrolled undergraduate student at ASU"))
@@ -86,7 +88,8 @@ class AsuRegistrationForm(forms.ModelForm):
     last_name = forms.CharField(widget=widgets.TextInput)
     email = forms.EmailField(
         widget=widgets.TextInput,
-        help_text=_('''When experiments are scheduled you may receive an invitation to participate. Please be sure to enter a valid email address. We will never share your email.'''))
+        help_text=_('When experiments are scheduled you may receive an invitation to participate. '
+                    'Please be sure to enter a valid email address. We will never share your email.'))
 
     def __init__(self, *args, **kwargs):
         instance = kwargs.get('instance')
@@ -539,7 +542,7 @@ class AntiSpamForm(forms.Form):
     def generate_security_hash(self, timestamp):
         """Generate a (SHA1) security hash from the provided info."""
         info = (timestamp, settings.SECRET_KEY)
-        return sha1("".join(info)).hexdigest()
+        return sha1("".join(info).encode('utf-8')).hexdigest()
 
     def clean_contact_number(self):
         """Check that nothing's been entered into the honeypot."""
@@ -549,10 +552,9 @@ class AntiSpamForm(forms.Form):
         return value
 
 
-class AntiSpamContactForm(AntiSpamForm, ContactForm):
+class AntiSpamContactForm(ContactForm):
 
-    def from_email(self):
-        return self.cleaned_data.get('email', settings.DEFAULT_FROM_EMAIL)
+    captcha = ReCaptchaField()
 
 
 class BugReportForm(AntiSpamForm):
