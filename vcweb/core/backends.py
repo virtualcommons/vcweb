@@ -21,7 +21,8 @@ class EmailAuthenticationBackend(ModelBackend):
         UserModel = get_user_model()
         lowercase_username = username.lower()
         try:
-            validate_email(lowercase_username)
+            if '@' in lowercase_username:
+                validate_email(lowercase_username)
             user = UserModel.objects.get(Q(email=lowercase_username) | Q(username=lowercase_username))
             if user.check_password(password):
                 return user

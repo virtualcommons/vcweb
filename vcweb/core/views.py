@@ -257,7 +257,7 @@ class PortOfMarsSignupView(FormView):
         participant = Participant.objects.create(user=user, institution=institution, can_receive_invitations=True)
         participant.add_to_port_of_mars_group()
         user.save()
-        auth.login(self.request, user)
+        auth.login(self.request, user, backend='vcweb.core.backends.EmailAuthenticationBackend')
         return user
 
 
