@@ -10,6 +10,7 @@ from enum import Enum
 import configparser
 import logging
 import os
+import pathlib
 
 
 class Environment(Enum):
@@ -104,6 +105,15 @@ SERVER_EMAIL = config.get('email', 'SERVER_EMAIL', fallback='commons@asu.edu')
 # recaptcha config
 RECAPTCHA_PUBLIC_KEY = config.get('captcha', 'RECAPTCHA_PUBLIC_KEY', fallback='')
 RECAPTCHA_PRIVATE_KEY = config.get('captcha', 'RECAPTCHA_PRIVATE_KEY', fallback='')
+
+# read in version
+RELEASE_VERSION_FILE = "release-version.txt"
+release_version_file = pathlib.Path(RELEASE_VERSION_FILE)
+RELEASE_VERSION = "v2018.11"
+if release_version_file.is_file():
+    with release_version_file.open('r') as infile:
+        RELEASE_VERSION = infile.read().strip()
+
 
 RAVEN_CONFIG = {
     'dsn': config.get('logging', 'SENTRY_DSN', fallback=''),
@@ -357,9 +367,3 @@ CAS_CUSTOM_FORBIDDEN = 'cas_error'
 # override in local.py to enable more verbose logging e.g.,
 # DISABLED_TEST_LOGLEVEL = logging.NOTSET
 DISABLED_TEST_LOGLEVEL = logging.DEBUG
-
-# revision reporting support using dealer
-DEALER_TYPE = 'git'
-DEALER_SILENT = True
-DEALER_BACKENDS = ('git',)
-DEALER_PATH = BASE_DIR
