@@ -108,7 +108,7 @@ RECAPTCHA_PRIVATE_KEY = config.get('captcha', 'RECAPTCHA_PRIVATE_KEY', fallback=
 
 # read in version
 RELEASE_VERSION_FILE = "release-version.txt"
-release_version_file = pathlib.Path(RELEASE_VERSION_FILE)
+release_version_file = pathlib.Path(BASE_DIR, RELEASE_VERSION_FILE)
 RELEASE_VERSION = "v2018.11"
 if release_version_file.is_file():
     with release_version_file.open('r') as infile:
