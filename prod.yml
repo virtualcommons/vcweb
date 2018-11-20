@@ -20,7 +20,7 @@ services:
     volumes:
       - ./deploy/nginx/nginx-haproxy.conf:/etc/nginx/nginx.conf
       - ./deploy/nginx/uwsgi_params:/etc/nginx/uwsgi_params
-      - ./docker/shared/srv:/srv/
+      - ./docker/shared/:/shared/
       - sockets:/shared/sockets
     command: ["nginx", "-g", "daemon off;"]
     ports:
