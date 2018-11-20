@@ -250,8 +250,8 @@ ACCOUNT_ACTIVATION_DAYS = 30
 
 # use email as username for authentication
 AUTHENTICATION_BACKENDS = (
-    'vcweb.core.backends.EmailAuthenticationBackend',
     'cas.backends.CASBackend',
+    'vcweb.core.backends.EmailAuthenticationBackend',
 )
 
 # Static files (CSS, JavaScript, Images)
