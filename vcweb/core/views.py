@@ -261,7 +261,7 @@ class PortOfMarsSignupView(FormView):
         return user
 
 
-class LoginView(ContribAuthLoginView):
+class LoginView(AnonymousMixin, ContribAuthLoginView):
     template_name = 'accounts/login.html'
 
     def form_valid(self, form):
