@@ -8,6 +8,8 @@ services:
         DJANGO_RUNIT_SCRIPT: "./deploy/runit/prod.sh"
     image: virtualcommons/vcweb/prod:latest
     restart: always
+    environment:
+      DJANGO_SETTINGS_MODULE: 'vcweb.settings.staging'
     volumes:
       - ./deploy/backup/cron-script:/etc/cron.daily/autopgsqlbackup
       - ./docker/shared:/shared
