@@ -275,7 +275,9 @@ class LogoutView(LoginRequiredMixin, ContribAuthLogoutView):
 
     def dispatch(self, request, *args, **kwargs):
         # clear auth tokens
-        set_authentication_token(request.user)
+        user = request.user
+        if not user.is_anonymous:
+            set_authentication_token(user)
         return super().dispatch(request, *args, **kwargs)
 
 
