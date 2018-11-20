@@ -129,30 +129,22 @@ DATABASES = {
     }
 }
 
-# security settings
-
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
-SECURE_CONTENT_TYPE_NOSNIFF = True
-SECURE_BROWSER_XSS_FILTER = True
-X_FRAME_OPTIONS = 'DENY'
 
 CSRF_FAILURE_VIEW = 'vcweb.core.views.csrf_failure'
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.dirname(__file__)],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
-                'django.contrib.auth.context_processors.auth',
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
                 'django.template.context_processors.static',
                 'django.contrib.messages.context_processors.messages',
                 'django.template.context_processors.tz',
-                'dealer.contrib.django.context_processor',
                 'vcweb.core.context_processors.common',
             ],
         },
@@ -227,7 +219,7 @@ VCWEB_APPS = ('vcweb.core', 'vcweb.core.subjectpool',) + VCWEB_EXPERIMENTS
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + VCWEB_APPS
 
-LOGIN_REDIRECT_URL = '/dashboard'
+LOGIN_REDIRECT_URL = '/dashboard/'
 
 # websockets configuration
 WEBSOCKET_SSL = False
@@ -240,9 +232,8 @@ ACCOUNT_ACTIVATION_DAYS = 30
 
 # use email as username for authentication
 AUTHENTICATION_BACKENDS = (
+    'vcweb.core.backends.EmailAuthenticationBackend',
     'cas.backends.CASBackend',
-    "vcweb.core.backends.EmailAuthenticationBackend",
-    "django.contrib.auth.backends.ModelBackend",
 )
 
 # Static files (CSS, JavaScript, Images)
