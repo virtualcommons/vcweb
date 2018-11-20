@@ -273,11 +273,10 @@ class LoginView(ContribAuthLoginView):
 
 class LogoutView(LoginRequiredMixin, ContribAuthLogoutView):
 
-    def get(self, request, *args, **kwargs):
-        user = request.user
-        set_authentication_token(user)
-        auth.logout(request)
-        return redirect('home')
+    def dispatch(self, request, *args, **kwargs):
+        # clear auth tokens
+        set_authentication_token(request.user)
+        return super().dispatch(request, *args, **kwargs)
 
 
 @login_required
