@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load bootstrap3 %}
+{% block title %}Port Of Mars ASU Student Registration{% endblock %}
+{% block page %}
+<div id="error-messages"></div>
+<div class='panel panel-default'>
+    <div class='panel-heading'>
+        <h3 class='panel-title'>Please fill in the following fields</h3>
+    </div>
+    <div class='panel-body'>
+        Please fill out all of the following fields to be registered with the Port of Mars experiment mailing list. In
+        order to participate in this experiment you <b>must be an undergraduate student currently enrolled at ASU and at
+            least 18 years of age</b>. If you have any further questions, please see <a href='/ostromlab/faq'>our FAQ</a> or
+        <a href='/contact'>send us a message</a>.
+    </div>
+</div>
+<form id='vcweb-form' method='post' class='form-horizontal'>
+    {% csrf_token %}
+    {%  bootstrap_form form layout="horizontal" %}
+    <div class="form-group">
+        <div class="col-md-offset-3 col-md-10">
+            <button type='submit' id='submitForm' class='btn btn-primary'>Register</button>
+        </div>
+    </div>
+</form>
+{% endblock page %}

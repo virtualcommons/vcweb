@@ -30,14 +30,3 @@
     </div>
 </div>
 {% endblock page %}
-
-{% block javascript %}
-{{ block.super }}
-<script type='text/javascript'>
-$(function() {
-    $('#vcweb-form').validate();
-    $('#id_email').focus();
-});
-</script>
-{% endblock %}
-

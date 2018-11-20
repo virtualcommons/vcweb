@@ -59,7 +59,7 @@ def create_user_decorator(view_function, is_valid_user, redirect_to='core:login'
         def _decorated_view(request, *args, **kwargs):
             user = request.user
             if is_valid_user(user):
-                logger.debug('checked if user %s was valid with %s', user, is_valid_user)
+                logger.debug('user %s was valid via test %s', user, is_valid_user)
                 return fn(request, *args, **kwargs)
             else:
                 logger.debug('user %s was deemed invalid with %s, redirecting to %s', user, is_valid_user, redirect_to)

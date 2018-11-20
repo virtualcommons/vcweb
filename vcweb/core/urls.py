@@ -1,7 +1,6 @@
 import logging
 
 from django.conf.urls import url
-from django.contrib.auth.decorators import login_required
 from django.views.generic import RedirectView, TemplateView
 
 from rest_framework import routers
@@ -30,9 +29,10 @@ urlpatterns = [
     url(r'^papers/$', TemplateView.as_view(template_name='papers.html')),
     url(r'^dashboard/$', dashboard, name='dashboard'),
     url(r'^accounts/login/$', LoginView.as_view(), name='login'),
-    url(r'^accounts/logout/$', login_required(LogoutView.as_view()), name='logout'),
+    url(r'^accounts/logout/$', LogoutView.as_view(), name='logout'),
     # url(r'^accounts/add/$', RegistrationView.as_view(), name='register'), # XXX: open registration currently disabled
     url(r'^accounts/profile/$', account_profile, name='profile'),
+    url(r'^accounts/mars-signup/$', views.PortOfMarsSignupView.as_view(), name='mars_registration'),
     url(r'^accounts/profile/update$', update_account_profile, name='update_profile'),
     url(r'^accounts/check-email$', is_email_available, name='check_email'),
     url(r'^ostromlab/faq$', OstromlabFaqList.as_view(), name='ostromlab_faq'),

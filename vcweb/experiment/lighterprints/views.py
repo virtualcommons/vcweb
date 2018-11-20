@@ -1,20 +1,19 @@
 from datetime import datetime
 
-from django.contrib import auth
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404, render, redirect
+from django.shortcuts import get_object_or_404, render
 
 import logging
 import unicodecsv
 
 from vcweb.core.decorators import group_required, ownership_required
-from vcweb.core.forms import (ChatForm, CommentForm, LikeForm, LoginForm)
+from vcweb.core.forms import (ChatForm, CommentForm, LikeForm)
 from vcweb.core.http import JsonResponse
 from vcweb.core.models import (ChatMessage, Comment, Experiment, ParticipantGroupRelationship,
                                ParticipantRoundDataValue, Like, PermissionGroup)
-from vcweb.core.views import (dumps, get_active_experiment, set_authentication_token, mimetypes)
+from vcweb.core.views import (dumps, get_active_experiment, mimetypes)
 from .forms import ActivityForm
 from .models import (Activity, get_lighterprints_experiment_metadata, is_high_school_treatment, get_treatment_type,
                      get_activity_performed_parameter, is_community_treatment, is_level_based_experiment)
@@ -338,21 +337,6 @@ def participate(request, experiment_id=None):
         sd = experiment.start_date
         upcoming = sd > datetime.now().date() if sd is not None else False
         return render(request, 'lighterprints/inactive.html', {'experiment': experiment, 'upcoming': upcoming})
-
-
-# FIXME: push this into core api/login if possible
-def mobile_login(request):
-    form = LoginForm(request.POST or None)
-    try:
-        if form.is_valid():
-            user = form.user_cache
-            logger.debug("user was authenticated as %s, attempting to login", user)
-            auth.login(request, user)
-            set_authentication_token(user, request.session.session_key)
-            return redirect('lighterprints:mobile_participate')
-    except Exception as e:
-        logger.debug("Invalid login: %s", e)
-    return render(request, 'lighterprints/mobile/login.html')
 
 
 @group_required(PermissionGroup.participant, PermissionGroup.demo_participant)

@@ -1,5 +1,5 @@
 {% load tags %}
-{% load static from staticfiles %}
+{% load static %}
 {% load bootstrap3 %}
 {% load raven %}
 {% url 'about' as about %}
@@ -167,7 +167,6 @@
     {% if not DEBUG %}
     <script src="//cdnjs.cloudflare.com/ajax/libs/raven.js/{{ravenjs_version}}/raven.min.js"></script>
     <script>
-        var options = { tags: { git_commit: '{{ REVISION }}'} }
         Raven.config('{% sentry_public_dsn %}', options).install();
     </script>
     {% endif %}

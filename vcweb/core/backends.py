@@ -1,8 +1,9 @@
 import logging
 
 from django.contrib.auth.backends import ModelBackend
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.core.validators import validate_email
+from django.db.models import Q
 
 
 logger = logging.getLogger(__name__)
@@ -12,23 +13,19 @@ class EmailAuthenticationBackend(ModelBackend):
 
     """
     allow users to login with their email as their username,
-    adapted from http://djangosnippets.org/snippets/74/ and
-    http://scottbarnham.com/blog/2008/08/21/extending-the-django-user-model-with-inheritance/
 
     FIXME: check for and handle Participant experiment auth codes separately from actual login
     """
 
-    def authenticate(self, username=None, password=None, **kwargs):
+    def authenticate(self, request, username=None, password=None, **kwargs):
+        UserModel = get_user_model()
+        lowercase_username = username.lower()
         try:
-            lowercase_username = username.lower()
             validate_email(lowercase_username)
-            user = User.objects.get(email=lowercase_username)
+            user = UserModel.objects.get(Q(email=lowercase_username) | Q(username=lowercase_username))
             if user.check_password(password):
                 return user
-                # check for and handle participants logging in with an auth
-                # code?
-        except User.DoesNotExist:
+            # TODO: at some point should check for participants logging in with an auth code
+        except UserModel.DoesNotExist:
             logger.warning("no user found with username %s", username)
-        except:
-            logger.exception("unhandled exception with username %s", username, exc_info=True)
         return None

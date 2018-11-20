@@ -1,15 +1,13 @@
 import email
 import logging
 import re
-from dal import autocomplete
 import time
 
 from hashlib import sha1
 
 from django import forms
 from django.conf import settings
-from django.contrib.auth import authenticate
-from django.contrib.auth.forms import PasswordResetForm
+from django.contrib.auth.forms import PasswordResetForm, UserCreationForm, UsernameField
 from django.core.validators import validate_email
 from django.forms import widgets, ValidationError, CheckboxInput
 from django.utils.translation import ugettext_lazy as _
@@ -40,70 +38,45 @@ class URLInput(widgets.Input):
     input_type = 'url'
 
 
-"""
-XXX: open registration currently disabled.
-
-class BaseRegistrationForm(forms.Form):
+class PortOfMarsSignupForm(UserCreationForm):
     required_css_class = 'required'
 
-    first_name = forms.CharField(widget=widgets.TextInput)
-    last_name = forms.CharField(widget=widgets.TextInput)
-    email = forms.EmailField(widget=EmailInput, help_text=_('Please enter a valid email.'))
-    password = forms.CharField(widget=widgets.PasswordInput)
-    confirm_password = forms.CharField(widget=widgets.PasswordInput)
-    institution = forms.CharField(widget=autocomplete_light.TextWidget(InstitutionAutocomplete),
-                                  help_text=_('The primary institution, if any, you are affiliated with.'))
+    username = UsernameField(label="ASURITE ID",
+                             help_text=_("Please enter your ASURITE id here to use CAS authentication in the future."))
+    first_name = forms.CharField(widget=widgets.TextInput, help_text=_("Your given name"))
+    last_name = forms.CharField(widget=widgets.TextInput, help_text=_("Your family name"))
+    asu_undergraduate = forms.BooleanField(label='Current ASU Undergraduate', help_text=_("I confirm I am a currently-enrolled undergraduate student at ASU"))
 
-    def clean_email(self):
-        email_address = self.cleaned_data.get('email', '').lower()
-        if not email_address:
-            raise ValidationError(_("Please enter a valid email address."))
-        try:
-            User.objects.get(email=email_address)
-        except User.DoesNotExist:
-            return email_address
-        raise forms.ValidationError(_("This email address is already registered in our system."),
-                                    code='already-registered')
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        email_field_name = User.get_email_field_name()
+        email_field = self.fields[email_field_name]
+        email_field.required = True
 
     def clean(self):
-        cleaned_data = super(BaseRegistrationForm, self).clean()
-        pw = cleaned_data['password']
-        confirm_pw = cleaned_data['confirm_password']
-        if pw == confirm_pw:
-            return cleaned_data
-        raise forms.ValidationError(_("Please make sure your passwords match."), code='invalid')
+        super().clean()
+        email = self.cleaned_data.get('email')
+        username = self.cleaned_data.get('username')
+        if all([username, email]) and User.objects.filter(email__iexact=email).exclude(username=username).exists():
+            raise forms.ValidationError('This email address already exists in our system.')
+        return self.cleaned_data
 
-class RegistrationForm(BaseRegistrationForm):
-    experimenter = forms.BooleanField(required=False,
-                                      help_text=_('Check this box if you would like to request experimenter access.'))
-"""
+    class Meta(UserCreationForm.Meta):
+        fields = [
+            'first_name',
+            'last_name',
+            User.USERNAME_FIELD,
+            User.get_email_field_name(),
+            'password1',
+            'password2',
+            'asu_undergraduate',
+        ]
 
 
 class VcwebPasswordResetForm(PasswordResetForm):
 
     def __init__(self, *args, **kwargs):
         super(VcwebPasswordResetForm, self).__init__(*args, **kwargs)
-
-
-class LoginForm(forms.Form):
-    email = forms.EmailField(widget=EmailInput)
-    password = forms.CharField(widget=widgets.PasswordInput)
-    INVALID_AUTHENTICATION_MESSAGE = "Your combination of email and password was incorrect."
-    INACTIVE_USER_AUTHENTICATION_MESSAGE = "This user has been deactivated. Please contact us if this is in error."
-
-    def clean(self):
-        cleaned_data = super(LoginForm, self).clean()
-        email_address = cleaned_data.get('email')
-        if email_address:
-            email_address = email_address.lower()
-        password = cleaned_data.get('password')
-        if email_address and password:
-            self.user_cache = authenticate(username=email_address, password=password)
-            if self.user_cache is None:
-                raise forms.ValidationError(_(LoginForm.INVALID_AUTHENTICATION_MESSAGE), code='invalid')
-            elif not self.user_cache.is_active:
-                raise forms.ValidationError(_(LoginForm.INACTIVE_USER_AUTHENTICATION_MESSAGE))
-        return cleaned_data
 
 
 class AsuRegistrationForm(forms.ModelForm):
@@ -117,27 +90,13 @@ class AsuRegistrationForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         instance = kwargs.get('instance')
-        super(AsuRegistrationForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if instance is not None:
             for attr in ('first_name', 'last_name', 'email', 'major'):
                 self.fields[attr].initial = getattr(instance, attr)
 
-    class Meta:
-        model = Participant
-        fields = ['first_name', 'last_name', 'email', 'gender', 'class_status', 'major', 'favorite_sport',
-                  'favorite_food', 'favorite_color', 'favorite_movie_genre']
-        widgets = {
-            'major': autocomplete.ModelSelect2(
-                url='core:major-autocomplete',
-                attrs={
-                    'data-placeholder': 'Major',
-                    'data-minimum-input-length': 3,
-                }
-            )
-        }
-
     def save(self, commit=True):
-        profile = super(AsuRegistrationForm, self).save(commit=False)
+        profile = super().save(commit=False)
         profile.can_receive_invitations = True
         profile.institution = Institution.objects.get(name="Arizona State University")
         user = profile.user
@@ -148,6 +107,11 @@ class AsuRegistrationForm(forms.ModelForm):
             user.save()
             profile.save()
 
+    class Meta:
+        model = Participant
+        fields = ['first_name', 'last_name', 'email', 'gender', 'class_status', 'major', 'favorite_sport',
+                  'favorite_food', 'favorite_color', 'favorite_movie_genre']
+
 
 class AccountForm(forms.ModelForm):
     required_css_class = 'required'
@@ -155,23 +119,12 @@ class AccountForm(forms.ModelForm):
     first_name = forms.CharField(widget=widgets.TextInput)
     last_name = forms.CharField(widget=widgets.TextInput)
     email = forms.EmailField(widget=widgets.TextInput, help_text=_('We will never share your email.'))
-    institution = forms.ModelChoiceField(
-        queryset=Institution.objects.all(),
-        widget=autocomplete.ModelSelect2(
-            url='core:institution-autocomplete',
-            attrs={
-                'data-placeholder': 'Institution',
-                'data-minimum-input-length': 3,
-            }
-        ),
-        required=False,
-        help_text=_('The primary institution, if any, you are affiliated with.'))
 
     def __init__(self, *args, **kwargs):
         instance = kwargs.get('instance')
-        super(AccountForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if instance is not None:
-            for attr in ('first_name', 'last_name', 'email', 'institution'):
+            for attr in ('first_name', 'last_name', 'email'):
                 self.fields[attr].initial = getattr(instance, attr)
 
     def clean(self):
@@ -189,14 +142,8 @@ class AccountForm(forms.ModelForm):
 
     def save(self, commit=True):
         profile = super(AccountForm, self).save(commit=False)
-        institution_name = self.cleaned_data.get('institution')
-        if institution_name:
-            institution, created = Institution.objects.get_or_create(name=institution_name)
-            profile.institution = institution
-        else:
-            profile.institution = None
-            logger.debug('Institution is empty')
-
+        institution = Institution.objects.get(name='Arizona State University')
+        profile.institution = institution
         for attr in ('first_name', 'last_name', 'email'):
             setattr(profile.user, attr, self.cleaned_data.get(attr))
 
@@ -211,18 +158,10 @@ class ParticipantAccountForm(AccountForm):
     class Meta:
         model = Participant
         fields = ['gender', 'can_receive_invitations', 'class_status', 'major', 'favorite_sport', 'favorite_food',
-                  'favorite_color', 'favorite_movie_genre']
+                  'favorite_color', 'favorite_movie_genre',
+                  ]
         labels = {
             'can_receive_invitations': _('Receive invitations for experiments?')
-        }
-        widgets = {
-            'major': autocomplete.ModelSelect2(
-                url='core:major-autocomplete',
-                attrs={
-                    'data-placeholder': 'Major',
-                    'data-minimum-input-length': 3,
-                }
-            )
         }
 
     def clean(self):
@@ -436,19 +375,6 @@ class RegisterParticipantsForm(forms.Form):
         required=False,
         min_length=3,
         help_text=_('Participant login password. If blank, a unique password will be generated for each participant.'))
-    institution = forms.ModelChoiceField(
-        label="Institution",
-        required=False,
-        queryset=Institution.objects.all(),
-        widget=autocomplete.ModelSelect2(
-            url='core:institution-autocomplete',
-            attrs={
-                'data-placeholder': 'Institution',
-                'data-minimum-input-length': 3,
-            }
-        ),
-        help_text=_('Institution to associate with these participants.')
-    )
     registration_email_from_address = forms.EmailField(
         widget=EmailInput(),
         label=_('Sender email'),

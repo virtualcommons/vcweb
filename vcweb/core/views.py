@@ -10,9 +10,12 @@ from dal import autocomplete
 from django.conf import settings
 from django.contrib import auth, messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.views import LoginView as ContribAuthLoginView, LogoutView as ContribAuthLogoutView
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
 from django.db import models
+from django.db import transaction
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.decorators import method_decorator
@@ -32,10 +35,10 @@ from contact_form.views import ContactFormView
 from .api import SUCCESS_DICT, FAILURE_DICT, create_message_event
 from .http import JsonResponse, dumps
 from .decorators import (anonymous_required, is_participant, is_experimenter, ownership_required, group_required)
-from .forms import (LoginForm, ParticipantAccountForm, ExperimenterAccountForm, UpdateExperimentForm,
+from .forms import (ParticipantAccountForm, ExperimenterAccountForm, UpdateExperimentForm,
                     AsuRegistrationForm, RegisterEmailListParticipantsForm, RegisterTestParticipantsForm,
                     BookmarkExperimentMetadataForm, ExperimentConfigurationForm, ExperimentParameterValueForm,
-                    RoundConfigurationForm, RoundParameterValueForm, AntiSpamContactForm)
+                    RoundConfigurationForm, RoundParameterValueForm, AntiSpamContactForm, PortOfMarsSignupForm)
 from .models import (User, ChatMessage, Participant, ParticipantExperimentRelationship, ParticipantGroupRelationship,
                      ExperimentConfiguration, Experiment, Institution, BookmarkedExperimentMetadata, OstromlabFaqEntry,
                      ExperimentParameterValue, RoundConfiguration, RoundParameterValue, ParticipantSignup,
@@ -52,7 +55,7 @@ class AnonymousMixin(object):
 
     @method_decorator(anonymous_required)
     def dispatch(self, *args, **kwargs):
-        return super(AnonymousMixin, self).dispatch(*args, **kwargs)
+        return super().dispatch(*args, **kwargs)
 
 
 class ParticipateView(TemplateView):
@@ -159,6 +162,7 @@ def dashboard(request):
     selects the appropriate dashboard template and data for participants and experimenters
     """
     user = request.user
+    logger.debug("handling dashboard request for user %s", user)
     if is_participant(user):
         participant = user.participant
         # special case for if this participant needs to update their profile or if they have pending invitations to
@@ -236,37 +240,38 @@ def get_active_experiment(participant, experiment_metadata=None, **kwargs):
     return None
 
 
-class LoginView(AnonymousMixin, FormView):
-    form_class = LoginForm
+class PortOfMarsSignupView(FormView):
+    form_class = PortOfMarsSignupForm
+    template_name = 'accounts/port_of_mars_registration_form.html'
+    success_url = '/dashboard/'
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        self.register(form)
+        return response
+
+    @transaction.atomic
+    def register(self, form):
+        institution = Institution.objects.get(name='Arizona State University')
+        user = form.save()
+        participant = Participant.objects.create(user=user, institution=institution, can_receive_invitations=True)
+        participant.add_to_port_of_mars_group()
+        user.save()
+        auth.login(self.request, user)
+        return user
+
+
+class LoginView(ContribAuthLoginView):
     template_name = 'accounts/login.html'
 
     def form_valid(self, form):
-        request = self.request
-        user = form.user_cache
-        auth.login(request, user)
-        set_authentication_token(user, request.session.session_key)
-        return super(LoginView, self).form_valid(form)
-
-    def get_next_url(self):
-        next_url = self.request.GET.get('next', '')
-        if 'logout' in next_url or next_url.startswith('http'):
-            return None
-        else:
-            return next_url
-
-    def get_success_url(self):
-        next_url = self.get_next_url()
-        if not next_url:
-            # if no next_url specified, redirect participants to their first active experiment if it exists.
-            user = self.request.user
-            if is_participant(user):
-                active_experiment = get_active_experiment(user.participant)
-                if active_experiment:
-                    next_url = active_experiment.participant_url
-        return next_url if next_url else reverse('core:dashboard')
+        response = super().form_valid(form)
+        user = form.get_user()
+        set_authentication_token(user, self.request.session.session_key)
+        return response
 
 
-class LogoutView(TemplateView):
+class LogoutView(LoginRequiredMixin, ContribAuthLogoutView):
 
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -982,9 +987,13 @@ class InstitutionAutocomplete(autocomplete.Select2QuerySetView):
 
 
 # Sets up autocomplete functionality for major field on participant account profile
-class ParticipantMajorAutocomplete(autocomplete.Select2QuerySetView):
-    def get_queryset(self):
+class ParticipantMajorAutocomplete(autocomplete.Select2ListView):
+    def create(self, text):
+        logger.debug("Creating major %s", text)
+        pass
+
+    def get_list(self):
         qs = Participant.objects.order_by('major').distinct('major')
         if self.q:
             qs = qs.filter(major__istartswith=self.q)
-        return qs.values_list('major', flat=True)
+        return list(qs.values_list('major', flat=True))

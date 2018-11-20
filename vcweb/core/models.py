@@ -43,6 +43,11 @@ logger = logging.getLogger(__name__)
 Permissions Enum for Auth Permission Groups
 """
 
+@transaction.atomic
+def get_port_of_mars_group():
+    group, _ = Group.objects.get_or_create(name='Port of Mars')
+    return group
+
 
 class PermissionGroup(Enum):
     participant = 'Participants'
@@ -2657,6 +2662,12 @@ class Participant(CommonsUser):
             delta = class_status_offsets[class_status]
             return date_created + delta > now
         return False
+
+    def add_to_port_of_mars_group(self):
+        groups = self.user.groups
+        groups.add(get_port_of_mars_group())
+        # also add the user to participant permission group
+        groups.add(PermissionGroup.participant.get_django_group())
 
     @transaction.atomic
     def deactivate(self):
