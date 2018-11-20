@@ -237,6 +237,7 @@ VCWEB_APPS = ('vcweb.core', 'vcweb.core.subjectpool',) + VCWEB_EXPERIMENTS
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + VCWEB_APPS
 
 LOGIN_REDIRECT_URL = '/dashboard/'
+LOGOUT_REDIRECT_URL = '/'
 
 # websockets configuration
 WEBSOCKET_SSL = False
