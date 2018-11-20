@@ -265,12 +265,12 @@ STATICFILES_DIRS = [
     os.path.join(PROJECT_DIR, "static"),
 ]
 
-STATIC_ROOT = '/shared/static'
+STATIC_ROOT = '/shared/srv/static'
 STATIC_URL = '/static/'
 
 # Absolute path to the directory that holds media (user uploads).
 # Example: "/home/media/media.lawrence.com/"
-MEDIA_ROOT = '/shared/media'
+MEDIA_ROOT = '/shared/srv/media'
 
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash if there is a path component (optional in other cases).
@@ -284,17 +284,12 @@ def is_accessible(directory_path):
 
 LOG_DIRECTORY = config.get('logging', 'LOG_DIRECTORY', fallback=os.path.join(BASE_DIR, 'logs'))
 
-if not is_accessible(LOG_DIRECTORY):
-    try:
-        os.makedirs(LOG_DIRECTORY)
-    except OSError:
-        print(("Unable to create absolute log directory at {}, setting to relative path logs instead".format(LOG_DIRECTORY)))
-        LOG_DIRECTORY = 'logs'
-        if not is_accessible(LOG_DIRECTORY):
-            try:
-                os.makedirs(LOG_DIRECTORY)
-            except OSError:
-                print("Couldn't create any log directory, startup will fail")
+for directory in (STATIC_ROOT, MEDIA_ROOT, LOG_DIRECTORY):
+    if not is_accessible(directory):
+        try:
+            os.makedirs(directory)
+        except OSError:
+            print("Unable to create directory at {}, startup will fail".format(directory))
 
 LOGGING = {
     'version': 1,

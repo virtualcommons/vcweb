@@ -20,14 +20,13 @@ services:
     volumes:
       - ./deploy/nginx/nginx-haproxy.conf:/etc/nginx/nginx.conf
       - ./deploy/nginx/uwsgi_params:/etc/nginx/uwsgi_params
-      - ./docker/shared:/shared
+      - ./docker/shared/srv:/srv/
       - sockets:/shared/sockets
     command: ["nginx", "-g", "daemon off;"]
     ports:
       - "127.0.0.1:8001:80"
     depends_on:
       - django
-
 volumes:
   sockets:
     driver: local
