@@ -2,8 +2,10 @@ import json
 import logging
 import random
 
+from django.contrib.auth import get_user_model
+from django.contrib.auth.forms import AuthenticationForm
+
 from .common import BaseVcwebTest, SubjectPoolTest
-from ..forms import LoginForm
 from ..models import (Participant, ExperimentMetadata, ExperimentSession, Invitation, ParticipantSignup,
                       PermissionGroup, BookmarkedExperimentMetadata)
 from ..views import (DashboardViewModel, ExperimenterDashboardViewModel)
@@ -12,6 +14,9 @@ logger = logging.getLogger(__name__)
 
 
 class AuthTest(BaseVcwebTest):
+
+    INVALID_LOGIN_MESSAGE = str(AuthenticationForm.error_messages['invalid_login'])
+    INACTIVE_USER_MESSAGE = str(AuthenticationForm.error_messages['inactive'])
 
     def test_authentication_redirect(self):
         experiment = self.experiment
@@ -27,20 +32,15 @@ class AuthTest(BaseVcwebTest):
         self.assertFalse(self.login(username=experiment.experimenter.email, password='jibber jabber'))
         response = self.post(self.login_url, {'email': experiment.experimenter.email,
                                               'password': 'jibber jabber'})
-        self.assertTrue(LoginForm.INVALID_AUTHENTICATION_MESSAGE in str(response.content))
+        self.assertFalse(response.wsgi_request.user.is_authenticated)
 
     def test_inactive_user_login(self):
-        participant = Participant.objects.all()[0]
-        participant.user.is_active = False
-        participant.user.save()
-
-        self.assertEqual(participant.user.is_active, False)
-
-        response = self.post(self.login_url, {'email': participant.email,
-                                              'password': 'test'})
-        self.assertTrue(
-            LoginForm.INACTIVE_USER_AUTHENTICATION_MESSAGE in str(response.content)
-        )
+        User = get_user_model()
+        user = User.objects.first()
+        user.is_active = False
+        user.save()
+        response = self.post(self.login_url, {'email': user.email, 'password': 'test'})
+        self.assertFalse(response.wsgi_request.user.is_authenticated)
 
     def test_experimenter_permissions(self):
         self.assertTrue(self.login_experimenter())
