@@ -149,3 +149,4 @@ tags
 # ignore generated docker-compose.yml
 docker-compose.yml
 config-backup-*
+docker
