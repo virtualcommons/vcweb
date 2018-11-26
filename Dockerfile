@@ -30,6 +30,7 @@ RUN pip3 install -r /tmp/${REQUIREMENTS_FILE}
 
 COPY ./deploy/db/autopostgresqlbackup.conf /etc/default/autopostgresqlbackup
 COPY ./deploy/db/postgresql-backup-pre /etc/
+COPY ./deploy/db/autopostgresqlbackup /etc/cron.daily/
 COPY ${DJANGO_RUNIT_SCRIPT} /etc/service/django/run
 COPY ./deploy/runit/sockjs.sh /etc/service/sockjs/run
 COPY deploy/mail/main.cf /etc/postfix/main.cf

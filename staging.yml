@@ -11,7 +11,6 @@ services:
     environment:
       DJANGO_SETTINGS_MODULE: 'vcweb.settings.staging'
     volumes:
-      - ./deploy/backup/cron-script:/etc/cron.daily/autopgsqlbackup
       - ./docker/shared:/shared
       - sockets:/shared/sockets
   nginx:
