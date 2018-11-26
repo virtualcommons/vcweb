@@ -6,6 +6,7 @@ ARG REQUIREMENTS_FILE=requirements-dev.txt
 
 RUN sed -i "s|archive.ubuntu.com|${UBUNTU_MIRROR}|" /etc/apt/sources.list \
     && apt-get update && apt-get install -q -y \
+    autopostgresqlbackup \
     curl \
     git \
     libxml2-dev \
