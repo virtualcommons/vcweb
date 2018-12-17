@@ -2,18 +2,20 @@
 {% load static %}
 {% load bootstrap3 %}
 {% load raven %}
-{% url 'about' as about %}
-{% url 'home' as home %}
-{% url 'core:contact_form' as contact %}
-{% url 'core:dashboard' as dashboard %}
-{% url 'core:login' as login %}
-{% url 'core:logout' as logout %}
-{% url 'core:participate' as participate %}
-{% url 'core:profile' as profile %}
-{% url 'core:register' as register %}
+{% url 'about' as about_url %}
+{% url 'home' as home_url %}
+{% url 'cas_login' as cas_login_url %}
+{% url 'core:contact_form' as contact_url %}
+{% url 'core:ostromlab_faq' as faq_url %}
+{% url 'core:dashboard' as dashboard_url %}
+{% url 'core:login' as login_url %}
+{% url 'core:logout' as logout_url %}
+{% url 'core:participate' as participate_url %}
+{% url 'core:profile' as profile_url %}
+{% url 'core:register' as register_url %}
 {% url 'core:report_issues' as issues_url %}
-{% url 'core:audit_report' as audit_report %}
-{% url 'subjectpool:subjectpool_index' as subjectpool %}
+{% url 'core:audit_report' as audit_report_url %}
+{% url 'subjectpool:subjectpool_index' as subjectpool_url %}
 <!DOCTYPE html>
 <html lang="en">
 {% with bootstrap_version="3.3.7" bootswatch_version="3.3.7" fontawesome_version="4.7.0" knockout_version="3.4.0" ravenjs_version="3.7.0" path=request.path %}
@@ -44,21 +46,21 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a class='navbar-brand {{ path|active:home }}' href='{{ home }}'><img class='pull-left' src='{% static "images/vcweb-logo.png" %}' width='30' height='23' alt='the virtual commons'>virtual commons </a>
+            <a class='navbar-brand {{ path|active:home_url }}' href='{{ home_url }}'><img class='pull-left' src='{% static "images/vcweb-logo.png" %}' width='30' height='23' alt='the virtual commons'>virtual commons </a>
         </div>
         <div class="collapse navbar-collapse" role='navigation'>
             <ul class='nav navbar-nav'>
                 {% if user.is_authenticated %}
-                {% if user.participant %}
-                <li class='{{ path|active_re:participate }}'><a href='{{ participate }}'><i class='fa fa-users'></i> Participate</a></li>
-                {% elif user.experimenter %}
-                <li class='{{ path|active_re:dashboard }}'><a href='{{ dashboard }}'><i class='fa fa-tachometer'></i> Dashboard</a></li>
-                {% if not user.experimenter.is_demo_experimenter %}
-                <li class='{{ path|active_re:subjectpool }}'><a href='{{ subjectpool }}'><i class='fa fa-users'></i> Subject recruitment</a></li>
+                    {% if user.participant %}
+                        <li class='{{ path|active_re:participate_url }}'><a href='{{ participate_url }}'><i class='fa fa-users'></i> Participate</a></li>
+                    {% elif user.experimenter %}
+                        <li class='{{ path|active_re:dashboard_url }}'><a href='{{ dashboard_url }}'><i class='fa fa-tachometer'></i> Dashboard</a></li>
+                        {% if not user.experimenter.is_demo_experimenter %}
+                            <li class='{{ path|active_re:subjectpool_url }}'><a href='{{ subjectpool_url }}'><i class='fa fa-users'></i> Subject recruitment</a></li>
+                        {% endif %}
+                    {% endif %}
                 {% endif %}
-                {% endif %}
-                {% endif %}
-                <li class='{{ path|active:contact }}'><a href='{{ contact }}'><i class='fa fa-bell-o'></i> Contact us</a></li>
+                <li class='{{ path|active:contact_url }}'><a href='{{ contact_url }}'><i class='fa fa-bell-o'></i> Contact us</a></li>
                 <li><a target='_blank' href='{{ issues_url }}'><i class='fa fa-bullhorn'></i> Report a bug</a></li>
                 {% comment %} <li><a href='#' id="report-issue" data-toggle="modal" data-target="#bugModal" ><i class='fa fa-bullhorn'></i> Report a bug</a></li> {% endcomment %}
             </ul>
@@ -66,22 +68,22 @@
             {% block login %}
             <ul class='nav navbar-nav navbar-right'>
                 {% if user.is_authenticated %}
-                <li class='{{ path|active:login }} dropdown'>
+                <li class='{{ path|active:login_url }} dropdown'>
                 <a class='dropdown-toggle' data-toggle='dropdown' href='#'>{{ user.email }} <i class='fa fa-chevron-down'></i></a>
                     <ul class='dropdown-menu'>
                         {% if user.is_superuser %}
-                        <li><a href='{{ audit_report }}'><i class='fa fa-pie-chart'></i> Audit Report</a></li>
+                            <li><a href='{{ audit_report_url }}'><i class='fa fa-pie-chart'></i> Audit Report</a></li>
                         {% endif %}
-                        <li><a href='{{ profile }}'><i class='fa fa-user'></i> Account</a></li>
-                        <li><a href='{{ logout }}'><i class='fa fa-sign-out'></i> Sign out</a></li>
+                        <li><a href='{{ profile_url }}'><i class='fa fa-user'></i> Account</a></li>
+                        <li><a href='{{ logout_url }}'><i class='fa fa-sign-out'></i> Sign out</a></li>
                     </ul>
                 </li>
                 {% else %}
-                <li class='{{ path|active:login }}'>
+                <li class='{{ path|active:login_url }}'>
                     {% if DEBUG %}
-                    <a href='{{ login }}'>
+                        <a href='{{ login_url }}'>
                     {% else %}
-                    <a href='https://{{ request.get_host }}{{ login }}'>
+                        <a href='{{ request.build_absolute_uri }}{{ login_url }}'>
                     {% endif %}
                     <i class='fa fa-sign-in'></i> Sign In</a>
                 </li>
@@ -129,12 +131,12 @@
     <div class='container'>
         {% block footerlinks %}
         <ul class='nav-footer hidden-xs'>
-            <li><a href='http://cbie.asu.edu'>Center for Behavior, Institutions, and the Environment</a></li>
-            <li><a href='http://complexity.asu.edu'>Biosocial Complexity Initiative @ ASU</a></li>
+            <li><a href='https://cbie.asu.edu'>Center for Behavior, Institutions, and the Environment</a></li>
+            <li><a href='https://complexity.asu.edu'>Biosocial Complexity Initiative @ ASU</a></li>
             <li><a href='http://www.azregents.edu/'>&copy; 2011-{% now "Y" %} Arizona Board of Regents</a></li>
             <li><a href='https://github.com/virtualcommons/vcweb'><i class='fa fa-github-square'></i> build: {{ RELEASE_VERSION }}</a></li>
         </ul>
-        <a style='margin-top: 15px;' class='visible-xs pull-right' href='{{home}}'><img class='logo' src='{% static "images/vcweb-logo.png" %}' width='30' height='23' alt='vcweb logo'/></a>
+        <a style='margin-top: 15px;' class='visible-xs pull-right' href='{{home_url}}'><img class='logo' src='{% static "images/vcweb-logo.png" %}' width='30' height='23' alt='vcweb logo'/></a>
         <ul style='margin-top: 5px;' class='list-unstyled visible-xs'>
             <li><a href='http://cbie.asu.edu'>Center for Behavior, Institutions, and the Environment</a>
             <li><a href='http://complexity.asu.edu'>Biosocial Complexity Initiative @ ASU</a></li>
