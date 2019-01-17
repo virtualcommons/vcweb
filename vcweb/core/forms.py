@@ -40,8 +40,8 @@ class URLInput(widgets.Input):
 class PortOfMarsSignupForm(UserCreationForm):
     required_css_class = 'required'
 
-    username = UsernameField(label="ASURITE ID",
-                             help_text=_("Please enter your ASURITE id for CAS authentication."))
+    username = UsernameField(label="ASURITE username",
+                             help_text=_("Please enter your ASURITE username for CAS authentication."))
     first_name = forms.CharField(widget=widgets.TextInput, help_text=_("Your given name"))
     last_name = forms.CharField(widget=widgets.TextInput, help_text=_("Your family name"))
     asu_undergraduate = forms.BooleanField(label='Current ASU Undergraduate', help_text=_("I confirm I am a currently-enrolled undergraduate student at ASU"))
