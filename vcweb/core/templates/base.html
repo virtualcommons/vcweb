@@ -80,12 +80,9 @@
                 </li>
                 {% else %}
                 <li class='{{ path|active:login_url }}'>
-                    {% if DEBUG %}
-                        <a href='{{ login_url }}'>
-                    {% else %}
-                        <a href='{{ request.build_absolute_uri }}{{ login_url }}'>
-                    {% endif %}
-                    <i class='fa fa-sign-in'></i> Sign In</a>
+                    <a href='{{ login_url }}'>
+                        <i class='fa fa-sign-in'></i> Sign In
+                    </a>
                 </li>
                 {% endif %}
             </ul>
