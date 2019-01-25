@@ -169,12 +169,10 @@ class ParticipantAccountForm(AccountForm):
             'can_receive_invitations': _('Receive invitations for experiments?')
         }
 
-    def clean(self):
-        data = super(ParticipantAccountForm, self).clean()
-        can_receive_invitations = data.get('can_receive_invitations')
-        if can_receive_invitations and not all([data.get(key) for key in ParticipantAccountForm.Meta.fields]):
-            raise forms.ValidationError(_("Please fill in all fields to be eligible for experiment invitations."))
-        return data
+    def save(self, commit=True):
+        participant = super().save(commit)
+        if self.cleaned_data.get('port_of_mars'):
+            participant.add_to_port_of_mars_group()
 
 
 class ExperimenterAccountForm(AccountForm):
