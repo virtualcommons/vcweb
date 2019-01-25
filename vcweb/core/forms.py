@@ -81,6 +81,8 @@ class VcwebPasswordResetForm(PasswordResetForm):
 class AsuRegistrationForm(forms.ModelForm):
     required_css_class = 'required'
 
+    port_of_mars = forms.BooleanField(label=_("Participate in the Port of Mars Experiment?"),
+                                      help_text=_("Check if you would like to sign up for the ASU Port of Mars experiment"))
     first_name = forms.CharField(widget=widgets.TextInput)
     last_name = forms.CharField(widget=widgets.TextInput)
     email = forms.EmailField(
@@ -109,7 +111,7 @@ class AsuRegistrationForm(forms.ModelForm):
 
     class Meta:
         model = Participant
-        fields = ['first_name', 'last_name', 'email', 'gender', 'class_status', 'major', 'favorite_sport',
+        fields = ['port_of_mars', 'first_name', 'last_name', 'email', 'gender', 'class_status', 'major', 'favorite_sport',
                   'favorite_food', 'favorite_color', 'favorite_movie_genre']
 
 
@@ -154,10 +156,13 @@ class AccountForm(forms.ModelForm):
 
 
 class ParticipantAccountForm(AccountForm):
+    port_of_mars = forms.BooleanField(label=_("Participate in the Port of Mars Experiment?"),
+                                      required=False,
+                                      help_text=_("Check this box if you would like to sign up for the ASU Port of Mars experiment"))
 
     class Meta:
         model = Participant
-        fields = ['gender', 'can_receive_invitations', 'class_status', 'major', 'favorite_sport', 'favorite_food',
+        fields = ['gender', 'can_receive_invitations', 'port_of_mars', 'class_status', 'major', 'favorite_sport', 'favorite_food',
                   'favorite_color', 'favorite_movie_genre',
                   ]
         labels = {

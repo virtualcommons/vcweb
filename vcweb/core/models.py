@@ -2605,7 +2605,7 @@ class Participant(CommonsUser):
                                   'Musical', 'Horror', 'Foreign', 'Romance', 'Independent', 'Drama')
     UNDERGRADUATE_CLASS_CHOICES = ('Freshman', 'Sophomore', 'Junior', 'Senior')
     can_receive_invitations = models.BooleanField(default=False, help_text=_(
-        "Check this box if you'd like to opt-in and receive email invitations for upcoming experiments"))
+        "Check this box to opt-in and receive email invitations for upcoming experiments"))
     groups = models.ManyToManyField(ExperimentGroup, through='ParticipantGroupRelationship',
                                     related_name='participant_set')
     experiments = models.ManyToManyField(Experiment,
