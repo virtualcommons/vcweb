@@ -143,6 +143,7 @@ class ParticipantDashboardViewModel(DashboardViewModel):
             'runningExperiments': self.running_experiments,
             'signups': self.signups,
             'showEndDates': self.show_end_dates,
+            'isPortOfMars': self.participant.is_port_of_mars_participant()
         }
 
 

@@ -2669,7 +2669,7 @@ class Participant(CommonsUser):
         return False
 
     def is_port_of_mars_participant(self):
-        return self.user.groups.filter(pk=get_port_of_mars_group().pk)
+        return self.user.groups.filter(pk=get_port_of_mars_group().pk).exists()
 
     def add_to_port_of_mars_group(self):
         groups = self.user.groups
