@@ -36,18 +36,6 @@
                     gender: {
                         required: "#id_can_receive_invitations:checked"
                     },
-                    favorite_sport: {
-                        required: "#id_can_receive_invitations:checked"
-                    },
-                    favorite_color: {
-                        required: "#id_can_receive_invitations:checked"
-                    },
-                    favorite_food: {
-                        required: "#id_can_receive_invitations:checked"
-                    },
-                    favorite_movie_genre: {
-                        required: "#id_can_receive_invitations:checked"
-                    },
                     email: {
                         required: true,
                         email: true,
@@ -63,11 +51,10 @@
                     }
                 },
                 messages: {
-                    major: "Please enter your major.",
                     class_status: "Please enter your class status",
                     gender: "Please enter your gender",
                     email: {
-                        remote: 'This email is already registered in our system. <a href="https://vcweb.asu.edu/accounts/password/reset">Request a new password?</a>'
+                        remote: 'This email is already registered in our system. <a href="https://commons.asu.edu/accounts/password/reset">Request a new password?</a>'
                     }
                 },
                 submitHandler: function(form) {
