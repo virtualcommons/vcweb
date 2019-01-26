@@ -134,12 +134,13 @@ def get_invitations_count(request):
         experiment_metadata_ids = ExperimentSession.objects.filter(pk__in=session_pk_list).values_list(
             'experiment_metadata__pk', flat=True)
         if len(set(experiment_metadata_ids)) == 1:
-            # As all sessions selected by experimenter to send invitations belong to same experiment metadata
+            # only allow invitations for sessions of a single ExperimentMetadata type
             # get the experiment metadata pk of any session (This is ensured as it is a constraint)
             potential_participants = Participant.objects.invitation_eligible(
                 experiment_metadata_ids[0],
                 gender=form.cleaned_data.get('gender'),
                 institution=form.cleaned_data.get('affiliated_institution'),
+                port_of_mars=form.cleaned_data.get('port_of_mars'),
                 only_undergrad=form.cleaned_data.get('only_undergrad'))
             return JsonResponse({'success': True, 'invitesCount': len(potential_participants)})
     return JsonResponse({'success': False, 'invitesCount': 0, 'errors': form.errors})
@@ -195,7 +196,7 @@ def send_invitations(request):
                     final_participants = random.sample(potential_participants, invitation_count)
                 message = "Invitations were sent to %s / %s participants." % (len(final_participants), invitation_count)
 
-                today = datetime.now()
+                today = timezone.now()
                 invitations = []
                 recipient_list = [settings.DEFAULT_FROM_EMAIL]
                 for participant in final_participants:
@@ -283,7 +284,7 @@ def add_participant(request, pk=None):
     participant = get_object_or_404(Participant.objects.select_related('user'), user__email=participant_email)
     es = get_object_or_404(ExperimentSession, pk=pk)
     # First check that the experiment session has already been completed
-    if es.scheduled_end_date > datetime.now():
+    if es.scheduled_end_date > timezone.now():
         logger.debug("%s tried to add participant %s to pending experiment session %s - ignoring",
                      request.user, participant, pk)
         return JsonResponse({'success': False, 'error': "You can't manually add a participant to a pending experiment session."})
