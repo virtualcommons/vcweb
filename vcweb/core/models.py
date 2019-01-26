@@ -2562,7 +2562,7 @@ class ParticipantQuerySet(models.query.QuerySet):
         return self.filter(user__email__contains='mailinator.com')
 
     def invitation_eligible(self, experiment_metadata_pk, only_undergrad=True, gender=None,
-                            institution_name=None, institution=None):
+                            port_of_mars=False, institution_name=None, institution=None):
         # invited_in_last_threshold_days contains all Invitations that were generated in last threshold days for the
         # given Experiment metadata
         invited_in_last_threshold_days = Invitation.objects.already_invited(
@@ -2580,6 +2580,8 @@ class ParticipantQuerySet(models.query.QuerySet):
                                                            already_participated, invalid_participants)))
 
         criteria = dict(can_receive_invitations=True, user__is_active=True)
+        if port_of_mars:
+            criteria.update(user__groups=get_port_of_mars_group())
         if institution is not None:
             criteria.update(institution=institution)
         elif institution_name is not None:
@@ -2666,7 +2668,7 @@ class Participant(CommonsUser):
         return False
 
     def is_port_of_mars_participant(self):
-        return get_port_of_mars_group().user_set.filter(pk=self.user.pk).exists()
+        return self.user.groups.filter(pk=get_port_of_mars_group().pk)
 
     def add_to_port_of_mars_group(self):
         groups = self.user.groups

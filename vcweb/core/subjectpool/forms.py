@@ -63,6 +63,10 @@ class SessionInviteForm(forms.Form):
     only_undergrad = forms.BooleanField(
         help_text=_("Limit to self-reported undergraduate students"),
         widget=CheckboxInput(attrs={'checked': True}), required=False)
+    port_of_mars = forms.BooleanField(
+        help_text=_("Limit to Port of Mars Signups"),
+        required=False
+    )
     gender = forms.ChoiceField(choices=GENDER_CHOICES)
     affiliated_institution = forms.ModelChoiceField(
         queryset=Institution.objects.all(),
