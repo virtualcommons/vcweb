@@ -104,8 +104,8 @@
 
 {% block javascript %}
     {{ block.super }}
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
+    <script type='text/javascript' src='/static/collected/admin/js/vendor/jquery/jquery.js'></script>
+    {{ form.media }}
     {% include "includes/bootstrap-datetimepicker.html" %}
     <script type= "text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.7.0/underscore-min.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}js/calendar.js"></script>
@@ -382,10 +382,10 @@
                                             model.session_list.remove(session);
                                             calendar = createCalendar();
                                         } else {
-                                            displayiFormError(result.errors);
+                                            displayFormError(result.errors);
                                         }
                                     });
-                            } 
+                            }
                         });
                 };
 

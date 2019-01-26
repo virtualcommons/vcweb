@@ -1,8 +1,7 @@
 dealer==2.1.0
 Django<1.12
-django-autocomplete-light==3.3.2
+django-autocomplete-light==3.2.10
 django-bootstrap3==11.0.0
-# forked django-cas from @tgpatel, testing need
 django-cas-client==1.4.0
 django-contact-form==1.6
 django-crontab==0.7.1

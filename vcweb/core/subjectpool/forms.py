@@ -67,6 +67,7 @@ class SessionInviteForm(forms.Form):
     affiliated_institution = forms.ModelChoiceField(
         queryset=Institution.objects.all(),
         required=False,
+        initial=1,
         widget=autocomplete.ModelSelect2(
             url='core:institution-autocomplete',
             attrs={
