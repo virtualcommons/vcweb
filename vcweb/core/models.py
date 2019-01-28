@@ -2635,8 +2635,7 @@ class Participant(CommonsUser):
             """
             return False
         # returns true if any of the following fields are not set
-        return not all([self.class_status, self.gender, self.favorite_sport, self.favorite_color, self.favorite_food,
-                        self.favorite_movie_genre, self.major])
+        return not all([self.class_status, self.gender, self.major])
 
     @property
     def is_demo_participant(self):
