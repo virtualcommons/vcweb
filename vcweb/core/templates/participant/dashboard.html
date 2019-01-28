@@ -15,11 +15,13 @@ Participant Dashboard
             periodically email random groups of participants to sign up for registered sessions for the duration of the
             experiment. Thanks in advance for participating!
         </div>
-        <div data-bind='if: ! isPortOfMars && ! hasUpcomingEvents'>
-            <div class='alert alert-warning alert-block'>
-                You're not signed up for any other experiments at the moment. We periodically invite random groups of
-                participants to participate in experiments. Please check again later or 
-                <a href='/contact'>contact us</a> if you have any questions.
+        <div data-bind='ifnot: isPortOfMars'>
+            <div data-bind='ifnot: hasUpcomingEvents'>
+                <div class='alert alert-warning alert-block'>
+                    You're not signed up for any other experiments at the moment. We periodically invite random groups of
+                    participants to participate in experiments. Please check again later or 
+                    <a href='/contact'>contact us</a> if you have any questions.
+                </div>
             </div>
         </div>
         <div data-bind='if: pendingExperiments().length > 0'>

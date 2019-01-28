@@ -2671,11 +2671,15 @@ class Participant(CommonsUser):
     def is_port_of_mars_participant(self):
         return self.user.groups.filter(pk=get_port_of_mars_group().pk).exists()
 
+    @transaction.atomic
     def add_to_port_of_mars_group(self):
         groups = self.user.groups
         groups.add(get_port_of_mars_group())
-        # also add the user to participant permission group
+        # also add to participant permission group in case they are still not a Participant
         groups.add(PermissionGroup.participant.get_django_group())
+
+    def remove_from_port_of_mars_group(self):
+        self.user.groups.remove(get_port_of_mars_group())
 
     @transaction.atomic
     def deactivate(self):

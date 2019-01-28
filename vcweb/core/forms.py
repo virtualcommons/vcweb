@@ -96,6 +96,7 @@ class AsuRegistrationForm(forms.ModelForm):
         if instance is not None:
             for attr in ('first_name', 'last_name', 'email', 'major'):
                 self.fields[attr].initial = getattr(instance, attr)
+            self.fields['port_of_mars'].initial = instance.is_port_of_mars_participant()
 
     def save(self, commit=True):
         profile = super().save(commit=False)
@@ -160,6 +161,12 @@ class ParticipantAccountForm(AccountForm):
                                       required=False,
                                       help_text=_("Check this box if you would like to sign up for the ASU Port of Mars experiment"))
 
+    def __init__(self, *args, **kwargs):
+        instance = kwargs.get('instance')
+        super().__init__(*args, **kwargs)
+        if instance is not None:
+            self.fields['port_of_mars'].initial = instance.is_port_of_mars_participant()
+
     class Meta:
         model = Participant
         fields = ['gender', 'can_receive_invitations', 'port_of_mars', 'class_status', 'major', 'favorite_sport', 'favorite_food',
@@ -173,6 +180,8 @@ class ParticipantAccountForm(AccountForm):
         participant = super().save(commit)
         if self.cleaned_data.get('port_of_mars'):
             participant.add_to_port_of_mars_group()
+        else:
+            participant.remove_from_port_of_mars_group()
 
 
 class ExperimenterAccountForm(AccountForm):
