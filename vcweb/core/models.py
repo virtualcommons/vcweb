@@ -3422,9 +3422,9 @@ def create_reminder_emails():
         participant_emails = ParticipantSignup.objects.filter(invitation__experiment_session=es).values_list(
             'invitation__participant__user__email', flat=True)
         logger.debug("SUBJECT POOL: sending reminder emails to %s", participant_emails)
-        emails.append(create_markdown_email(template="email/reminder-email.txt",
+        emails.append(create_markdown_email(template="subjectpool/email/reminder-email.txt",
                                             context={"session": es},
-                                            subject="vcweb experiment reminder",
+                                            subject="[vcweb] experiment signup reminder",
                                             to_email=[settings.DEFAULT_EMAIL],
                                             bcc=participant_emails))
     return emails
