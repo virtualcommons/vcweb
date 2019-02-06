@@ -3105,15 +3105,16 @@ class ExperimentSession(models.Model):
 
     def add_participant(self, participant, participated=True):
         # manually add a participant to this session
-        existing_invitation = self.invitation_set.filter(participant=participant)
+        existing_invitation_set = self.invitation_set.filter(participant=participant)
         attendance = ParticipantSignup.ATTENDANCE.participated if participated else ParticipantSignup.ATTENDANCE.absent
         
-        if not existing_invitation.exists():
+        if existing_invitation_set.exists():
+            existing_invitation = existing_invitation_set.last()
+        else:
             existing_invitation = self.invitation_set.create(participant=participant, sender=self.creator)
 
-        signups = existing_invitation.signup_set.all()
-        if signups.exists():
-            signups.update(attendance=attendance)
+        if existing_invitation.signup_set.exists():
+            existing_invitation.signup_set.update(attendance=attendance)
         else:
             ParticipantSignup.objects.create(invitation=existing_invitation, attendance=attendance)
 
