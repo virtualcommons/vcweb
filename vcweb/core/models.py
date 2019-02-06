@@ -3103,6 +3103,20 @@ class ExperimentSession(models.Model):
             return int(min(settings.SUBJECT_POOL_WAITLIST_SIZE, self.capacity * .20))
         return 0
 
+    def add_participant(self, participant, participated=True):
+        # manually add a participant to this session
+        existing_invitation = self.invitation_set.filter(participant=participant)
+        attendance = ParticipantSignup.ATTENDANCE.participated if participated else ParticipantSignup.ATTENDANCE.absent
+        
+        if not existing_invitation.exists():
+            existing_invitation = self.invitation_set.create(participant=participant, sender=self.creator)
+
+        signups = existing_invitation.signup_set.all()
+        if signups.exists():
+            signups.update(attendance=attendance)
+        else:
+            ParticipantSignup.objects.create(invitation=existing_invitation, attendance=attendance)
+
     def is_owner(self, user):
         return self.creator == user or user.is_superuser
 
@@ -3254,6 +3268,7 @@ class ParticipantSignup(models.Model):
         (4, 'waitlist', _('waitlisted')),
     )
     """ Provides participated, discharged, absent, and initial attendance enum values """
+    # FIXME: this should be a OneToOne instead
     invitation = models.ForeignKey(Invitation, related_name='signup_set')
     date_created = models.DateTimeField(auto_now_add=True)
     attendance = models.PositiveIntegerField(choices=ATTENDANCE, default=ATTENDANCE.registered)
