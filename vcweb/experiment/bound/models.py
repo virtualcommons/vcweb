@@ -12,7 +12,7 @@ from vcweb.experiment.forestry.models import (
     get_harvest_decision_parameter, get_harvest_decision, get_group_harvest_parameter,
     get_reset_resource_level_parameter, get_regrowth_parameter, get_initial_resource_level_parameter,
     get_resource_level_parameter, get_resource_level_dv as get_unshared_resource_level_dv, get_group_harvest_dv,
-    get_regrowth_dv, )
+    get_regrowth_dv, set_harvest_decision as forestry_set_harvest_decision, )
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +28,8 @@ INITIAL_RESOURCES_PER_PARTICIPANT_PER_ROUND = 3
 '''
 Experiment parameters and metadata accessors
 '''
+
+set_harvest_decision = forestry_set_harvest_decision
 
 
 @simplecache
