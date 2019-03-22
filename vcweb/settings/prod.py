@@ -7,6 +7,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
 SITE_URL = 'https://commons.asu.edu'
 
+SUBJECT_POOL_INVITATION_DELAY = 3
+
 # security settings
 
 SESSION_COOKIE_SECURE = True

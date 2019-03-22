@@ -3161,10 +3161,14 @@ class InvitationQuerySet(models.query.QuerySet):
         return self.select_related('experiment_session__experiment_metadata').filter(**criteria).exclude(
             experiment_session__experiment_metadata__pk__in=participated_sessions)
 
-    def already_invited(self, experiment_metadata_pk=None, days_threshold=7):
-        last_week_date = datetime.now() - timedelta(days=days_threshold)
-        return self.filter(date_created__gt=last_week_date,
-                           experiment_session__experiment_metadata__pk=experiment_metadata_pk)
+    def already_invited(self, experiment_metadata_pk=None, invitation_delay_days=7):
+        qs = self.filter(experiment_session__experiment_metadata__pk=experiment_metadata_pk)
+        if settings.SUBJECT_POOL_INVITATION_DELAY:
+            invitation_delay_days = settings.SUBJECT_POOL_INVITATION_DELAY
+        if invitation_delay_days > 0:
+            invited_after = datetime.now() - timedelta(days=invitation_delay_days)
+            qs = qs.filter(date_created__gt=invited_after)
+        return qs
 
 
 class Invitation(models.Model):

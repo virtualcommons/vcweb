@@ -61,6 +61,9 @@ GITHUB_REPO_OWNER = "virtualcommons"
 GITHUB_ISSUE_LABELS = ["bug"]
 
 SUBJECT_POOL_WAITLIST_SIZE = 10
+# how long to wait (in days) before allowing a potential participant to receive an invitation email for an experiment
+# for which they have already been invited
+SUBJECT_POOL_INVITATION_DELAY = 5
 
 DEMO_EXPERIMENTER_EMAIL = 'vcweb@mailinator.com'
 DEFAULT_EMAIL = DEFAULT_FROM_EMAIL = 'vcweb@asu.edu'
