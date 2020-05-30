@@ -128,7 +128,7 @@ if release_version_file.is_file():
 
 sentry_sdk.init(
     dsn=config.get('logging', 'SENTRY_DSN', fallback=''),
-    integrations=[DjangoIntegration(), RedisIntegration()],
+    integrations=[DjangoIntegration()],
     send_default_pii=True
 )
 
