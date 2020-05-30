@@ -11,6 +11,8 @@ import configparser
 import logging
 import os
 import pathlib
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
 
 
 class Environment(Enum):
@@ -124,13 +126,11 @@ if release_version_file.is_file():
         RELEASE_VERSION = infile.read().strip()
 
 
-RAVEN_CONFIG = {
-    'dsn': config.get('logging', 'SENTRY_DSN', fallback=''),
-    'public_dsn': config.get('logging', 'SENTRY_PUBLIC_DSN', fallback=''),
-    # If you are using git, you can also automatically configure the
-    # release based on the git info.
-    # 'release': raven.fetch_git_sha(BASE_DIR),
-}
+sentry_sdk.init(
+    dsn=config.get('logging', 'SENTRY_DSN', fallback=''),
+    integrations=[DjangoIntegration(), RedisIntegration()],
+    send_default_pii=True
+)
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = config.get('django', 'SECRET_KEY')
@@ -171,8 +171,6 @@ TEMPLATES = [
 ]
 
 MIDDLEWARE = [
-    'raven.contrib.django.raven_compat.middleware.Sentry404CatchMiddleware',
-    'raven.contrib.django.raven_compat.middleware.SentryResponseErrorIdMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -203,6 +201,7 @@ CACHES = {
     }
 }
 
+
 DJANGO_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -216,7 +215,6 @@ DJANGO_APPS = (
 )
 
 THIRD_PARTY_APPS = (
-    'raven.contrib.django.raven_compat',
     'captcha',
     'contact_form',
     'django_extensions',
@@ -311,11 +309,6 @@ LOGGING = {
         },
     },
     'handlers': {
-        'sentry': {
-            'level': 'ERROR',
-            'formatter': 'verbose',
-            'class': 'raven.contrib.django.raven_compat.handlers.SentryHandler',
-        },
         'console': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
@@ -331,16 +324,6 @@ LOGGING = {
         },
     },
     'loggers': {
-        'raven': {
-            'level': 'DEBUG',
-            'handlers': ['vcweb.file', 'console'],
-            'propagate': False,
-        },
-        'sentry.errors': {
-            'level': 'DEBUG',
-            'handlers': ['vcweb.file', 'console'],
-            'propagate': False,
-        },
         'django.db.backends': {
             'level': 'ERROR',
             'handlers': ['console'],

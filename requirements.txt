@@ -13,6 +13,7 @@ django-recaptcha==2.0.6
 django-redis==4.12.1
 djangorestframework==3.11.0
 Markdown==3.2.2
+sentry-sdk==0.14.4
 psycopg2-binary==2.8.5
 requests==2.23.0
 sockjs-tornado==1.0.7
