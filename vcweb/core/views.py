@@ -24,7 +24,7 @@ from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import FormView, TemplateView, ListView
 from django.views.generic.detail import SingleObjectMixin
 from rest_framework import viewsets, status, renderers
-from rest_framework.decorators import detail_route
+from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from .api import SUCCESS_DICT, FAILURE_DICT, create_message_event
@@ -433,7 +433,7 @@ class ManageExperimentViewSet(viewsets.ModelViewSet):
     permission_classes = [CanEditExperiment]
     renderer_classes = (renderers.TemplateHTMLRenderer, renderers.JSONRenderer)
 
-    @detail_route(methods=['post'])
+    @action(detail=True, methods=['post'])
     def submit_register_test_participants(self, request, pk=None):
         experiment = self.get_object()
         serializer = ExperimentRegistrationSerializer(data=request.data, experiment=experiment)
