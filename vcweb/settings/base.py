@@ -330,7 +330,7 @@ LOGGING = {
             'propagate': False,
         },
         'vcweb': {
-            'handlers': ['vcweb.file', 'console', 'sentry'],
+            'handlers': ['vcweb.file', 'console'],
             'level': 'DEBUG',
             'propagate': False,
         }
