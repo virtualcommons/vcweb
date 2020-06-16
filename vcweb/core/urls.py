@@ -88,4 +88,4 @@ urlpatterns = [
 ]
 
 router = routers.DefaultRouter(trailing_slash=False)
-router.register(r'experiments', views.ManageExperimentViewSet, base_name='experiment')
+router.register(r'experiments', views.ManageExperimentViewSet, basename='experiment')
