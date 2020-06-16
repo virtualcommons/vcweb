@@ -1,7 +1,6 @@
 {% load tags %}
 {% load static %}
 {% load bootstrap3 %}
-{% load raven %}
 {% url 'about' as about_url %}
 {% url 'home' as home_url %}
 {% url 'cas_login' as cas_login_url %}
@@ -18,7 +17,7 @@
 {% url 'subjectpool:subjectpool_index' as subjectpool_url %}
 <!DOCTYPE html>
 <html lang="en">
-{% with bootstrap_version="3.3.7" bootswatch_version="3.3.7" fontawesome_version="4.7.0" knockout_version="3.4.0" ravenjs_version="3.7.0" path=request.path %}
+{% with bootstrap_version="3.3.7" bootswatch_version="3.3.7" fontawesome_version="4.7.0" knockout_version="3.4.0" path=request.path %}
 <head>
 {% block head %}
 <title>{% block title %}Virtual Commons Web Experiment{% endblock %}</title>
@@ -163,12 +162,6 @@
     <script src='{% static "js/ko/knockout.mapping.min.js" %}'></script>
     <script src='{% static "js/ko/knockout.helper.js" %}'></script>
     <script src='{% static "js/common.js" %}'></script>
-    {% if not DEBUG %}
-    <script src="//cdnjs.cloudflare.com/ajax/libs/raven.js/{{ravenjs_version}}/raven.min.js"></script>
-    <script>
-        Raven.config('{% sentry_public_dsn %}', options).install();
-    </script>
-    {% endif %}
     <script>
         (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
          (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),

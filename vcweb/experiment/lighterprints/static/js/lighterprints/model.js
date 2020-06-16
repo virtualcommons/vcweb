@@ -85,7 +85,8 @@ function LighterFootprintsModel(data) {
                     ko.mapping.fromJS(response.viewModel, model);
                 }
                 else {
-                    Raven.captureMessage("Unable to post chat message: " + formData);
+                  // FIXME: replace with https://docs.sentry.io/platforms/javascript/
+                  // Raven.captureMessage("Unable to post chat message: " + formData);
                 }
             });
         $('#chatText').val('');

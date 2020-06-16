@@ -505,7 +505,8 @@ $(function() {
                 viewModel.initializeChart();
             }
             else {
-                Raven.captureMessage("Unable to perform activity: " + formData);
+                // FIXME: replace with https://docs.sentry.io/platforms/javascript/
+                // Raven.captureMessage("Unable to perform activity: " + formData);
                 $('#activityPerformedModal').modal('hide');
                 viewModel.errorMessage(data.response);
                 $('#activityUnavailableModal').modal();
