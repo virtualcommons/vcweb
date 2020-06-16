@@ -6,13 +6,15 @@ import sys
 from itertools import chain
 from logging.config import dictConfig
 from os import path
-
-import django
-import tornadoredis
-from raven.contrib.tornado import AsyncSentryClient
 from sockjs.tornado import SockJSRouter, SockJSConnection
+
 from tornado import web, ioloop
 from tornadoredis import pubsub
+from sentry_sdk.integrations.tornado import TornadoIntegration
+
+import django
+import sentry_sdk
+import tornadoredis
 
 # assumes containerized execution
 sys.path.append('/code')
@@ -167,8 +169,10 @@ def main(argv=None):
     app = web.Application(urls)
     logger.info("starting sockjs server on port %s", port)
     app.listen(port)
-    if getattr(settings, 'RAVEN_CONFIG', None):
-        app.sentry_client = AsyncSentryClient(settings.RAVEN_CONFIG['dsn'])
+    if getattr(settings, 'SENTRY_DSN', None):
+        sentry_sdk.init(dsn=settings.SENTRY_DSN,
+                integrations=[TornadoIntegration()]
+                )
     ioloop.IOLoop.instance().start()
 
 
