@@ -5,7 +5,7 @@ round and a random set of participants that are partitioned into groups (or netw
 involve common pool resources where individuals must balance self interest with the good of the group or linear public
 good games where majority group contribution is needed to maximize payoffs.
 
-We maintain a managed instance of vcweb at https://vcweb.asu.edu but you are welcome to host your own server.
+We maintain a managed instance of vcweb at https://commons.asu.edu but you are welcome to host your own server.
 
 ### features
 
@@ -39,16 +39,16 @@ We maintain a managed instance of vcweb at https://vcweb.asu.edu but you are wel
 
 ### run experiments or develop new experiments
 
-Please [contact us](http://vcweb.asu.edu/contact) if you'd like to request an experimenter account or develop new
+Please [contact us](http://commons.asu.edu/contact) if you'd like to request an experimenter account or develop new
 experiments
 
 ### participate in an experiment
 
-In order to participate in a vcweb experiment you must be invited to one by an experimenter. 
+In order to participate in a commons experiment you must be invited to one by an experimenter. 
 
 ### try it out
 
-You can try the software as a demo experimenter by logging in to https://vcweb.asu.edu with the following credentials:
+You can try the software as a demo experimenter by logging in to https://commons.asu.edu with the following credentials:
 
 * Email: vcweb@mailinator.com
 * Password: demo
