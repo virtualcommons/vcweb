@@ -1,6 +1,6 @@
 -r requirements.txt
 # development dependencies
 django-sslserver
-django-debug-toolbar
+django-debug-toolbar==2.2
 ipython
 python-coveralls
