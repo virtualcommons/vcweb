@@ -22,9 +22,9 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         input_filename = options['filename']
-        with open(input_filename, 'rb') as infile, open('spool-amdf.txt', 'wb') as outfile, open('spool-dupes.txt', 'wb') as dupes:
+        with open(input_filename, 'rt', encoding='utf-8-sig') as infile, open('spool-amdf.txt', 'wt') as outfile, open('spool-dupes.txt', 'wt') as dupes:
             r = csv.reader(infile, dialect=csv.excel)
-            header = tuple([_.decode('utf-8-sig') for _ in next(r, None)])
+            header = tuple(next(r))
             # FIXME: make this more broadly generalizable if needed
             print(("header: %s", header))
             assert header == ("First Name", "Last Name", "Asu Email Addr", "Email Addr", "Asu Asurite Id")
