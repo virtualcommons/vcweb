@@ -11,7 +11,7 @@ django-model-utils==4.0.0
 django-mptt==0.11.0
 django-recaptcha==2.0.6
 django-redis==4.12.1
-djangorestframework==3.11.0
+djangorestframework==3.11.2
 Markdown==3.2.2
 sentry-sdk==0.14.4
 psycopg2-binary==2.8.5
